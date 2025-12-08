@@ -1,0 +1,677 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}信用额度设置 - NEXUS{% endblock %}
+{% block breadcrumb %}财务管理 / 客户信用 / 额度设置{% endblock %}
+
+{% block content %}
+<div class="credit-setting-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('finance.credits') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回客户信用列表</span>
+        </a>
+    </div>
+    
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="title-area">
+            <div class="title-icon">
+                <i class="fas fa-sliders-h"></i>
+                <div class="icon-pulse"></div>
+            </div>
+            <div>
+                <h1 class="page-title">信用额度设置</h1>
+                <p class="page-subtitle">CREDIT LIMIT SETTING</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page-content">
+        <!-- 客户信息 -->
+        <div class="customer-info-card">
+            <div class="customer-avatar">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="customer-detail">
+                <h2 class="customer-name">{{ customer.name }}</h2>
+                <div class="customer-meta">
+                    <span><i class="fas fa-phone"></i> {{ customer.phone or '-' }}</span>
+                    <span><i class="fas fa-user"></i> {{ customer.contact_person or '-' }}</span>
+                </div>
+            </div>
+            {% if credit.is_frozen %}
+            <div class="frozen-badge">
+                <i class="fas fa-lock"></i>
+                <span>已冻结</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 当前信用状态 -->
+        <div class="credit-status-card">
+            <div class="status-header">
+                <i class="fas fa-chart-pie"></i>
+                <span>当前信用状态</span>
+            </div>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-icon blue">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="status-content">
+                        <span class="status-label">信用额度</span>
+                        <span class="status-value">¥{{ "{:,.2f}".format(credit.credit_limit) }}</span>
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-icon orange">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="status-content">
+                        <span class="status-label">已用额度</span>
+                        <span class="status-value">¥{{ "{:,.2f}".format(credit.used_credit) }}</span>
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-icon green">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="status-content">
+                        <span class="status-label">可用额度</span>
+                        <span class="status-value">¥{{ "{:,.2f}".format(credit.available_credit) }}</span>
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-icon {{ 'red' if credit.usage_rate >= 80 else 'purple' }}">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="status-content">
+                        <span class="status-label">使用率</span>
+                        <span class="status-value {{ 'warning' if credit.usage_rate >= 80 else '' }}">{{ "{:.1f}".format(credit.usage_rate) }}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 使用率条形图 -->
+            <div class="usage-bar-container">
+                <div class="usage-bar">
+                    <div class="usage-fill {{ 'warning' if credit.usage_rate >= credit.warning_threshold else '' }}" 
+                         style="width: {{ credit.usage_rate|round(1) }}%;"></div>
+                    <div class="warning-line" style="left: {{ credit.warning_threshold }}%;"></div>
+                </div>
+                <div class="usage-labels">
+                    <span>0%</span>
+                    <span class="warning-label" style="left: {{ credit.warning_threshold }}%;">预警线 {{ credit.warning_threshold|round(0)|int }}%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设置表单 -->
+        <div class="form-container">
+            <form method="POST" class="credit-form">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-cog"></i>
+                        <span>额度设置</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">信用额度 <span class="required">*</span></label>
+                            {{ form.credit_limit(class="form-input", placeholder="请输入信用额度", step="0.01") }}
+                            {% if form.credit_limit.errors %}
+                            <div class="form-error">{{ form.credit_limit.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-hint">客户可使用的最大赊账额度</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">预警阈值 (%)</label>
+                            {{ form.warning_threshold(class="form-input", placeholder="默认80%", min="0", max="100", step="1") }}
+                            {% if form.warning_threshold.errors %}
+                            <div class="form-error">{{ form.warning_threshold.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-hint">使用率达到此比例时触发预警</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 快捷额度 -->
+                    <div class="quick-limits">
+                        <span class="quick-label">快捷设置：</span>
+                        <button type="button" class="quick-btn" onclick="setLimit(10000)">1万</button>
+                        <button type="button" class="quick-btn" onclick="setLimit(50000)">5万</button>
+                        <button type="button" class="quick-btn" onclick="setLimit(100000)">10万</button>
+                        <button type="button" class="quick-btn" onclick="setLimit(200000)">20万</button>
+                        <button type="button" class="quick-btn" onclick="setLimit(500000)">50万</button>
+                    </div>
+                </div>
+                
+                <!-- 提交按钮 -->
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-save"></i>
+                        <span>保存设置</span>
+                    </button>
+                    <a href="{{ url_for('finance.credits') }}" class="cancel-btn">
+                        <span>取消</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 说明卡片 -->
+        <div class="info-card">
+            <div class="info-header">
+                <i class="fas fa-info-circle"></i>
+                <span>信用管理说明</span>
+            </div>
+            <ul class="info-list">
+                <li>信用额度限制客户的最大赊账金额</li>
+                <li>当使用率超过预警阈值时，系统会发出预警提醒</li>
+                <li>冻结状态下客户无法进行赊账交易</li>
+                <li>建议根据客户交易记录和信用情况合理设置额度</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.credit-setting-page {
+    padding: 0 0.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* 页面头部 */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.title-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    border: 2px solid #10b981;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 2px;
+}
+
+/* 客户信息卡片 */
+.customer-info-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+}
+
+.customer-avatar {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #10b981;
+    font-size: 1.5rem;
+}
+
+.customer-detail {
+    flex: 1;
+}
+
+.customer-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+}
+
+.customer-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.customer-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.customer-meta i {
+    color: #10b981;
+}
+
+.frozen-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* 信用状态卡片 */
+.credit-status-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.status-header i {
+    color: #10b981;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.status-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.status-icon.orange { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.status-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.status-icon.purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.status-icon.red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+.status-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.status-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.status-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.status-value.warning {
+    color: #ef4444;
+}
+
+/* 使用率条形图 */
+.usage-bar-container {
+    position: relative;
+}
+
+.usage-bar {
+    position: relative;
+    height: 12px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: visible;
+}
+
+.usage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 6px;
+    transition: width 0.8s ease;
+}
+
+.usage-fill.warning {
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.warning-line {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: #ef4444;
+    border-radius: 1px;
+}
+
+.usage-labels {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.warning-label {
+    position: absolute;
+    transform: translateX(-50%);
+    color: #ef4444;
+}
+
+/* 表单容器 */
+.form-container {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-title i {
+    color: #10b981;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.form-error {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #ef4444;
+}
+
+.form-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* 快捷额度 */
+.quick-limits {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.quick-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.quick-btn {
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* 提交按钮 */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.85rem 1.5rem;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text-main);
+}
+
+/* 说明卡片 */
+.info-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+}
+
+.info-header i {
+    color: #3b82f6;
+}
+
+.info-list {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.info-list li {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.info-list li:last-child {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setLimit(amount) {
+    document.querySelector('input[name="credit_limit"]').value = amount.toFixed(2);
+}
+</script>
+{% endblock %}

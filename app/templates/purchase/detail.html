@@ -1,0 +1,1469 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}采购单详情 - NEXUS{% endblock %}
+{% block breadcrumb %}采购管理 / {{ po.po_no }}{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== 基础样式 ===== */
+    .purchase-detail-page {
+        padding: 0 0.5rem;
+        animation: fadeIn 0.4s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* 返回导航 */
+    .back-nav {
+        margin-bottom: 1.5rem;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .back-link:hover {
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    /* 网格布局 */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    
+    @media (max-width: 992px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        .detail-sidebar {
+            display: none;
+        }
+    }
+    
+    /* 侧边栏固定导航 */
+    .detail-sidebar {
+        position: sticky;
+        top: 1rem;
+    }
+    
+    .quick-nav {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 1.25rem;
+        overflow: hidden;
+    }
+    
+    .quick-nav-title {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        padding-left: 0.5rem;
+    }
+    
+    .quick-nav-section {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .quick-nav-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .quick-nav-section-title {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        padding-left: 0.5rem;
+        opacity: 0.7;
+    }
+    
+    .quick-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 10px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        margin-bottom: 0.35rem;
+    }
+    
+    .quick-nav-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .quick-nav-item:hover {
+        background: rgba(245, 158, 11, 0.08);
+        color: #f59e0b;
+        transform: translateX(4px);
+    }
+    
+    .quick-nav-item.active {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        font-weight: 500;
+    }
+    
+    .quick-nav-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+    
+    /* 快捷操作按钮 */
+    .quick-action-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 10px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+        background: transparent;
+        width: 100%;
+        margin-bottom: 0.35rem;
+    }
+    
+    .quick-action-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .quick-action-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+    
+    .quick-action-item.danger {
+        color: #ef4444;
+    }
+    
+    .quick-action-item.danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
+        transform: translateX(4px);
+    }
+    
+    .quick-action-item.warning {
+        color: #f59e0b;
+    }
+    
+    .quick-action-item.warning:hover {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+        transform: translateX(4px);
+    }
+    
+    .quick-action-item.primary {
+        color: #6366f1;
+    }
+    
+    .quick-action-item.primary:hover {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
+        transform: translateX(4px);
+    }
+    
+    .quick-action-item.success {
+        color: #10b981;
+    }
+    
+    .quick-action-item.success:hover {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.2);
+        transform: translateX(4px);
+    }
+    
+    /* ===== 订单卡片 ===== */
+    .order-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .order-card .card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .order-icon-lg {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .icon-pulse {
+        position: absolute;
+        inset: -4px;
+        border-radius: 20px;
+        border: 2px solid #f59e0b;
+        opacity: 0.4;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.4; }
+        50% { transform: scale(1.1); opacity: 0.2; }
+    }
+    
+    .order-header-info {
+        flex: 1;
+    }
+    
+    .order-badges {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .po-badge, .id-badge {
+        padding: 0.25rem 0.75rem;
+        background: rgba(245, 158, 11, 0.12);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-family: monospace;
+        color: #f59e0b;
+    }
+    
+    .id-badge {
+        background: var(--bg-hover);
+        color: var(--text-muted);
+    }
+    
+    .order-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 0.5rem;
+    }
+    
+    .order-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    
+    .meta-item i {
+        color: #f59e0b;
+    }
+    
+    /* ===== 信息卡片 ===== */
+    .info-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 1.25rem;
+    }
+    
+    .card-title i {
+        color: #f59e0b;
+    }
+    
+    /* 信息网格 */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+    
+    .info-item.full {
+        grid-column: span 2;
+    }
+    
+    .info-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-main);
+    }
+    
+    /* ===== 状态管理卡片 ===== */
+    .status-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-card .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .status-card .card-title {
+        margin: 0;
+    }
+    
+    .status-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* 当前状态显示 */
+    .current-status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 1.25rem;
+        background: rgba(245, 158, 11, 0.08);
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-indicator {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .status-indicator.draft { background: linear-gradient(135deg, #6b7280, #4b5563); }
+    .status-indicator.pending { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .status-indicator.approved { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .status-indicator.received { background: linear-gradient(135deg, #10b981, #059669); }
+    .status-indicator.cancelled { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    
+    .status-info {
+        flex: 1;
+    }
+    
+    .status-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+    
+    .status-name.draft { color: #6b7280; }
+    .status-name.pending { color: #f59e0b; }
+    .status-name.approved { color: #06b6d4; }
+    .status-name.received { color: #10b981; }
+    .status-name.cancelled { color: #ef4444; }
+    
+    .status-desc {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin: 0.25rem 0 0 0;
+    }
+    
+    /* 状态流程图 */
+    .status-flow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .flow-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        position: relative;
+    }
+    
+    .flow-step::after {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--border-color);
+        z-index: 0;
+    }
+    
+    .flow-step:last-child::after {
+        display: none;
+    }
+    
+    .flow-step.active::after,
+    .flow-step.completed::after {
+        background: linear-gradient(90deg, #10b981, #f59e0b);
+    }
+    
+    .step-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-hover);
+        border: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .flow-step.active .step-dot {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-color: #f59e0b;
+        color: white;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+    
+    .flow-step.completed .step-dot {
+        background: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+    
+    .flow-step.cancelled .step-dot {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: white;
+    }
+    
+    .step-name {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-align: center;
+    }
+    
+    .flow-step.active .step-name,
+    .flow-step.completed .step-name {
+        color: var(--text-main);
+        font-weight: 500;
+    }
+    
+    /* 操作按钮组 */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn.primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+    }
+    
+    .action-btn.success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+    
+    .action-btn.warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+    
+    .action-btn.danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    
+    .action-btn.secondary {
+        background: var(--bg-hover);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.05);
+    }
+    
+    .action-btn.danger:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+    
+    .action-divider {
+        height: 1px;
+        background: var(--border-color);
+        margin: 0.5rem 0;
+    }
+    
+    /* ===== 商品表格 ===== */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .items-table th {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        background: rgba(245, 158, 11, 0.06);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .items-table td {
+        padding: 1rem;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .items-table tbody tr:hover {
+        background: rgba(245, 158, 11, 0.03);
+    }
+    
+    .product-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .product-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    
+    .product-info h6 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.9rem;
+    }
+    
+    .product-info small {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+    
+    .product-info code {
+        color: #f59e0b;
+        font-size: 0.75rem;
+    }
+    
+    .qty-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .qty-badge.success {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    
+    .qty-badge.warning {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    
+    /* 表尾合计 */
+    .items-table tfoot td {
+        padding: 1rem;
+        font-weight: 600;
+        background: rgba(245, 158, 11, 0.04);
+    }
+    
+    .total-amount {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #f59e0b;
+    }
+    
+    /* ===== 侧边栏卡片 ===== */
+    .sidebar-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .sidebar-card .card-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .sidebar-card .card-header h5 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .sidebar-card .card-header h5 i {
+        color: #f59e0b;
+    }
+    
+    .sidebar-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    /* 供应商信息 */
+    .supplier-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .supplier-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    
+    .supplier-detail h6 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    
+    .supplier-detail p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    
+    /* 备注 */
+    .remark-content {
+        padding: 1rem;
+        background: rgba(245, 158, 11, 0.06);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        color: var(--text-main);
+        line-height: 1.6;
+    }
+    
+    /* ===== 表单样式 ===== */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.6rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.85rem 1.15rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        color: var(--text-main);
+        background: var(--bg-hover);
+        border: 1px solid var(--border-color);
+        transition: all 0.25s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+    }
+
+    /* 状态选择器 */
+    .status-selector {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.6rem;
+    }
+    
+    .status-option {
+        cursor: pointer;
+    }
+    
+    .status-option.disabled {
+        cursor: not-allowed;
+        opacity: 0.35;
+    }
+    
+    .status-option input {
+        display: none;
+    }
+    
+    .status-choice {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 0.5rem;
+        border-radius: 14px;
+        background: var(--bg-hover);
+        border: 2px solid transparent;
+        transition: all 0.25s ease;
+    }
+    
+    .status-choice i {
+        font-size: 1.25rem;
+    }
+    
+    .status-choice .name {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    
+    .status-choice.draft i { color: #6b7280; }
+    .status-choice.pending i { color: #f59e0b; }
+    .status-choice.approved i { color: #06b6d4; }
+    .status-choice.received i { color: #10b981; }
+    .status-choice.cancelled i { color: #ef4444; }
+    
+    .status-option:not(.disabled):hover .status-choice {
+        border-color: var(--border-color);
+        transform: translateY(-2px);
+    }
+    
+    .status-option input:checked + .status-choice.draft { 
+        border-color: #6b7280; 
+        background: rgba(107, 114, 128, 0.15);
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
+    }
+    .status-option input:checked + .status-choice.pending { 
+        border-color: #f59e0b; 
+        background: rgba(245, 158, 11, 0.15);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+    .status-option input:checked + .status-choice.approved { 
+        border-color: #06b6d4; 
+        background: rgba(6, 182, 212, 0.15);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+    }
+    .status-option input:checked + .status-choice.received { 
+        border-color: #10b981; 
+        background: rgba(16, 185, 129, 0.15);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    .status-option input:checked + .status-choice.cancelled { 
+        border-color: #ef4444; 
+        background: rgba(239, 68, 68, 0.15);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+    
+    /* ===== 操作表单卡片 ===== */
+    .action-form-card {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-form-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+    
+    .action-form-card.danger::before {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+    
+    .action-form-card.warning::before {
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+    
+    .action-form-card.primary::before {
+        background: linear-gradient(90deg, #6366f1, #4f46e5);
+    }
+    
+    .action-form-card .card-title {
+        padding-top: 0.5rem;
+    }
+    
+    .action-form-card.danger .card-title i {
+        color: #ef4444;
+    }
+    
+    .action-form-card.warning .card-title i {
+        color: #f59e0b;
+    }
+    
+    .action-form-card.primary .card-title i {
+        color: #6366f1;
+    }
+    
+    .action-form-alert {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 1.25rem;
+        font-size: 0.9rem;
+    }
+    
+    .action-form-alert i {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    
+    .action-form-alert.danger {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+    }
+    
+    .action-form-alert.warning {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+    }
+    
+    .action-form-footer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .action-form-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.75rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+    
+    .action-form-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .action-form-btn.danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .action-form-btn.danger:hover {
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    }
+    
+    .action-form-btn.warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    
+    .action-form-btn.warning:hover {
+        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+    }
+    
+    .action-form-btn.primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .action-form-btn.primary:hover {
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+</style>
+
+<div class="purchase-detail-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('purchase.index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回采购单列表</span>
+        </a>
+    </div>
+    
+    <!-- 订单卡片 -->
+    <div class="order-card">
+        <div class="card-header">
+            <div class="order-icon-lg">
+                <i class="fas fa-file-invoice"></i>
+                <div class="icon-pulse"></div>
+            </div>
+            <div class="order-header-info">
+                <div class="order-badges">
+                    <span class="po-badge"><i class="fas fa-barcode"></i> {{ po.po_no }}</span>
+                    <span class="id-badge">#{{ po.id }}</span>
+                </div>
+                <h1 class="order-name">采购订单详情</h1>
+                <div class="order-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-store"></i>
+                        {{ po.supplier.name if po.supplier else '未指定供应商' }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        {{ po.created_at.strftime('%Y-%m-%d') }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-boxes"></i>
+                        {{ po.items|length }} 种商品
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="detail-grid">
+        <!-- 左侧主内容 -->
+        <div class="detail-main">
+            <!-- 状态管理模块 - 直接可操作 -->
+            <div class="status-card" id="section-status">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-tasks"></i>
+                        订单状态管理
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 当前状态 -->
+                    <div class="current-status">
+                        <div class="status-indicator {{ po.status }}">
+                            {% if po.status == 'draft' %}<i class="fas fa-edit"></i>
+                            {% elif po.status == 'pending' %}<i class="fas fa-hourglass-half"></i>
+                            {% elif po.status == 'approved' %}<i class="fas fa-check"></i>
+                            {% elif po.status == 'received' %}<i class="fas fa-box-open"></i>
+                            {% elif po.status == 'cancelled' %}<i class="fas fa-ban"></i>
+                            {% endif %}
+                        </div>
+                        <div class="status-info">
+                            <h4 class="status-name {{ po.status }}">
+                                {% if po.status == 'draft' %}草稿
+                                {% elif po.status == 'pending' %}待审批
+                                {% elif po.status == 'approved' %}已审批
+                                {% elif po.status == 'received' %}已收货
+                                {% elif po.status == 'cancelled' %}已取消
+                                {% endif %}
+                            </h4>
+                            <p class="status-desc">
+                                {% if po.status == 'draft' %}订单尚未提交审批
+                                {% elif po.status == 'pending' %}等待管理员审核
+                                {% elif po.status == 'approved' %}可以进行收货入库
+                                {% elif po.status == 'received' %}商品已入库完成
+                                {% elif po.status == 'cancelled' %}订单已被取消
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- 状态流程图 -->
+                    <div class="status-flow">
+                        <div class="flow-step {{ 'completed' if po.status in ['pending', 'approved', 'received'] else 'active' if po.status == 'draft' else '' }}">
+                            <div class="step-dot"><i class="fas fa-edit"></i></div>
+                            <span class="step-name">草稿</span>
+                        </div>
+                        <div class="flow-step {{ 'completed' if po.status in ['approved', 'received'] else 'active' if po.status == 'pending' else '' }}">
+                            <div class="step-dot"><i class="fas fa-hourglass-half"></i></div>
+                            <span class="step-name">待审批</span>
+                        </div>
+                        <div class="flow-step {{ 'completed' if po.status == 'received' else 'active' if po.status == 'approved' else '' }}">
+                            <div class="step-dot"><i class="fas fa-check"></i></div>
+                            <span class="step-name">已审批</span>
+                        </div>
+                        <div class="flow-step {{ 'active' if po.status == 'received' else 'cancelled' if po.status == 'cancelled' else '' }}">
+                            <div class="step-dot">
+                                <i class="fas {{ 'fa-ban' if po.status == 'cancelled' else 'fa-box-open' }}"></i>
+                            </div>
+                            <span class="step-name">{{ '已取消' if po.status == 'cancelled' else '已收货' }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按钮 - 横向排列 -->
+                    <div class="action-buttons" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                        {% if po.status == 'draft' %}
+                        <form action="{{ url_for('purchase.submit', po_id=po.id) }}" method="POST" style="flex: 1; min-width: 140px;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="action-btn warning" style="width: 100%;">
+                                <i class="fas fa-paper-plane"></i> 提交审批
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if po.status == 'pending' %}
+                        <form action="{{ url_for('purchase.approve', po_id=po.id) }}" method="POST" style="flex: 1; min-width: 140px;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="action-btn success" style="width: 100%;">
+                                <i class="fas fa-check"></i> 审批通过
+                            </button>
+                        </form>
+                        <a href="#section-reject" class="action-btn danger" style="flex: 1; min-width: 140px;">
+                            <i class="fas fa-times"></i> 拒绝申请
+                        </a>
+                        {% endif %}
+                        
+                        {% if po.status == 'approved' %}
+                        <a href="{{ url_for('purchase.receive', po_id=po.id) }}" class="action-btn success" style="flex: 1; min-width: 140px;">
+                            <i class="fas fa-truck"></i> 收货入库
+                        </a>
+                        {% endif %}
+                        
+                        {% if po.status in ['draft', 'pending'] %}
+                        <a href="#section-cancel" class="action-btn danger" style="flex: 1; min-width: 140px;">
+                            <i class="fas fa-ban"></i> 取消订单
+                        </a>
+                        {% endif %}
+                        
+                        <a href="#section-change-status" class="action-btn secondary" style="flex: 1; min-width: 140px;">
+                            <i class="fas fa-exchange-alt"></i> 手动修改状态
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 拒绝申请区域 -->
+            {% if po.status == 'pending' %}
+            <div class="info-card action-form-card danger" id="section-reject">
+                <div class="card-title">
+                    <i class="fas fa-times-circle"></i>
+                    拒绝采购申请
+                </div>
+                <div class="action-form-alert danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>拒绝后采购单将退回草稿状态，需重新修改后提交审批</span>
+                </div>
+                <form action="{{ url_for('purchase.reject', po_id=po.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label class="form-label">拒绝原因 <span style="color: #ef4444;">*</span></label>
+                        <textarea class="form-control" name="reason" rows="4" required placeholder="请详细说明拒绝的原因，便于采购员修改..."></textarea>
+                    </div>
+                    <div class="action-form-footer">
+                        <button type="submit" class="action-form-btn danger">
+                            <i class="fas fa-times-circle"></i> 确认拒绝
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            
+            <!-- 取消订单区域 -->
+            {% if po.status in ['draft', 'pending'] %}
+            <div class="info-card action-form-card warning" id="section-cancel">
+                <div class="card-title">
+                    <i class="fas fa-ban"></i>
+                    取消采购订单
+                </div>
+                <div class="action-form-alert warning">
+                    <i class="fas fa-info-circle"></i>
+                    <span>取消后采购单将永久作废，此操作无法撤销</span>
+                </div>
+                <form action="{{ url_for('purchase.cancel', po_id=po.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label class="form-label">取消原因 <span style="color: var(--text-muted);">（可选）</span></label>
+                        <textarea class="form-control" name="reason" rows="4" placeholder="请说明取消的原因，便于后续查阅..."></textarea>
+                    </div>
+                    <div class="action-form-footer">
+                        <button type="submit" class="action-form-btn warning">
+                            <i class="fas fa-ban"></i> 确认取消
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            
+            <!-- 修改状态区域 -->
+            <div class="info-card action-form-card primary" id="section-change-status">
+                <div class="card-title">
+                    <i class="fas fa-exchange-alt"></i>
+                    手动修改订单状态
+                </div>
+                <form action="{{ url_for('purchase.change_status', po_id=po.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label class="form-label">选择新状态 <span style="color: #ef4444;">*</span></label>
+                        <div class="status-selector">
+                            <label class="status-option {{ 'disabled' if po.status == 'draft' }}">
+                                <input type="radio" name="new_status" value="draft" {{ 'disabled' if po.status == 'draft' }}>
+                                <span class="status-choice draft"><i class="fas fa-edit"></i><span class="name">草稿</span></span>
+                            </label>
+                            <label class="status-option {{ 'disabled' if po.status == 'pending' }}">
+                                <input type="radio" name="new_status" value="pending" {{ 'disabled' if po.status == 'pending' }}>
+                                <span class="status-choice pending"><i class="fas fa-hourglass-half"></i><span class="name">待审批</span></span>
+                            </label>
+                            <label class="status-option {{ 'disabled' if po.status == 'approved' }}">
+                                <input type="radio" name="new_status" value="approved" {{ 'disabled' if po.status == 'approved' }}>
+                                <span class="status-choice approved"><i class="fas fa-check"></i><span class="name">已审批</span></span>
+                            </label>
+                            <label class="status-option {{ 'disabled' if po.status == 'received' }}">
+                                <input type="radio" name="new_status" value="received" {{ 'disabled' if po.status == 'received' }}>
+                                <span class="status-choice received"><i class="fas fa-box-open"></i><span class="name">已收货</span></span>
+                            </label>
+                            <label class="status-option {{ 'disabled' if po.status == 'cancelled' }}">
+                                <input type="radio" name="new_status" value="cancelled" {{ 'disabled' if po.status == 'cancelled' }}>
+                                <span class="status-choice cancelled"><i class="fas fa-ban"></i><span class="name">已取消</span></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">修改原因 <span style="color: var(--text-muted);">（可选）</span></label>
+                        <textarea class="form-control" name="reason" rows="3" placeholder="请说明手动修改状态的原因..."></textarea>
+                    </div>
+                    <div class="action-form-footer">
+                        <button type="submit" class="action-form-btn primary">
+                            <i class="fas fa-check"></i> 确认修改
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 商品明细 -->
+            <div class="info-card" id="section-items">
+                <div class="card-title">
+                    <i class="fas fa-boxes"></i>
+                    采购商品明细
+                </div>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>商品信息</th>
+                            <th>采购数量</th>
+                            <th>单价</th>
+                            <th>小计</th>
+                            {% if po.status in ['approved', 'received'] %}
+                            <th>已收货</th>
+                            <th>待收货</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in po.items %}
+                        <tr>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-thumb">{{ item.product.name[:1] }}</div>
+                                    <div class="product-info">
+                                        <h6>{{ item.product.name }}</h6>
+                                        <small><code>{{ item.product.sku }}</code></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ item.quantity }}</strong>
+                                <span style="color: var(--text-muted);">{{ item.product.unit }}</span>
+                            </td>
+                            <td>¥{{ "%.2f"|format(item.unit_price) }}</td>
+                            <td style="color: #10b981; font-weight: 600;">¥{{ "%.2f"|format(item.subtotal) }}</td>
+                            {% if po.status in ['approved', 'received'] %}
+                            <td>
+                                <span class="qty-badge {{ 'success' if item.received_qty >= item.quantity else 'warning' }}">
+                                    {% if item.received_qty >= item.quantity %}<i class="fas fa-check-circle"></i>{% endif %}
+                                    {{ item.received_qty }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.pending_qty > 0 %}
+                                <span class="qty-badge warning"><i class="fas fa-clock"></i> {{ item.pending_qty }}</span>
+                                {% else %}
+                                <span class="qty-badge success"><i class="fas fa-check"></i> 完成</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="{{ 5 if po.status in ['approved', 'received'] else 3 }}" style="text-align: right;">
+                                采购总金额：
+                            </td>
+                            <td class="total-amount">¥{{ "%.2f"|format(po.total_amount) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <!-- 订单信息 -->
+            <div class="info-card" id="section-info">
+                <div class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    订单信息
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">创建人</span>
+                        <span class="info-value">
+                            <i class="fas fa-user-circle" style="color: #f59e0b; margin-right: 0.35rem;"></i>
+                            {{ po.creator.username if po.creator else '-' }}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">创建时间</span>
+                        <span class="info-value">{{ po.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    {% if po.approved_by %}
+                    <div class="info-item">
+                        <span class="info-label">审批人</span>
+                        <span class="info-value">
+                            <i class="fas fa-user-check" style="color: #10b981; margin-right: 0.35rem;"></i>
+                            {{ po.approver.username if po.approver else '-' }}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">审批时间</span>
+                        <span class="info-value">{{ po.approved_at.strftime('%Y-%m-%d %H:%M') if po.approved_at else '-' }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <span class="info-label">入库仓库</span>
+                        <span class="info-value">
+                            <i class="fas fa-warehouse" style="color: #06b6d4; margin-right: 0.35rem;"></i>
+                            {{ po.warehouse.name if po.warehouse else '-' }}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">采购总额</span>
+                        <span class="info-value" style="color: #f59e0b; font-weight: 700;">¥{{ "%.2f"|format(po.total_amount) }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 备注 -->
+            {% if po.remark %}
+            <div class="info-card" id="section-remark">
+                <div class="card-title">
+                    <i class="fas fa-sticky-note"></i>
+                    备注说明
+                </div>
+                <div class="remark-content">
+                    {{ po.remark }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 右侧边栏 - 快速导航 -->
+        <div class="detail-sidebar">
+            <div class="quick-nav">
+                <div class="quick-nav-title">快速导航</div>
+                
+                <!-- 页面区域导航 -->
+                <div class="quick-nav-section">
+                    <div class="quick-nav-section-title">页面区域</div>
+                    <a href="#section-status" class="quick-nav-item active">
+                        <i class="fas fa-tasks"></i> 状态管理
+                    </a>
+                    {% if po.status == 'pending' %}
+                    <a href="#section-reject" class="quick-nav-item">
+                        <i class="fas fa-times-circle"></i> 拒绝申请
+                    </a>
+                    {% endif %}
+                    {% if po.status in ['draft', 'pending'] %}
+                    <a href="#section-cancel" class="quick-nav-item">
+                        <i class="fas fa-ban"></i> 取消订单
+                    </a>
+                    {% endif %}
+                    <a href="#section-change-status" class="quick-nav-item">
+                        <i class="fas fa-exchange-alt"></i> 修改状态
+                    </a>
+                    <a href="#section-items" class="quick-nav-item">
+                        <i class="fas fa-boxes"></i> 商品明细
+                    </a>
+                    <a href="#section-info" class="quick-nav-item">
+                        <i class="fas fa-info-circle"></i> 订单信息
+                    </a>
+                    {% if po.remark %}
+                    <a href="#section-remark" class="quick-nav-item">
+                        <i class="fas fa-sticky-note"></i> 备注说明
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 供应商信息 -->
+            <div class="sidebar-card" style="margin-top: 1rem;">
+                <div class="card-header">
+                    <h5><i class="fas fa-store"></i> 供应商</h5>
+                </div>
+                <div class="card-body">
+                    <div class="supplier-info">
+                        <div class="supplier-avatar">
+                            {{ po.supplier.name[0] if po.supplier else '?' }}
+                        </div>
+                        <div class="supplier-detail">
+                            <h6>{{ po.supplier.name if po.supplier else '未指定供应商' }}</h6>
+                            {% if po.supplier and po.supplier.phone %}
+                            <p><i class="fas fa-phone-alt"></i> {{ po.supplier.phone }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 平滑滚动和导航高亮
+document.querySelectorAll('.quick-nav-item, .action-btn[href^="#"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href && href.startsWith('#')) {
+            e.preventDefault();
+            const targetId = href.substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // 更新激活状态
+                document.querySelectorAll('.quick-nav-item').forEach(item => item.classList.remove('active'));
+                const navItem = document.querySelector(`.quick-nav-item[href="#${targetId}"]`);
+                if (navItem) navItem.classList.add('active');
+            }
+        }
+    });
+});
+
+// 滚动时更新导航高亮
+window.addEventListener('scroll', function() {
+    const sections = ['section-status', 'section-reject', 'section-cancel', 'section-change-status', 'section-items', 'section-info', 'section-remark'];
+    let currentSection = '';
+    
+    sections.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            const rect = element.getBoundingClientRect();
+            if (rect.top <= 100 && rect.bottom >= 100) {
+                currentSection = id;
+            }
+        }
+    });
+    
+    if (currentSection) {
+        document.querySelectorAll('.quick-nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') === '#' + currentSection) {
+                item.classList.add('active');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

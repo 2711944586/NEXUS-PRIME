@@ -1,0 +1,1042 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}通知中心 - NEXUS{% endblock %}
+{% block breadcrumb %}通知中心{% endblock %}
+
+{% block content %}
+<div class="notification-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-area">
+                <div class="title-icon">
+                    <i class="fas fa-bell"></i>
+                    <span class="icon-ring"></span>
+                    {% if unread_count > 0 %}
+                    <span class="notification-dot"></span>
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 class="page-title">智能通知中心</h1>
+                    <p class="page-subtitle">INTELLIGENT NOTIFICATION CENTER</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            {% if unread_count > 0 %}
+            <form action="{{ url_for('notification.mark_all_read') }}" method="POST" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="action-btn outline">
+                    <i class="fas fa-check-double"></i>
+                    <span>全部已读</span>
+                </button>
+            </form>
+            {% endif %}
+            
+            <a href="{{ url_for('notification.subscriptions') }}" class="action-btn primary">
+                <span class="btn-glow"></span>
+                <i class="fas fa-cog"></i>
+                <span>订阅设置</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 统计概览 -->
+    <div class="notification-stats">
+        <div class="stat-item total">
+            <div class="stat-icon"><i class="fas fa-inbox"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ pagination.total if pagination else (notifications|length if notifications else 0) }}</span>
+                <span class="stat-label">全部消息</span>
+            </div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item unread">
+            <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ unread_count }}</span>
+                <span class="stat-label">未读消息</span>
+            </div>
+            {% if unread_count > 0 %}
+            <span class="stat-badge pulse">新</span>
+            {% endif %}
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item read">
+            <div class="stat-icon"><i class="fas fa-envelope-open"></i></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ (pagination.total if pagination else (notifications|length if notifications else 0)) - unread_count }}</span>
+                <span class="stat-label">已读消息</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 筛选栏 -->
+    <div class="filter-section">
+        <div class="filter-tabs">
+            <a href="{{ url_for('notification.index') }}" class="filter-tab {{ 'active' if not current_is_read else '' }}">
+                <i class="fas fa-layer-group"></i> 全部
+            </a>
+            <a href="{{ url_for('notification.index', is_read='0') }}" class="filter-tab {{ 'active' if current_is_read == '0' else '' }}">
+                <i class="fas fa-envelope"></i> 未读
+                {% if unread_count > 0 %}
+                <span class="count-badge">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('notification.index', is_read='1') }}" class="filter-tab {{ 'active' if current_is_read == '1' else '' }}">
+                <i class="fas fa-envelope-open"></i> 已读
+            </a>
+        </div>
+        
+        <div class="filter-controls">
+            <select class="filter-select" onchange="location.href='{{ url_for('notification.index') }}?category=' + this.value + '{% if current_is_read %}&is_read={{ current_is_read }}{% endif %}'">
+                <option value="">全部类型</option>
+                <option value="system" {{ 'selected' if current_category == 'system' }}>系统通知</option>
+                <option value="stock" {{ 'selected' if current_category == 'stock' }}>库存预警</option>
+                <option value="order" {{ 'selected' if current_category == 'order' }}>订单相关</option>
+                <option value="approval" {{ 'selected' if current_category == 'approval' }}>审批通知</option>
+                <option value="report" {{ 'selected' if current_category == 'report' }}>报表通知</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- 通知列表 -->
+    <div class="notification-list-card">
+        <div class="list-header">
+            <span class="list-title">
+                <i class="fas fa-stream"></i> 消息列表
+            </span>
+        </div>
+        
+        <div class="notification-list">
+            {% for n in notifications %}
+            <div class="notification-item {{ 'unread' if not n.is_read else '' }}">
+                <div class="notification-icon-wrapper">
+                    <div class="notification-icon {{ n.type }}">
+                        {% if n.type == 'info' %}
+                        <i class="fas fa-info"></i>
+                        {% elif n.type == 'warning' %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {% elif n.type == 'alert' %}
+                        <i class="fas fa-exclamation-circle"></i>
+                        {% elif n.type == 'success' %}
+                        <i class="fas fa-check-circle"></i>
+                        {% else %}
+                        <i class="fas fa-bell"></i>
+                        {% endif %}
+                    </div>
+                    {% if not n.is_read %}
+                    <span class="unread-dot"></span>
+                    {% endif %}
+                </div>
+                
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <a href="{{ url_for('notification.detail', notification_id=n.id) }}" class="notification-title">
+                            {{ n.title }}
+                        </a>
+                        <div class="notification-meta">
+                            {% if n.category %}
+                            <span class="category-tag {{ n.category }}">
+                                {{ n.category }}
+                            </span>
+                            {% endif %}
+                            <span class="notification-time">
+                                <i class="far fa-clock"></i>
+                                {{ n.created_at.strftime('%m-%d %H:%M') }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="notification-body">
+                        {{ n.content[:120] }}{{ '...' if n.content|length > 120 else '' }}
+                    </div>
+                </div>
+                
+                <div class="notification-actions">
+                    {% if not n.is_read %}
+                    <form action="{{ url_for('notification.mark_read', notification_id=n.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="action-icon" title="标记已读">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('notification.detail', notification_id=n.id) }}" class="action-icon" title="查看详情">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-notifications">
+                <div class="empty-icon">
+                    <i class="fas fa-bell-slash"></i>
+                </div>
+                <p class="empty-text">暂无通知消息</p>
+                <span class="empty-hint">NO NOTIFICATIONS YET</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 分页 -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="list-pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('notification.index', page=pagination.prev_num, is_read=current_is_read, category=current_category) }}" class="page-btn">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            <div class="page-info">
+                <span class="current">{{ pagination.page }}</span>
+                <span class="separator">/</span>
+                <span class="total">{{ pagination.pages }}</span>
+            </div>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('notification.index', page=pagination.next_num, is_read=current_is_read, category=current_category) }}" class="page-btn">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.notification-panel {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.title-icon .icon-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    border: 2px solid #06b6d4;
+    opacity: 0.5;
+    animation: ringPulse 2s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.notification-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid var(--bg-main);
+    animation: dotPulse 1.5s infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), #06b6d4);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 1px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* 操作按钮 */
+.action-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.action-btn.outline {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-btn.outline:hover {
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+    overflow: hidden;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4);
+}
+
+.action-btn .btn-glow {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    animation: btnGlow 3s infinite;
+}
+
+@keyframes btnGlow {
+    0% { transform: translateX(-100%); }
+    50%, 100% { transform: translateX(100%); }
+}
+
+/* 统计概览 */
+.notification-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.stat-item .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.stat-item.total .stat-icon {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+}
+
+.stat-item.unread .stat-icon {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.stat-item.read .stat-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-info .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stat-info .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.stat-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: #ef4444;
+    color: white;
+    font-weight: 600;
+}
+
+.stat-badge.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.stat-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+}
+
+/* 筛选区 */
+.filter-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+    color: var(--text-main);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+.filter-tab.active {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(8, 145, 178, 0.1));
+    color: #22d3ee;
+    border-color: rgba(6, 182, 212, 0.4);
+}
+
+.count-badge {
+    padding: 0.1rem 0.4rem;
+    background: #ef4444;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    color: white;
+    font-weight: 600;
+}
+
+.filter-select {
+    padding: 0.6rem 2rem 0.6rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #06b6d4;
+}
+
+/* 通知列表卡片 */
+.notification-list-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.list-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.list-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.list-title i { color: #06b6d4; }
+
+.notification-list {
+    /* 通知列表容器 */
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+    background: rgba(6, 182, 212, 0.05);
+}
+
+.notification-item.unread {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.08), transparent);
+    border-left: 3px solid #06b6d4;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-icon-wrapper {
+    position: relative;
+}
+
+.notification-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.notification-icon.info {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.notification-icon.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.notification-icon.alert {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.notification-icon.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.unread-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: #06b6d4;
+    border-radius: 50%;
+    border: 2px solid var(--bg-surface);
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4rem;
+    gap: 1rem;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: var(--text-main);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.notification-title:hover {
+    color: #06b6d4;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.category-tag {
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.category-tag.system { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+.category-tag.stock { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.category-tag.order { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.category-tag.approval { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+.category-tag.report { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+.notification-time {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.notification-body {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.action-icon {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.action-icon:hover {
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.3);
+    color: #06b6d4;
+}
+
+/* 空状态 */
+.empty-notifications {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(8, 145, 178, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.empty-icon i {
+    font-size: 2rem;
+    color: #06b6d4;
+    opacity: 0.7;
+}
+
+.empty-text {
+    color: var(--text-main);
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.empty-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+/* 分页 */
+.list-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.page-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+    background: rgba(6, 182, 212, 0.2);
+    color: #06b6d4;
+}
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.page-info .current {
+    color: #06b6d4;
+    font-weight: 600;
+}
+
+.page-info .separator,
+.page-info .total {
+    color: var(--text-muted);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .notification-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .stat-divider {
+        width: 80%;
+        height: 1px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filter-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .notification-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ============ 亮色主题适配 ============ */
+[data-theme="light"] .notification-panel {
+    background: transparent;
+}
+
+[data-theme="light"] .page-title {
+    background: linear-gradient(135deg, #1e293b, #0891b2);
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+[data-theme="light"] .page-subtitle {
+    color: #64748b;
+}
+
+[data-theme="light"] .title-icon {
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25);
+}
+
+[data-theme="light"] .action-btn.outline {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #475569;
+}
+
+[data-theme="light"] .action-btn.outline:hover {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: #06b6d4;
+    color: #0891b2;
+}
+
+[data-theme="light"] .notification-stats {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .stat-info .stat-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .stat-info .stat-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .stat-divider {
+    background: #e2e8f0;
+}
+
+[data-theme="light"] .filter-tab {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .filter-tab:hover {
+    color: #0891b2;
+    border-color: rgba(6, 182, 212, 0.3);
+    background: rgba(6, 182, 212, 0.05);
+}
+
+[data-theme="light"] .filter-tab.active {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(8, 145, 178, 0.08));
+    color: #0891b2;
+    border-color: rgba(6, 182, 212, 0.35);
+}
+
+[data-theme="light"] .filter-select {
+    background-color: #ffffff;
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .filter-select:focus {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+[data-theme="light"] .notification-list-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .list-header {
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .list-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .notification-item {
+    border-bottom-color: #f1f5f9;
+}
+
+[data-theme="light"] .notification-item:hover {
+    background: rgba(6, 182, 212, 0.04);
+}
+
+[data-theme="light"] .notification-item.unread {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.06), transparent);
+    border-left-color: #06b6d4;
+}
+
+[data-theme="light"] .notification-icon.info {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+[data-theme="light"] .notification-icon.warning {
+    background: rgba(245, 158, 11, 0.12);
+}
+
+[data-theme="light"] .notification-icon.alert {
+    background: rgba(239, 68, 68, 0.12);
+}
+
+[data-theme="light"] .notification-icon.success {
+    background: rgba(16, 185, 129, 0.12);
+}
+
+[data-theme="light"] .unread-dot {
+    border-color: #ffffff;
+}
+
+[data-theme="light"] .notification-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .notification-title:hover {
+    color: #0891b2;
+}
+
+[data-theme="light"] .notification-time {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .notification-body {
+    color: #64748b;
+}
+
+[data-theme="light"] .action-icon {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .action-icon:hover {
+    background: rgba(6, 182, 212, 0.1);
+    border-color: rgba(6, 182, 212, 0.3);
+    color: #0891b2;
+}
+
+[data-theme="light"] .empty-notifications {
+    background: transparent;
+}
+
+[data-theme="light"] .empty-icon {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(8, 145, 178, 0.06));
+}
+
+[data-theme="light"] .empty-text {
+    color: #1e293b;
+}
+
+[data-theme="light"] .empty-hint {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .list-pagination {
+    border-top-color: #e2e8f0;
+}
+
+[data-theme="light"] .page-btn {
+    background: #f8fafc;
+    color: #64748b;
+}
+
+[data-theme="light"] .page-btn:hover {
+    background: rgba(6, 182, 212, 0.12);
+    color: #0891b2;
+}
+
+[data-theme="light"] .page-info .current {
+    color: #0891b2;
+}
+
+[data-theme="light"] .page-info .separator,
+[data-theme="light"] .page-info .total {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .stat-item.total .stat-icon {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .stat-item.unread .stat-icon {
+    background: rgba(245, 158, 11, 0.12);
+}
+
+[data-theme="light"] .stat-item.read .stat-icon {
+    background: rgba(16, 185, 129, 0.12);
+}
+
+/* 亮色模式 - 筛选栏完整样式 */
+[data-theme="light"] .filter-section {
+    background: transparent;
+}
+
+[data-theme="light"] .filter-controls {
+    background: transparent;
+}
+
+[data-theme="light"] .category-tag.system {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .category-tag.stock {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+[data-theme="light"] .category-tag.order {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="light"] .category-tag.approval {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+[data-theme="light"] .category-tag.report {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+[data-theme="light"] .count-badge {
+    background: #ef4444;
+}
+
+[data-theme="light"] .stat-badge {
+    background: #ef4444;
+}
+</style>
+{% endblock %}

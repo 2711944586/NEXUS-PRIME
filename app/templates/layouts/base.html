@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NEXUS PRIME{% endblock %}</title>
+    
+    <!-- 在页面渲染前立即恢复主题和侧边栏状态，避免闪烁 -->
+    <script>
+        (function() {
+            // 恢复主题设置
+            var theme = localStorage.getItem('nexus-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // 恢复侧边栏状态
+            var collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (collapsed) {
+                document.documentElement.classList.add('sidebar-collapsed-init');
+            }
+        })();
+    </script>
+    <style>
+        /* 页面初始化时禁用侧边栏过渡动画 */
+        html.sidebar-collapsed-init .sidebar,
+        html.sidebar-collapsed-init .main-content {
+            transition: none !important;
+        }
+        html.sidebar-collapsed-init .sidebar {
+            width: 78px !important;
+            padding: 1.25rem 0.7rem !important;
+        }
+        html.sidebar-collapsed-init .main-content {
+            margin-left: 78px !important;
+        }
+        html.sidebar-collapsed-init .sidebar .brand-text,
+        html.sidebar-collapsed-init .sidebar .nav-item span:not(.nav-badge),
+        html.sidebar-collapsed-init .sidebar .nav-badge,
+        html.sidebar-collapsed-init .sidebar .nav-divider span,
+        html.sidebar-collapsed-init .sidebar .sys-status span:not(.status-dot) {
+            opacity: 0 !important;
+            max-width: 0 !important;
+            overflow: hidden !important;
+        }
+        html.sidebar-collapsed-init .sidebar-toggle i {
+            transform: rotate(180deg) !important;
+        }
+    </style>
+    
+    <!-- 预加载关键资源 -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nexus.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nexus_ultimate.css') }}">
+    
+    <!-- 页面切换优化 -->
+    <style>
+        /* 页面加载精美淡入 */
+        .content-wrapper {
+            animation: pageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes pageSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(12px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        /* 卡片交错进入动画 */
+        .n-card {
+            animation: cardFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        }
+        .n-card:nth-child(1) { animation-delay: 0.05s; }
+        .n-card:nth-child(2) { animation-delay: 0.1s; }
+        .n-card:nth-child(3) { animation-delay: 0.15s; }
+        .n-card:nth-child(4) { animation-delay: 0.2s; }
+        .n-card:nth-child(5) { animation-delay: 0.25s; }
+        .n-card:nth-child(6) { animation-delay: 0.3s; }
+        @keyframes cardFadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(16px) scale(0.98); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        /* 优化渲染性能 */
+        * { 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+    
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- Bootstrap JS for Dropdown -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div id="particles-js"></div>
+    
+    <!-- 全局光晕层 -->
+    <div class="global-glow-layer"></div>
+
+    <!-- Toast 通知容器 -->
+    <div id="toast-container" class="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-data" data-category="{{ category }}" data-message="{{ message }}" style="display:none;"></div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <!-- 侧边栏折叠按钮 -->
+            <button class="sidebar-toggle" id="sidebar-toggle" title="收起/展开侧边栏">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <div class="cube-wrapper">
+                        <div class="cube-face front"></div>
+                        <div class="cube-face back"></div>
+                        <div class="cube-face left"></div>
+                        <div class="cube-face right"></div>
+                        <div class="cube-face top"></div>
+                        <div class="cube-face bottom"></div>
+                    </div>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">NEXUS</span>
+                    <span class="brand-edition">PRIME</span>
+                </div>
+            </div>
+            
+            <!-- 导航菜单 -->
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('main.index') }}" class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}" data-tooltip="指挥舱">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>指挥舱</span>
+                    <span class="nav-badge">Dashboard</span>
+                </a>
+                <a href="{{ url_for('inventory.index') }}" class="nav-item {% if 'inventory' in request.endpoint %}active{% endif %}" data-tooltip="量子仓储">
+                    <i class="fas fa-box"></i>
+                    <span>量子仓储</span>
+                    <span class="nav-badge">WMS</span>
+                </a>
+                <a href="{{ url_for('sales.kanban') }}" class="nav-item {% if request.endpoint and 'sales' in request.endpoint %}active{% endif %}" data-tooltip="商业订单">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>商业订单</span>
+                    <span class="nav-badge">CRM</span>
+                </a>
+                <a href="{{ url_for('purchase.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('purchase.') %}active{% endif %}" data-tooltip="采购管理">
+                    <i class="fas fa-truck-loading"></i>
+                    <span>采购管理</span>
+                    <span class="nav-badge">PO</span>
+                </a>
+                <a href="{{ url_for('finance.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('finance.') %}active{% endif %}" data-tooltip="财务管理">
+                    <i class="fas fa-chart-line"></i>
+                    <span>财务管理</span>
+                    <span class="nav-badge">FIN</span>
+                </a>
+                <a href="{{ url_for('stocktake.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('stocktake.') %}active{% endif %}" data-tooltip="库存盘点">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>库存盘点</span>
+                    <span class="nav-badge">ST</span>
+                </a>
+                <a href="{{ url_for('cms.index') }}" class="nav-item {% if request.endpoint == 'cms.index' %}active{% endif %}" data-tooltip="资讯中心">
+                    <i class="fas fa-rss"></i>
+                    <span>资讯中心</span>
+                    <span class="nav-badge">CMS</span>
+                </a>
+                <a href="{{ url_for('cms.files') }}" class="nav-item {% if request.endpoint == 'cms.files' %}active{% endif %}" data-tooltip="数字资产">
+                    <i class="fas fa-folder-open"></i>
+                    <span>数字资产</span>
+                    <span class="nav-badge">Files</span>
+                </a>
+                <a href="{{ url_for('ai.chat_page') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('ai.') %}active{% endif %}" data-tooltip="AI 智脑">
+                    <i class="fas fa-robot"></i>
+                    <span>AI 智脑</span>
+                    <span class="nav-badge">DeepSeek</span>
+                </a>
+                <a href="{{ url_for('reports.index') }}" class="nav-item {% if 'reports' in request.endpoint %}active{% endif %}" data-tooltip="数据分析">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>数据分析</span>
+                    <span class="nav-badge">Reports</span>
+                </a>
+                
+                <!-- 系统管理分组 -->
+                <div class="nav-divider">
+                    <span>系统管理</span>
+                </div>
+                <a href="{{ url_for('notification.index') }}" class="nav-item {% if request.endpoint and request.endpoint in ['notification.index', 'notification.subscriptions', 'notification.reports'] %}active{% endif %}" data-tooltip="消息通知">
+                    <i class="fas fa-bell"></i>
+                    <span>消息通知</span>
+                    <span class="nav-badge">Msg</span>
+                </a>
+                <a href="{{ url_for('notification.alerts') }}" class="nav-item {% if request.endpoint == 'notification.alerts' %}active{% endif %}" data-tooltip="库存预警">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>库存预警</span>
+                    <span class="nav-badge">Alert</span>
+                </a>
+                <a href="{{ url_for('system.data_import') }}" class="nav-item {% if request.endpoint == 'system.data_import' %}active{% endif %}" data-tooltip="数据导入">
+                    <i class="fas fa-upload"></i>
+                    <span>数据导入</span>
+                    <span class="nav-badge">Import</span>
+                </a>
+                <a href="{{ url_for('system.team') }}" class="nav-item {% if request.endpoint == 'system.team' %}active{% endif %}" data-tooltip="团队管理">
+                    <i class="fas fa-users-cog"></i>
+                    <span>团队管理</span>
+                    <span class="nav-badge">Team</span>
+                </a>
+                <a href="{{ url_for('system.audit_log') }}" class="nav-item {% if request.endpoint == 'system.audit_log' %}active{% endif %}" data-tooltip="审计日志">
+                    <i class="fas fa-history"></i>
+                    <span>审计日志</span>
+                    <span class="nav-badge">Audit</span>
+                </a>
+                <a href="{{ url_for('system.settings') }}" class="nav-item {% if request.endpoint == 'system.settings' %}active{% endif %}" data-tooltip="系统设置">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                    <span class="nav-badge">Settings</span>
+                </a>
+                
+                <a href="{{ url_for('profile.view') }}" class="nav-item {% if 'profile' in request.endpoint %}active{% endif %}" data-tooltip="个人中心">
+                    <i class="fas fa-user-circle"></i>
+                    <span>个人中心</span>
+                    <span class="nav-badge">Profile</span>
+                </a>
+            </nav>
+            
+            <!-- 侧边栏底部状态 -->
+            <div class="sidebar-footer">
+                <div class="sys-status">
+                    <span class="status-dot"></span>
+                    <span>系统运行中</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <div class="breadcrumb-path">
+                        <i class="fas fa-satellite-dish"></i>
+                        <span class="path-text">{% block breadcrumb %}Dashboard{% endblock %}</span>
+                    </div>
+                </div>
+                
+                <div class="topbar-right">
+                    <button id="theme-toggle" class="theme-switcher" title="切换主题">
+                        <span class="switcher-track">
+                            <span class="switcher-thumb"></span>
+                        </span>
+                        <i class="fas fa-sun icon-light"></i>
+                        <i class="fas fa-moon icon-dark"></i>
+                    </button>
+                    
+                    <button class="ai-fab" title="AI 核心" onclick="window.location.href='{{ url_for('ai.chat_page') }}'">
+                        <span class="ai-fab-glow"></span>
+                        <i class="fas fa-robot"></i>
+                    </button>
+                    
+                    {% if current_user.is_authenticated %}
+                    <div class="user-dropdown">
+                        <button class="user-trigger">
+                            <div class="user-avatar">
+                                {% if current_user.avatar %}
+                                    {% if current_user.avatar.startswith('http') %}
+                                    <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}">
+                                    {% else %}
+                                    <img src="{{ url_for('static', filename=current_user.avatar) }}" alt="{{ current_user.username }}">
+                                    {% endif %}
+                                {% else %}
+                                <i class="fas fa-user"></i>
+                                {% endif %}
+                            </div>
+                            <span class="user-name">{{ current_user.username }}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('profile.view') }}"><i class="fas fa-id-badge"></i> 个人中心</a>
+                            <a href="{{ url_for('profile.edit') }}"><i class="fas fa-pen"></i> 编辑资料</a>
+                            <hr>
+                            <a href="{{ url_for('auth.logout') }}" class="logout"><i class="fas fa-power-off"></i> 注销登录</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn-login">登录系统</a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script>
+        particlesJS.load('particles-js', "{{ url_for('static', filename='js/particles.json') }}");
+        
+        // 侧边栏折叠功能
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const mainContent = document.querySelector('.main-content');
+        
+        // 从 localStorage 恢复侧边栏状态
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (sidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+        }
+        
+        // 移除初始化类，启用过渡动画（延迟一帧确保样式已应用）
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.documentElement.classList.remove('sidebar-collapsed-init');
+            });
+        });
+        
+        sidebarToggle?.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            
+            // 保存状态到 localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            
+            // 触发 resize 事件以便图表等组件可以重新调整
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 350);
+        });
+        
+        // 用户下拉菜单
+        document.querySelectorAll('.user-dropdown').forEach(dropdown => {
+            const trigger = dropdown.querySelector('.user-trigger');
+            const menu = dropdown.querySelector('.dropdown-menu');
+            trigger?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+        });
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.user-dropdown.open').forEach(d => d.classList.remove('open'));
+        });
+    </script>
+    
+    <!-- 模态框容器 - 在所有 transform 父元素之外 -->
+    {% block modals %}{% endblock %}
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

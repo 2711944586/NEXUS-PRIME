@@ -1,0 +1,623 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}收货入库 - NEXUS{% endblock %}
+{% block breadcrumb %}采购管理 / {{ po.po_no }} / 收货入库{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== 禁用主题切换时的过渡动画 ===== */
+    html.theme-switching,
+    html.theme-switching *,
+    html.theme-switching *::before,
+    html.theme-switching *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+
+    .receive-page {
+        animation: fadeIn 0.4s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ===== 返回导航 ===== */
+    .back-nav {
+        margin-bottom: 1.5rem;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: color 0.2s ease;
+    }
+    
+    .back-link:hover {
+        color: #10b981;
+    }
+    
+    /* ===== 收货卡片 - 简洁风格 ===== */
+    .receive-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .receive-icon-lg {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .receive-header-info h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .receive-header-info h1 i {
+        color: #10b981;
+    }
+    
+    .receive-header-info p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    
+    /* 信息摘要卡片 - 亮暗主题适配 */
+    .info-summary {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    [data-theme="light"] .info-summary {
+        border: 1px solid rgba(99, 102, 241, 0.12);
+    }
+    
+    [data-theme="dark"] .info-summary {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .summary-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .summary-icon.supplier {
+        background: rgba(99, 102, 241, 0.15);
+        color: var(--color-primary);
+    }
+    
+    .summary-icon.warehouse {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+    
+    .summary-icon.amount {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+    
+    .summary-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+    }
+    
+    .summary-value {
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    
+    /* 收货表格卡片 - 亮暗主题适配 */
+    .receive-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    [data-theme="light"] .receive-card {
+        border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+    
+    [data-theme="dark"] .receive-card {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .receive-card:hover {
+        border-color: rgba(16, 185, 129, 0.25);
+        box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+    }
+    
+    .receive-card-header {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    [data-theme="light"] .receive-card-header {
+        background: rgba(16, 185, 129, 0.06);
+        border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+    }
+    
+    [data-theme="dark"] .receive-card-header {
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .receive-card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .receive-card-header h5 i {
+        color: #10b981;
+    }
+    
+    /* 收货表格 - 亮暗主题适配 */
+    .receive-table {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .receive-table thead th {
+        color: var(--text-main);
+        font-weight: 600;
+        padding: 1rem 1.25rem;
+        border: none;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    [data-theme="light"] .receive-table thead th {
+        background: rgba(16, 185, 129, 0.08);
+    }
+    
+    [data-theme="dark"] .receive-table thead th {
+        background: rgba(16, 185, 129, 0.1);
+    }
+    
+    .receive-table tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        color: var(--text-main);
+    }
+    
+    [data-theme="light"] .receive-table tbody td {
+        border-bottom: 1px solid rgba(16, 185, 129, 0.08);
+    }
+    
+    [data-theme="dark"] .receive-table tbody td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .receive-table tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    .receive-table tbody tr:hover {
+        background: rgba(16, 185, 129, 0.05);
+    }
+    
+    .receive-table tbody tr.completed {
+        opacity: 0.6;
+    }
+    
+    .product-cell {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .product-thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: var(--gradient-green);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .product-info h6 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    
+    .product-info code {
+        color: var(--color-primary);
+    }
+    
+    .qty-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.625rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+    
+    .qty-badge.pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+    
+    .qty-badge.done {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+    
+    /* 输入框 - 亮暗主题适配 */
+    .receive-input {
+        border-radius: 8px !important;
+        padding: 0.5rem 0.75rem !important;
+        color: var(--text-main) !important;
+        text-align: center;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    [data-theme="light"] .receive-input {
+        background: rgba(248, 250, 252, 0.9) !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    }
+    
+    [data-theme="dark"] .receive-input {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .receive-input:focus {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+        outline: none;
+    }
+    
+    [data-theme="light"] .receive-input:focus {
+        background: rgba(255, 255, 255, 1) !important;
+    }
+    
+    [data-theme="dark"] .receive-input:focus {
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    .receive-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .quality-select {
+        border-radius: 8px !important;
+        padding: 0.5rem 0.75rem !important;
+        color: var(--text-main) !important;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    [data-theme="light"] .quality-select {
+        background: rgba(248, 250, 252, 0.9) !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    }
+    
+    [data-theme="dark"] .quality-select {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .quality-select:focus {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+        outline: none;
+    }
+    
+    .quality-select option {
+        background: var(--bg-surface);
+        color: var(--text-main);
+    }
+    
+    /* 操作按钮区域 - 亮暗主题适配 */
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding: 1.5rem;
+        background: var(--bg-surface);
+        border-radius: 16px;
+    }
+    
+    [data-theme="light"] .action-buttons {
+        border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+    
+    [data-theme="dark"] .action-buttons {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .btn-back {
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        color: var(--text-main);
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    [data-theme="light"] .btn-back {
+        background: rgba(99, 102, 241, 0.08);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    [data-theme="dark"] .btn-back {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-back:hover {
+        color: var(--text-main);
+    }
+    
+    [data-theme="light"] .btn-back:hover {
+        background: rgba(99, 102, 241, 0.12);
+        border-color: var(--color-primary);
+    }
+    
+    [data-theme="dark"] .btn-back:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-confirm {
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    
+    /* 收货进度 */
+    .receive-progress {
+        margin-top: 0.5rem;
+    }
+    
+    .progress-bar-container {
+        height: 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        background: var(--gradient-green);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="warehouse-panel receive-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('purchase.detail', po_id=po.id) }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回采购单详情</span>
+        </a>
+    </div>
+    
+    <!-- 收货卡片 -->
+    <div class="receive-card">
+        <div class="card-header">
+            <div class="receive-icon-lg">
+                <i class="fas fa-truck-loading"></i>
+            </div>
+            <div class="receive-header-info">
+                <h1><i class="fas fa-box-open"></i>收货入库</h1>
+                <p>采购单 {{ po.po_no }} · 确认到货商品数量</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 信息摘要 -->
+    <div class="info-summary">
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-icon supplier">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div>
+                    <div class="summary-label">供应商</div>
+                    <div class="summary-value">{{ po.supplier.name if po.supplier else '-' }}</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon warehouse">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div>
+                    <div class="summary-label">入库仓库</div>
+                    <div class="summary-value">{{ po.warehouse.name if po.warehouse else '-' }}</div>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon amount">
+                    <i class="fas fa-yen-sign"></i>
+                </div>
+                <div>
+                    <div class="summary-label">采购总金额</div>
+                    <div class="summary-value" style="color: #f59e0b;">¥{{ "%.2f"|format(po.total_amount) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('purchase.receive', po_id=po.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <!-- 收货明细卡片 -->
+        <div class="receive-card">
+            <div class="receive-card-header">
+                <h5><i class="fas fa-clipboard-check"></i> 收货明细</h5>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">
+                    {{ po.items|length }} 种商品
+                </span>
+            </div>
+            <div class="receive-card-body">
+                <table class="receive-table">
+                    <thead>
+                        <tr>
+                            <th>商品信息</th>
+                            <th>采购数量</th>
+                            <th>已收货</th>
+                            <th>待收货</th>
+                            <th style="width: 140px;">本次收货</th>
+                            <th style="width: 130px;">质检结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in po.items %}
+                        <tr class="{{ 'completed' if item.pending_qty == 0 else '' }}">
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-thumb">{{ item.product.name[:1] }}</div>
+                                    <div class="product-info">
+                                        <h6>{{ item.product.name }}</h6>
+                                        <small><code>{{ item.product.sku }}</code></small>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="item_id[]" value="{{ item.id }}">
+                            </td>
+                            <td>
+                                <strong>{{ item.quantity }}</strong>
+                                <span class="text-muted">{{ item.product.unit }}</span>
+                                <div class="receive-progress">
+                                    {% set progress = (item.received_qty / item.quantity * 100) if item.quantity > 0 else 0 %}
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar-fill" style="width: {{ progress|int }}%"></div>
+                                    </div>
+                                    <div class="progress-text">{{ progress|int }}% 已完成</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="qty-badge done">
+                                    <i class="fas fa-check"></i>
+                                    {{ item.received_qty }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.pending_qty > 0 %}
+                                <span class="qty-badge pending">
+                                    <i class="fas fa-clock"></i>
+                                    {{ item.pending_qty }}
+                                </span>
+                                {% else %}
+                                <span class="qty-badge done">
+                                    <i class="fas fa-check-circle"></i>
+                                    完成
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <input type="number" class="receive-input" 
+                                       name="received_qty[]" 
+                                       value="{{ item.pending_qty }}" 
+                                       min="0" 
+                                       max="{{ item.pending_qty }}"
+                                       {{ 'disabled' if item.pending_qty == 0 }}>
+                            </td>
+                            <td>
+                                <select class="quality-select" name="is_quality_pass[]" {{ 'disabled' if item.pending_qty == 0 }}>
+                                    <option value="1">✓ 合格</option>
+                                    <option value="0">✗ 不合格</option>
+                                </select>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <a href="{{ url_for('purchase.detail', po_id=po.id) }}" class="btn btn-back">
+                <i class="fas fa-arrow-left me-1"></i>返回详情
+            </a>
+            <button type="submit" class="btn btn-confirm">
+                <i class="fas fa-check-double me-1"></i>确认收货入库
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% endblock %}

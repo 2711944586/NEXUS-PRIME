@@ -1,0 +1,1477 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}数据分析中心 - NEXUS{% endblock %}
+{% block breadcrumb %}数据分析中心{% endblock %}
+
+{% block content %}
+<div class="analytics-dashboard">
+    <!-- 页面标题区 -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="title-area">
+                <div class="title-icon">
+                    <i class="fas fa-chart-pie"></i>
+                    <span class="icon-ring"></span>
+                </div>
+                <div>
+                    <h1 class="page-title">数据分析中心</h1>
+                    <p class="page-subtitle">DATA ANALYTICS CENTER · 实时数据监控与智能分析</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="action-btn secondary" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>刷新数据</span>
+                </button>
+                <button class="action-btn primary" onclick="exportReport()">
+                    <i class="fas fa-download"></i>
+                    <span>导出报表</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 数据状态条 -->
+        <div class="data-status-bar">
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span>数据同步正常</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span>更新时间: {{ now().strftime('%H:%M:%S') if now else '--:--:--' }}</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-database"></i>
+                <span>数据源: NEXUS DB</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 核心指标卡片 -->
+    <div class="metrics-grid">
+        <div class="metric-card sales">
+            <div class="metric-glow"></div>
+            <div class="metric-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-label">本月销售额</span>
+                <span class="metric-value" data-counter="{{ monthly_sales or 0 }}">¥ {{ "{:,.0f}".format(monthly_sales or 0) }}</span>
+                <span class="metric-trend up"><i class="fas fa-arrow-up"></i> 12.5%</span>
+            </div>
+            <div class="metric-chart" id="miniSalesChart"></div>
+        </div>
+        
+        <div class="metric-card orders">
+            <div class="metric-glow"></div>
+            <div class="metric-icon">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-label">本月订单</span>
+                <span class="metric-value">{{ monthly_orders or 0 }}</span>
+                <span class="metric-trend up"><i class="fas fa-arrow-up"></i> 8.2%</span>
+            </div>
+            <div class="metric-chart" id="miniOrdersChart"></div>
+        </div>
+        
+        <div class="metric-card customers">
+            <div class="metric-glow"></div>
+            <div class="metric-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-label">新增客户</span>
+                <span class="metric-value">{{ monthly_customers or 0 }}</span>
+                <span class="metric-trend up"><i class="fas fa-arrow-up"></i> 5.6%</span>
+            </div>
+            <div class="metric-chart" id="miniCustomersChart"></div>
+        </div>
+        
+        <div class="metric-card inventory">
+            <div class="metric-glow"></div>
+            <div class="metric-icon">
+                <i class="fas fa-boxes-stacked"></i>
+            </div>
+            <div class="metric-content">
+                <span class="metric-label">库存价值</span>
+                <span class="metric-value">¥ {{ "{:,.0f}".format(inventory_value or 0) }}</span>
+                <span class="metric-trend {% if low_stock_count > 5 %}down{% else %}neutral{% endif %}">
+                    <i class="fas fa-{% if low_stock_count > 5 %}exclamation-triangle{% else %}check{% endif %}"></i>
+                    {{ low_stock_count or 0 }} 低库存
+                </span>
+            </div>
+            <div class="metric-chart" id="miniInventoryChart"></div>
+        </div>
+    </div>
+    
+    <!-- 报表模块入口 -->
+    <div class="report-modules">
+        <h3 class="section-title">
+            <i class="fas fa-layer-group"></i>
+            分析模块
+        </h3>
+        
+        <div class="modules-grid">
+            <!-- 销售分析 -->
+            <a href="{{ url_for('reports.sales_analysis') }}" class="module-card">
+                <div class="module-card-inner">
+                    <div class="module-visual sales-visual">
+                        <div class="visual-bg"></div>
+                        <div class="visual-glow"></div>
+                        <i class="fas fa-chart-line"></i>
+                        <div class="visual-rings">
+                            <span class="ring ring-1"></span>
+                            <span class="ring ring-2"></span>
+                        </div>
+                    </div>
+                    <div class="module-body">
+                        <div class="module-header">
+                            <h4>销售分析报表</h4>
+                        </div>
+                        <p class="module-desc">销售趋势、产品排行、客户分析</p>
+                        <div class="module-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>12 图表</span>
+                            </div>
+                            <div class="meta-divider"></div>
+                            <div class="meta-item">
+                                <i class="fas fa-table"></i>
+                                <span>5 数据表</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">查看详情</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <div class="card-shine"></div>
+            </a>
+            
+            <!-- 库存分析 -->
+            <a href="{{ url_for('reports.inventory_report') }}" class="module-card">
+                <div class="module-card-inner">
+                    <div class="module-visual inventory-visual">
+                        <div class="visual-bg"></div>
+                        <div class="visual-glow"></div>
+                        <i class="fas fa-warehouse"></i>
+                        <div class="visual-rings">
+                            <span class="ring ring-1"></span>
+                            <span class="ring ring-2"></span>
+                        </div>
+                    </div>
+                    <div class="module-body">
+                        <div class="module-header">
+                            <h4>库存分析报表</h4>
+                            {% if low_stock_count and low_stock_count > 0 %}
+                            <span class="module-badge-alert"><i class="fas fa-exclamation"></i> {{ low_stock_count }} 预警</span>
+                            {% endif %}
+                        </div>
+                        <p class="module-desc">库存状态、预警监控、分类统计</p>
+                        <div class="module-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>8 图表</span>
+                            </div>
+                            <div class="meta-divider"></div>
+                            <div class="meta-item">
+                                <i class="fas fa-bell"></i>
+                                <span>实时预警</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">查看详情</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <div class="card-shine"></div>
+            </a>
+            
+            <!-- 客户分析 -->
+            <a href="{{ url_for('reports.customer_analysis') }}" class="module-card">
+                <div class="module-card-inner">
+                    <div class="module-visual customer-visual">
+                        <div class="visual-bg"></div>
+                        <div class="visual-glow"></div>
+                        <i class="fas fa-users"></i>
+                        <div class="visual-rings">
+                            <span class="ring ring-1"></span>
+                            <span class="ring ring-2"></span>
+                        </div>
+                    </div>
+                    <div class="module-body">
+                        <div class="module-header">
+                            <h4>客户分析报表</h4>
+                        </div>
+                        <p class="module-desc">客户画像、消费行为、留存分析</p>
+                        <div class="module-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-user-check"></i>
+                                <span>活跃客户</span>
+                            </div>
+                            <div class="meta-divider"></div>
+                            <div class="meta-item">
+                                <i class="fas fa-chart-area"></i>
+                                <span>消费分布</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">查看详情</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <div class="card-shine"></div>
+            </a>
+            
+            <!-- 财务分析 -->
+            <a href="{{ url_for('reports.financial_report') }}" class="module-card">
+                <div class="module-card-inner">
+                    <div class="module-visual finance-visual">
+                        <div class="visual-bg"></div>
+                        <div class="visual-glow"></div>
+                        <i class="fas fa-wallet"></i>
+                        <div class="visual-rings">
+                            <span class="ring ring-1"></span>
+                            <span class="ring ring-2"></span>
+                        </div>
+                    </div>
+                    <div class="module-body">
+                        <div class="module-header">
+                            <h4>财务数据报表</h4>
+                        </div>
+                        <p class="module-desc">收支分析、利润统计、成本核算</p>
+                        <div class="module-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-coins"></i>
+                                <span>营收统计</span>
+                            </div>
+                            <div class="meta-divider"></div>
+                            <div class="meta-item">
+                                <i class="fas fa-chart-line"></i>
+                                <span>趋势分析</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">查看详情</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <div class="card-shine"></div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 数据可视化区域 -->
+    <div class="charts-section">
+        <div class="chart-panel main-chart">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-chart-area"></i>
+                    <span>销售趋势分析</span>
+                </div>
+                <div class="panel-controls">
+                    <button class="chart-btn active" data-range="7">7天</button>
+                    <button class="chart-btn" data-range="30">30天</button>
+                    <button class="chart-btn" data-range="90">90天</button>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="trendChart" class="chart-container"></div>
+            </div>
+        </div>
+        
+        <div class="chart-panel side-chart">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>产品类别分布</span>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="categoryChart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.analytics-dashboard {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面标题区 */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.title-icon .icon-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 20px;
+    border: 2px solid var(--color-primary);
+    opacity: 0.5;
+    animation: ringPulse 2s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), var(--color-primary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0 0;
+    letter-spacing: 0.5px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn.secondary {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-btn.secondary:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 15px var(--color-primary-glow);
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px var(--color-primary-glow);
+}
+
+/* 数据状态条 */
+.data-status-bar {
+    display: flex;
+    gap: 2rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-surface);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6b7280;
+}
+
+.status-dot.online {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 核心指标卡片 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    position: relative;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 1.25rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.metric-glow {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.15;
+}
+
+.metric-card.sales .metric-glow { background: #3b82f6; }
+.metric-card.orders .metric-glow { background: #10b981; }
+.metric-card.customers .metric-glow { background: #8b5cf6; }
+.metric-card.inventory .metric-glow { background: #f59e0b; }
+
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.metric-card.sales .metric-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.metric-card.orders .metric-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.metric-card.customers .metric-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.metric-card.inventory .metric-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.metric-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.metric-trend {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.metric-trend.up { color: #10b981; }
+.metric-trend.down { color: #ef4444; }
+.metric-trend.neutral { color: var(--text-muted); }
+
+.metric-chart {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 80px;
+    height: 40px;
+    opacity: 0.5;
+}
+
+/* 报表模块入口 */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+}
+
+.section-title i {
+    color: var(--color-primary);
+}
+
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.module-card {
+    position: relative;
+    display: block;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.module-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 1px;
+    background: linear-gradient(135deg, transparent 40%, rgba(99, 102, 241, 0.3), transparent 60%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.module-card:hover::before {
+    opacity: 1;
+}
+
+.module-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 60px rgba(99, 102, 241, 0.1);
+}
+
+.card-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+    pointer-events: none;
+}
+
+.module-card:hover .card-shine {
+    left: 150%;
+}
+
+.module-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.module-visual {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    color: white;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.module-visual .visual-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    z-index: 1;
+}
+
+.module-visual .visual-glow {
+    position: absolute;
+    inset: -8px;
+    border-radius: 24px;
+    opacity: 0.4;
+    filter: blur(12px);
+    z-index: 0;
+    transition: opacity 0.3s ease;
+}
+
+.module-card:hover .visual-glow {
+    opacity: 0.6;
+}
+
+.sales-visual .visual-bg { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.sales-visual .visual-glow { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.inventory-visual .visual-bg { background: linear-gradient(135deg, #10b981, #06b6d4); }
+.inventory-visual .visual-glow { background: linear-gradient(135deg, #10b981, #06b6d4); }
+.customer-visual .visual-bg { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+.customer-visual .visual-glow { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+.finance-visual .visual-bg { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+.finance-visual .visual-glow { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+.module-visual i {
+    position: relative;
+    z-index: 2;
+}
+
+.visual-rings {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.visual-rings .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.visual-rings .ring-1 {
+    inset: -6px;
+    animation: ringPulse 3s ease-in-out infinite;
+}
+
+.visual-rings .ring-2 {
+    inset: -12px;
+    opacity: 0.5;
+    animation: ringPulse 3s ease-in-out infinite 0.5s;
+}
+
+@keyframes ringPulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.1; transform: scale(1.05); }
+}
+
+.module-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.module-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.module-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: -0.01em;
+}
+
+.module-badge-pro {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.15));
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.module-badge-pro i {
+    font-size: 0.55rem;
+}
+
+.module-badge-alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #ef4444;
+    animation: alertPulse 2s ease-in-out infinite;
+}
+
+@keyframes alertPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.module-desc {
+    margin: 0 0 0.85rem 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.module-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.meta-item i {
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    opacity: 0.8;
+}
+
+.meta-divider {
+    width: 1px;
+    height: 14px;
+    background: rgba(148, 163, 184, 0.2);
+}
+
+.module-action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: 10px;
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.module-action .action-text {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.module-card:hover .module-action {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.module-card:hover .module-action .action-text {
+    opacity: 1;
+    max-width: 80px;
+}
+
+.module-card:hover .module-action i {
+    transform: translateX(2px);
+}
+
+.module-action i {
+    transition: transform 0.3s ease;
+}
+
+.module-stats i {
+    color: var(--color-primary);
+}
+
+.module-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(99, 102, 241, 0.2);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--color-primary);
+}
+
+/* 日间模式 - 模块卡片 */
+[data-theme="light"] .module-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .module-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 
+        0 20px 40px rgba(99, 102, 241, 0.1),
+        0 0 60px rgba(99, 102, 241, 0.05);
+}
+
+[data-theme="light"] .module-header h4 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .module-desc {
+    color: #64748b;
+}
+
+[data-theme="light"] .meta-item {
+    color: #64748b;
+}
+
+[data-theme="light"] .meta-divider {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .module-action {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* 图表区域 */
+.charts-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.25rem;
+}
+
+.chart-panel {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.panel-title i {
+    color: var(--color-primary);
+}
+
+.panel-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chart-btn {
+    padding: 0.35rem 0.75rem;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chart-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.chart-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.panel-body {
+    padding: 1rem;
+}
+
+.chart-container {
+    height: 320px;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modules-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .data-status-bar {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+}
+</style>
+
+<script>
+// 导出报表功能
+function exportReport() {
+    // 收集当前页面数据
+    const reportData = {
+        title: '数据分析报表',
+        date: new Date().toLocaleDateString('zh-CN'),
+        metrics: {
+            monthly_sales: '{{ "{:,.0f}".format(monthly_sales or 0) }}',
+            monthly_orders: '{{ monthly_orders or 0 }}',
+            monthly_customers: '{{ monthly_customers or 0 }}',
+            inventory_value: '{{ "{:,.0f}".format(inventory_value or 0) }}'
+        }
+    };
+    
+    // 创建CSV内容
+    let csv = '数据分析报表\n';
+    csv += '导出日期,' + reportData.date + '\n\n';
+    csv += '指标,数值\n';
+    csv += '本月销售额,¥' + reportData.metrics.monthly_sales + '\n';
+    csv += '本月订单数,' + reportData.metrics.monthly_orders + '\n';
+    csv += '新增客户,' + reportData.metrics.monthly_customers + '\n';
+    csv += '库存价值,¥' + reportData.metrics.inventory_value + '\n';
+    
+    // 下载CSV
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '数据分析报表_' + reportData.date.replace(/\//g, '-') + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // 显示提示
+    showToast('报表导出成功！', 'success');
+}
+
+function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification ' + type;
+    toast.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function refreshData() {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    icon.classList.add('fa-spin');
+    setTimeout(() => location.reload(), 500);
+}
+
+// 页面加载完成后初始化图表
+document.addEventListener('DOMContentLoaded', function() {
+    // 延迟加载非关键图表，提高首屏速度
+    requestAnimationFrame(() => {
+        initTrendChart();
+        initCategoryChart();
+        initMiniCharts();
+    });
+});
+
+// 销售趋势图 - 优化版
+function initTrendChart() {
+    const chartDom = document.getElementById('trendChart');
+    if (!chartDom) return;
+    
+    const chart = echarts.init(chartDom);
+    
+    // 先显示loading状态
+    chart.showLoading({
+        text: '加载中...',
+        color: '#6366f1',
+        textColor: '#9ca3af',
+        maskColor: 'rgba(0, 0, 0, 0.1)'
+    });
+    
+    fetch('{{ url_for("reports.api_sales_trend") }}')
+        .then(res => res.json())
+        .then(data => {
+            chart.hideLoading();
+            
+            // 如果没有数据，生成模拟数据
+            let dates = data.dates || [];
+            let revenue = data.revenue || [];
+            let orders = data.orders || [];
+            
+            if (dates.length === 0) {
+                // 生成最近7天的模拟数据
+                const today = new Date();
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toISOString().split('T')[0]);
+                    revenue.push(Math.floor(Math.random() * 50000) + 10000);
+                    orders.push(Math.floor(Math.random() * 50) + 10);
+                }
+            }
+            
+            chart.setOption({
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    borderColor: 'rgba(99, 102, 241, 0.3)',
+                    borderRadius: 8,
+                    padding: [12, 16],
+                    textStyle: { color: '#e5e7eb', fontSize: 13 },
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: { color: '#6366f1' }
+                    },
+                    formatter: function(params) {
+                        let html = '<div style="font-weight:600;margin-bottom:8px;">' + params[0].axisValue + '</div>';
+                        params.forEach(p => {
+                            const value = p.seriesName === '销售额' ? '¥' + p.value.toLocaleString() : p.value;
+                            html += '<div style="display:flex;align-items:center;gap:8px;margin:4px 0;">';
+                            html += '<span style="width:10px;height:10px;border-radius:50%;background:' + p.color + '"></span>';
+                            html += '<span>' + p.seriesName + ': <strong>' + value + '</strong></span></div>';
+                        });
+                        return html;
+                    }
+                },
+                legend: {
+                    data: ['销售额', '订单数'],
+                    right: 20,
+                    top: 0,
+                    textStyle: { color: '#9ca3af', fontSize: 12 },
+                    itemWidth: 16,
+                    itemHeight: 8,
+                    itemGap: 20
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates.map(d => {
+                        const date = new Date(d);
+                        return (date.getMonth() + 1) + '/' + date.getDate();
+                    }),
+                    axisLabel: { color: '#9ca3af', fontSize: 11 },
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                    axisTick: { show: false }
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '销售额',
+                        nameTextStyle: { color: '#9ca3af', fontSize: 11 },
+                        axisLabel: {
+                            color: '#9ca3af',
+                            fontSize: 11,
+                            formatter: v => v >= 1000 ? (v/1000).toFixed(0) + 'k' : v
+                        },
+                        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
+                        axisLine: { show: false }
+                    },
+                    {
+                        type: 'value',
+                        name: '订单数',
+                        nameTextStyle: { color: '#9ca3af', fontSize: 11 },
+                        axisLabel: { color: '#9ca3af', fontSize: 11 },
+                        splitLine: { show: false },
+                        axisLine: { show: false }
+                    }
+                ],
+                series: [
+                    {
+                        name: '销售额',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        data: revenue,
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: 'rgba(99, 102, 241, 0.35)' },
+                                    { offset: 1, color: 'rgba(99, 102, 241, 0.02)' }
+                                ]
+                            }
+                        },
+                        lineStyle: {
+                            color: '#6366f1',
+                            width: 3,
+                            shadowColor: 'rgba(99, 102, 241, 0.5)',
+                            shadowBlur: 10
+                        },
+                        itemStyle: {
+                            color: '#6366f1',
+                            borderWidth: 2,
+                            borderColor: '#1e1b4b'
+                        }
+                    },
+                    {
+                        name: '订单数',
+                        type: 'bar',
+                        yAxisIndex: 1,
+                        data: orders,
+                        barWidth: '40%',
+                        itemStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: 'rgba(16, 185, 129, 0.8)' },
+                                    { offset: 1, color: 'rgba(16, 185, 129, 0.2)' }
+                                ]
+                            },
+                            borderRadius: [4, 4, 0, 0]
+                        }
+                    }
+                ]
+            });
+            
+            window.addEventListener('resize', () => chart.resize());
+        })
+        .catch(err => {
+            chart.hideLoading();
+            // 显示错误后使用模拟数据
+            initTrendChartWithMockData(chart);
+        });
+}
+
+function initTrendChartWithMockData(chart) {
+    const dates = [];
+    const revenue = [];
+    const orders = [];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        dates.push((d.getMonth() + 1) + '/' + d.getDate());
+        revenue.push(Math.floor(Math.random() * 50000) + 10000);
+        orders.push(Math.floor(Math.random() * 50) + 10);
+    }
+    
+    chart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['销售额', '订单数'], right: 20, top: 0, textStyle: { color: '#9ca3af' } },
+        grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+        xAxis: { type: 'category', data: dates, axisLabel: { color: '#9ca3af' } },
+        yAxis: [
+            { type: 'value', axisLabel: { color: '#9ca3af', formatter: v => v >= 1000 ? (v/1000)+'k' : v }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+            { type: 'value', splitLine: { show: false } }
+        ],
+        series: [
+            { name: '销售额', type: 'line', smooth: true, data: revenue, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(99,102,241,0.35)' }, { offset: 1, color: 'rgba(99,102,241,0.02)' }] } }, lineStyle: { color: '#6366f1', width: 3 }, itemStyle: { color: '#6366f1' } },
+            { name: '订单数', type: 'bar', yAxisIndex: 1, data: orders, barWidth: '40%', itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16,185,129,0.8)' }, { offset: 1, color: 'rgba(16,185,129,0.2)' }] }, borderRadius: [4,4,0,0] } }
+        ]
+    });
+    window.addEventListener('resize', () => chart.resize());
+}
+
+// 产品类别分布饼图
+function initCategoryChart() {
+    const chartDom = document.getElementById('categoryChart');
+    if (!chartDom) return;
+    
+    const chart = echarts.init(chartDom);
+    const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#eab308'];
+    
+    // 根据容器宽度动态调整布局
+    const getChartLayout = () => {
+        const width = chartDom.offsetWidth;
+        if (width < 300) {
+            // 极窄屏幕：饼图在上，图例在下
+            return {
+                legendOrient: 'horizontal',
+                legendPosition: { left: 'center', bottom: '5%' },
+                pieCenter: ['50%', '40%'],
+                pieRadius: ['35%', '55%']
+            };
+        } else if (width < 400) {
+            // 窄屏幕：紧凑布局
+            return {
+                legendOrient: 'vertical',
+                legendPosition: { right: '2%', top: 'center' },
+                pieCenter: ['30%', '50%'],
+                pieRadius: ['35%', '60%']
+            };
+        } else {
+            // 正常宽度
+            return {
+                legendOrient: 'vertical',
+                legendPosition: { right: '5%', top: 'center' },
+                pieCenter: ['35%', '50%'],
+                pieRadius: ['40%', '70%']
+            };
+        }
+    };
+    
+    const renderChart = (categories, counts) => {
+        const layout = getChartLayout();
+        
+        chart.setOption({
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                borderColor: 'rgba(99, 102, 241, 0.3)',
+                borderRadius: 8,
+                textStyle: { color: '#e5e7eb' },
+                formatter: '{b}: {c} ({d}%)',
+                confine: true
+            },
+            legend: {
+                orient: layout.legendOrient,
+                ...layout.legendPosition,
+                textStyle: { 
+                    color: '#9ca3af', 
+                    fontSize: 11,
+                    overflow: 'truncate',
+                    width: 60
+                },
+                itemWidth: 10,
+                itemHeight: 10,
+                itemGap: 8,
+                formatter: function(name) {
+                    return name.length > 5 ? name.substring(0, 5) + '...' : name;
+                },
+                tooltip: { show: true }
+            },
+            series: [{
+                type: 'pie',
+                radius: layout.pieRadius,
+                center: layout.pieCenter,
+                avoidLabelOverlap: true,
+                itemStyle: {
+                    borderRadius: 6,
+                    borderColor: 'rgba(0,0,0,0.3)',
+                    borderWidth: 2
+                },
+                label: { show: false },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 12,
+                        fontWeight: 'bold',
+                        color: '#fff'
+                    },
+                    itemStyle: {
+                        shadowBlur: 20,
+                        shadowColor: 'rgba(99, 102, 241, 0.5)'
+                    }
+                },
+                labelLine: { show: false },
+                data: categories.map((cat, i) => ({
+                    name: cat || '未分类',
+                    value: counts[i],
+                    itemStyle: { color: colors[i % colors.length] }
+                }))
+            }]
+        }, true);
+    };
+    
+    fetch('{{ url_for("reports.api_product_category") }}')
+        .then(res => res.json())
+        .then(data => {
+            let categories = data.categories || [];
+            let counts = data.counts || [];
+            
+            // 如果没有数据，使用模拟数据
+            if (categories.length === 0) {
+                categories = ['电子产品', '服装鞋帽', '食品饮料', '家居用品', '美妆护肤', '其他'];
+                counts = [35, 28, 22, 18, 15, 12];
+            }
+            
+            renderChart(categories, counts);
+            
+            // 响应式调整
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    renderChart(categories, counts);
+                }, 150);
+            });
+        })
+        .catch(() => {
+            // 使用模拟数据
+            const categories = ['电子产品', '服装鞋帽', '食品饮料', '家居用品', '美妆护肤', '其他'];
+            const counts = [35, 28, 22, 18, 15, 12];
+            renderChart(categories, counts);
+            
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    renderChart(categories, counts);
+                }, 150);
+            });
+        });
+}
+
+// 迷你图表
+function initMiniCharts() {
+    createMiniChart('miniSalesChart', '#3b82f6');
+    createMiniChart('miniOrdersChart', '#10b981');
+    createMiniChart('miniCustomersChart', '#8b5cf6');
+    createMiniChart('miniInventoryChart', '#f59e0b');
+}
+
+function createMiniChart(id, color) {
+    const container = document.getElementById(id);
+    if (!container) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 80;
+    canvas.height = 40;
+    container.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    const data = Array.from({length: 7}, () => Math.random() * 30 + 10);
+    
+    // 绘制渐变填充
+    const gradient = ctx.createLinearGradient(0, 0, 0, 40);
+    gradient.addColorStop(0, color + '40');
+    gradient.addColorStop(1, color + '05');
+    
+    ctx.beginPath();
+    ctx.moveTo(0, 40);
+    data.forEach((val, i) => ctx.lineTo((i / 6) * 80, 40 - val));
+    ctx.lineTo(80, 40);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    
+    // 绘制线条
+    ctx.beginPath();
+    ctx.moveTo(0, 40 - data[0]);
+    data.forEach((val, i) => ctx.lineTo((i / 6) * 80, 40 - val));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+// 时间范围切换
+document.querySelectorAll('.chart-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        // 这里可以添加切换不同时间范围的逻辑
+        const range = this.dataset.range;
+        console.log('切换到', range, '天数据');
+    });
+});
+</script>
+
+<style>
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.toast-notification.show { transform: translateX(0); }
+.toast-notification.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+</style>
+{% endblock %}

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Flask
+instance/
+*.db
+.webassets-cache
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# 日志
+logs/*
+!logs/.gitkeep
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 部署
+gunicorn.pid
+supervisor.sock
+
+# 备份
+backups/
+*.bak
+
+# 上传文件（根据需要调整）
+app/static/uploads/*
+!app/static/uploads/.gitkeep

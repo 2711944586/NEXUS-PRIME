@@ -1,0 +1,663 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}财务数据报表 - NEXUS{% endblock %}
+{% block breadcrumb %}数据分析 / 财务报表{% endblock %}
+
+{% block content %}
+<div class="report-page">
+    <!-- 页面头部 -->
+    <div class="report-header">
+        <a href="{{ url_for('reports.index') }}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            返回报表中心
+        </a>
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div>
+                <h1>财务数据报表</h1>
+                <p>Financial Report · 全面财务概览与分析</p>
+            </div>
+        </div>
+        <button class="export-btn" onclick="window.print()">
+            <i class="fas fa-file-pdf"></i>
+            导出报表
+        </button>
+    </div>
+
+    <!-- 核心指标 -->
+    <div class="metrics-grid">
+        <div class="metric-card gradient-1">
+            <div class="metric-content">
+                <span class="metric-label">本月营收</span>
+                <span class="metric-value">¥ {{ "{:,.2f}".format(monthly_revenue) }}</span>
+            </div>
+            <div class="metric-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="metric-bg"></div>
+        </div>
+        <div class="metric-card gradient-2">
+            <div class="metric-content">
+                <span class="metric-label">本年营收</span>
+                <span class="metric-value">¥ {{ "{:,.2f}".format(yearly_revenue) }}</span>
+            </div>
+            <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="metric-bg"></div>
+        </div>
+        <div class="metric-card gradient-3">
+            <div class="metric-content">
+                <span class="metric-label">本月订单</span>
+                <span class="metric-value">{{ monthly_orders }}</span>
+            </div>
+            <div class="metric-icon"><i class="fas fa-shopping-cart"></i></div>
+            <div class="metric-bg"></div>
+        </div>
+        <div class="metric-card gradient-4">
+            <div class="metric-content">
+                <span class="metric-label">平均客单价</span>
+                <span class="metric-value">¥ {{ "{:,.2f}".format(avg_order_value) }}</span>
+            </div>
+            <div class="metric-icon"><i class="fas fa-receipt"></i></div>
+            <div class="metric-bg"></div>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="charts-grid">
+        <!-- 营收趋势 -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-area"></i> 月度营收趋势</h3>
+                <span class="badge">最近12个月</span>
+            </div>
+            <div class="card-body">
+                <div id="trendChart" style="height: 320px;"></div>
+            </div>
+        </div>
+
+        <!-- 订单状态分布 -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> 订单状态分布</h3>
+            </div>
+            <div class="card-body">
+                <div id="statusChart" style="height: 320px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 财务概览 -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-header">
+                <i class="fas fa-warehouse"></i>
+                <h4>库存资产</h4>
+            </div>
+            <div class="summary-value">¥ {{ "{:,.2f}".format(inventory_value) }}</div>
+            <p>当前库存商品总价值</p>
+        </div>
+        <div class="summary-card">
+            <div class="summary-header">
+                <i class="fas fa-calendar-alt"></i>
+                <h4>日均营收</h4>
+            </div>
+            <div class="summary-value">¥ {{ "{:,.2f}".format(monthly_revenue / 30 if monthly_revenue else 0) }}</div>
+            <p>本月日均销售额</p>
+        </div>
+        <div class="summary-card">
+            <div class="summary-header">
+                <i class="fas fa-arrow-up"></i>
+                <h4>月度增长</h4>
+            </div>
+            <div class="summary-value trend-up">+{{ "{:.1f}".format((monthly_revenue / (yearly_revenue / 12) - 1) * 100 if yearly_revenue > 0 else 0) }}%</div>
+            <p>相对年均月营收</p>
+        </div>
+    </div>
+
+    <!-- 订单状态明细 -->
+    <div class="status-detail-card">
+        <div class="card-header">
+            <h3><i class="fas fa-list-alt"></i> 订单状态明细</h3>
+        </div>
+        <div class="card-body">
+            <div class="status-bars">
+                {% set status_names = {'pending': '待处理', 'paid': '已支付', 'shipped': '已发货', 'done': '已完成', 'cancelled': '已取消'} %}
+                {% set status_colors = {'pending': '#f59e0b', 'paid': '#3b82f6', 'shipped': '#8b5cf6', 'done': '#10b981', 'cancelled': '#ef4444'} %}
+                {% set total_orders = status_distribution | map(attribute='count') | sum %}
+                
+                {% for item in status_distribution %}
+                <div class="status-bar-item">
+                    <div class="status-bar-header">
+                        <span class="status-name">
+                            <i class="fas fa-circle" style="color: {{ status_colors.get(item.status, '#6b7280') }};"></i>
+                            {{ status_names.get(item.status, item.status) }}
+                        </span>
+                        <span class="status-count">{{ item.count }} 单</span>
+                    </div>
+                    <div class="status-bar-track">
+                        <div class="status-bar-fill" 
+                             style="width: {{ (item.count / total_orders * 100) if total_orders > 0 else 0 }}%; 
+                                    background: {{ status_colors.get(item.status, '#6b7280') }};"></div>
+                    </div>
+                    <span class="status-percent">{{ "{:.1f}".format(item.count / total_orders * 100 if total_orders > 0 else 0) }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-page {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 头部 */
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.header-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.header-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.header-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* 指标卡片 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-card {
+    position: relative;
+    padding: 1.5rem;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.metric-card.gradient-1 { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.metric-card.gradient-2 { background: linear-gradient(135deg, #10b981, #059669); }
+.metric-card.gradient-3 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.metric-card.gradient-4 { background: linear-gradient(135deg, #ec4899, #db2777); }
+
+.metric-content {
+    z-index: 1;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.metric-card .metric-icon {
+    font-size: 2rem;
+    color: rgba(255,255,255,0.3);
+    z-index: 1;
+}
+
+.metric-bg {
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    width: 100px;
+    height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+
+/* 图表区域 */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header h3 i {
+    color: var(--color-primary);
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--color-primary);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 汇总卡片 */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-card {
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.summary-header i {
+    font-size: 1.25rem;
+    color: var(--color-primary);
+}
+
+.summary-header h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.summary-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.summary-value.trend-up {
+    color: #10b981;
+}
+
+.summary-card p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 状态明细 */
+.status-detail-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.status-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.status-bar-item {
+    display: grid;
+    grid-template-columns: 1fr 3fr auto;
+    gap: 1rem;
+    align-items: center;
+}
+
+.status-bar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.status-name i {
+    font-size: 0.6rem;
+}
+
+.status-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.status-bar-track {
+    height: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.status-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s ease;
+}
+
+.status-percent {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 50px;
+    text-align: right;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-bar-item {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+
+@media print {
+    .back-btn, .export-btn { display: none !important; }
+}
+
+/* ===== 亮色主题适配 ===== */
+[data-theme="light"] .report-header {
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .back-btn {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .back-btn:hover {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+[data-theme="light"] .header-content h1 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .header-content p {
+    color: #64748b;
+}
+
+[data-theme="light"] .chart-card,
+[data-theme="light"] .summary-card,
+[data-theme="light"] .status-detail-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .card-header {
+    border-bottom-color: #f1f5f9;
+}
+
+[data-theme="light"] .card-header h3 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .badge {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .summary-header h4 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .summary-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .summary-card p {
+    color: #64748b;
+}
+
+[data-theme="light"] .status-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .status-count {
+    color: #64748b;
+}
+
+[data-theme="light"] .status-percent {
+    color: #1e293b;
+}
+
+[data-theme="light"] .status-bar-track {
+    background: #f1f5f9;
+}
+</style>
+
+<script>
+// 营收趋势图
+const trendChart = echarts.init(document.getElementById('trendChart'));
+trendChart.setOption({
+    tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        borderColor: 'rgba(16, 185, 129, 0.3)',
+        textStyle: { color: '#e5e7eb' },
+        formatter: function(params) {
+            return params[0].name + '<br/>营收: ¥' + params[0].value.toLocaleString();
+        }
+    },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+    xAxis: {
+        type: 'category',
+        data: [{% for item in monthly_trend %}'{{ item.month }}',{% endfor %}],
+        axisLabel: { color: '#9ca3af', fontSize: 11 },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+    },
+    yAxis: {
+        type: 'value',
+        axisLabel: { 
+            color: '#9ca3af', 
+            formatter: function(val) { return '¥' + (val/1000).toFixed(0) + 'k'; }
+        },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+    },
+    series: [{
+        type: 'bar',
+        data: [{% for item in monthly_trend %}{{ item.revenue }},{% endfor %}],
+        itemStyle: {
+            borderRadius: [6, 6, 0, 0],
+            color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                    { offset: 0, color: '#10b981' },
+                    { offset: 1, color: '#059669' }
+                ]
+            }
+        }
+    }]
+});
+
+// 订单状态分布
+const statusChart = echarts.init(document.getElementById('statusChart'));
+const statusNames = {'pending': '待处理', 'paid': '已支付', 'shipped': '已发货', 'done': '已完成', 'cancelled': '已取消'};
+const statusColors = {'pending': '#f59e0b', 'paid': '#3b82f6', 'shipped': '#8b5cf6', 'done': '#10b981', 'cancelled': '#ef4444'};
+
+statusChart.setOption({
+    tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+        textStyle: { color: '#e5e7eb' }
+    },
+    series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+            borderRadius: 10,
+            borderColor: 'rgba(0,0,0,0.3)',
+            borderWidth: 2
+        },
+        label: {
+            show: true,
+            position: 'outside',
+            color: '#e5e7eb',
+            formatter: '{b}\n{c}单'
+        },
+        data: [
+            {% for item in status_distribution %}
+            { 
+                name: statusNames['{{ item.status }}'] || '{{ item.status }}', 
+                value: {{ item.count }},
+                itemStyle: { color: statusColors['{{ item.status }}'] || '#6b7280' }
+            },
+            {% endfor %}
+        ]
+    }]
+});
+
+window.addEventListener('resize', () => {
+    trendChart.resize();
+    statusChart.resize();
+});
+</script>
+{% endblock %}

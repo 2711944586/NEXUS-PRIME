@@ -1,0 +1,846 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}个人中心{% endblock %}
+{% block breadcrumb %}个人中心 / Profile{% endblock %}
+
+{% block styles %}
+<style>
+/* ========= 全息容器 ========= */
+.profile-holo {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.8rem;
+    max-width: 1320px;
+    margin: 0 auto;
+}
+@media (max-width: 1024px) {
+    .profile-holo { grid-template-columns: 1fr; }
+}
+
+/* 光晕背景层 */
+.profile-holo::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(99,102,241,0.18), transparent 45%),
+        radial-gradient(circle at 85% 10%, rgba(14,165,233,0.14), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(244,114,182,0.09), transparent 55%);
+    pointer-events: none;
+    filter: blur(60px);
+    z-index: 0;
+}
+
+.glass-card {
+    position: relative;
+    z-index: 1;
+    border-radius: 22px;
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(28px);
+    border: 1px solid rgba(148,163,184,0.18);
+    box-shadow: 0 24px 80px rgba(2,6,23,0.55), inset 0 0 50px rgba(99,102,241,0.06);
+    overflow: hidden;
+    animation: floatUp 0.6s ease forwards;
+}
+@keyframes floatUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ========= 左侧资料卡 ========= */
+.profile-card-left {
+    padding: 2rem 1.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.avatar-ring {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    padding: 5px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+}
+.avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(15,23,42,0.9);
+    display: grid;
+    place-items: center;
+}
+.avatar-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.avatar-inner i {
+    font-size: 3.2rem;
+    color: rgba(148,163,184,0.6);
+}
+
+.profile-name {
+    margin-top: 1.4rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #a5b4fc, #22d3ee);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.profile-title {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-top: 0.35rem;
+}
+.status-chip {
+    margin-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid rgba(52,211,153,0.5);
+    color: #34d399;
+}
+.status-chip::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 10px rgba(52,211,153,0.7);
+    animation: pulse 1.4s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:0.5;}50%{opacity:1;} }
+
+.profile-contact {
+    width: 100%;
+    margin-top: 1.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.contact-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    border-radius: 12px;
+    background: rgba(15,23,42,0.5);
+    border: 1px solid rgba(148,163,184,0.1);
+    font-size: 0.92rem;
+    color: #e2e8f0;
+    transition: border-color var(--transition-smooth);
+}
+.contact-row:hover { border-color: rgba(99,102,241,0.5); }
+.contact-row i { width: 20px; text-align: center; color: #6366f1; }
+
+.profile-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+}
+.profile-actions .btn-edit {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #6366f1, #14b8a6);
+    border: none;
+    color: #fff;
+    box-shadow: 0 12px 35px rgba(99,102,241,0.35);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+    text-decoration: none;
+    text-align: center;
+}
+.profile-actions .btn-edit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 45px rgba(99,102,241,0.45);
+}
+.profile-actions .btn-logout {
+    padding: 0.75rem 1.2rem;
+    border-radius: 14px;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.4);
+    color: #f87171;
+    text-decoration: none;
+    display: grid;
+    place-items: center;
+}
+.profile-actions .btn-logout:hover {
+    background: rgba(239,68,68,0.25);
+}
+
+.profile-actions .btn-password {
+    padding: 0.75rem 1.2rem;
+    border-radius: 14px;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.4);
+    color: #a5b4fc;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s ease;
+}
+
+.profile-actions .btn-password:hover {
+    background: rgba(99,102,241,0.25);
+}
+
+/* ========= 右侧详情区 ========= */
+.profile-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+}
+.detail-block {
+    padding: 1.6rem;
+}
+.detail-block h5 {
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.detail-block h5 i { color: #6366f1; }
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(148,163,184,0.08);
+    font-size: 0.92rem;
+}
+.info-row:last-child { border: none; }
+.info-row .label { color: #94a3b8; }
+.info-row .value { font-weight: 500; color: #e2e8f0; }
+
+.pref-grid {
+    display: grid;
+    gap: 0.85rem;
+}
+.pref-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 14px;
+    background: rgba(15,23,42,0.5);
+    border: 1px solid rgba(148,163,184,0.1);
+    transition: border-color var(--transition-smooth), transform var(--transition-smooth);
+}
+.pref-card:hover {
+    border-color: rgba(99,102,241,0.4);
+    transform: translateY(-3px);
+}
+.pref-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+    background: rgba(99,102,241,0.12);
+    color: #818cf8;
+}
+.pref-text h6 { margin: 0; font-weight: 600; font-size: 0.95rem; }
+.pref-text small { color: #94a3b8; }
+
+.bio-block {
+    padding: 1.4rem 1.6rem;
+    border-radius: 14px;
+    background: rgba(15,23,42,0.4);
+    border: 1px solid rgba(148,163,184,0.1);
+    line-height: 1.7;
+    color: #cbd5e1;
+}
+
+/* ========== 亮色模式覆盖 ========== */
+[data-theme="light"] .profile-holo::before {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(99,102,241,0.08), transparent 45%),
+        radial-gradient(circle at 85% 10%, rgba(14,165,233,0.06), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(244,114,182,0.05), transparent 55%);
+}
+
+[data-theme="light"] .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.12);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .profile-name {
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+[data-theme="light"] .profile-title {
+    color: #64748b;
+}
+
+[data-theme="light"] .status-chip {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+[data-theme="light"] .contact-row {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #475569;
+}
+
+[data-theme="light"] .contact-row:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+[data-theme="light"] .detail-block h5 {
+    color: #64748b;
+}
+
+[data-theme="light"] .info-row .label {
+    color: #64748b;
+}
+
+[data-theme="light"] .info-row .value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .info-row {
+    border-bottom-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .pref-card {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .pref-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="light"] .pref-icon {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .pref-text h6 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .pref-text small {
+    color: #64748b;
+}
+
+[data-theme="light"] .bio-block {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #475569;
+}
+
+[data-theme="light"] .avatar-inner {
+    background: rgba(248, 250, 252, 0.9);
+}
+
+[data-theme="light"] .avatar-inner i {
+    color: #94a3b8;
+}
+
+/* ========== 修改密码模态框 (量子仓储风格) ========== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    position: relative;
+    width: calc(100% - 2rem);
+    max-width: 440px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 100px rgba(99, 102, 241, 0.3), 0 30px 80px rgba(0, 0, 0, 0.6);
+    transform: scale(0.9) translateY(30px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.modal-overlay.show .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* 模态框顶部装饰线 */
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #6366f1);
+    background-size: 200% 100%;
+    animation: gradientFlow 3s linear infinite;
+    border-radius: 24px 24px 0 0;
+}
+
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.modal-close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 1;
+}
+
+.modal-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.modal-header {
+    text-align: center;
+    padding: 2rem 2rem 1rem;
+    position: relative;
+}
+
+.modal-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.25rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+}
+
+.modal-icon::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 24px;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.08); opacity: 0.3; }
+}
+
+.modal-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, #a5b4fc);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0 0.5rem 0;
+}
+
+.modal-header p {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.modal-content form {
+    padding: 0 2rem 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 0.6rem;
+}
+
+.form-group label i {
+    color: #6366f1;
+    font-size: 0.85rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.9rem 1.15rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.form-input::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+}
+
+.modal-actions {
+    margin-top: 1.75rem;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-submit {
+    flex: 1;
+    padding: 0.95rem 1.5rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+}
+
+.btn-submit:hover::before {
+    transform: translateX(100%);
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* \u4eae\u8272\u6a21\u5f0f - \u4fee\u6539\u5bc6\u7801\u5f39\u7a97 */
+[data-theme="light"] .modal-overlay {
+    background: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme="light"] .modal-content {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 
+        0 0 80px rgba(99, 102, 241, 0.15),
+        0 25px 60px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .modal-content::before {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #6366f1);
+}
+
+[data-theme="light"] .modal-close {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #64748b;
+}
+
+[data-theme="light"] .modal-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+[data-theme="light"] .modal-icon {
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="light"] .modal-header h2 {
+    background: linear-gradient(135deg, #1e293b, #4f46e5);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .modal-header p {
+    color: #64748b;
+}
+
+[data-theme="light"] .form-group label {
+    color: #475569;
+}
+
+[data-theme="light"] .form-input {
+    background: rgba(248, 250, 252, 0.95);
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-input:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .form-input::placeholder {
+    color: #94a3b8;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="profile-holo">
+    <!-- 左侧资料卡 -->
+    <div class="glass-card profile-card-left" style="animation-delay: 0.1s;">
+        <div class="avatar-ring">
+            <div class="avatar-inner">
+                {% if user.avatar %}
+                <img src="{{ url_for('static', filename=user.avatar) }}" alt="{{ user.username }}">
+                {% else %}
+                <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+        </div>
+        <div class="profile-name">{{ user.username }}</div>
+        <div class="profile-title">
+            {{ user.position or '暂无职位' }}
+            {% if user.department_name %} · {{ user.department_name }}{% endif %}
+        </div>
+        <div class="status-chip">
+            {% if user.is_active %}ACTIVE{% else %}INACTIVE{% endif %}
+        </div>
+        <div class="profile-contact">
+            <div class="contact-row"><i class="fas fa-envelope"></i> {{ user.email }}</div>
+            {% if user.phone %}
+            <div class="contact-row"><i class="fas fa-phone"></i> {{ user.phone }}</div>
+            {% endif %}
+            <div class="contact-row"><i class="fas fa-id-badge"></i> UID #{{ user.id }}</div>
+        </div>
+        <div class="profile-actions">
+            <a href="{{ url_for('profile.edit') }}" class="btn-edit"><i class="fas fa-pen me-2"></i>编辑资料</a>
+            <button type="button" class="btn-password" onclick="openPasswordModal()" title="修改密码"><i class="fas fa-key"></i></button>
+            <a href="{{ url_for('auth.logout') }}" class="btn-logout" title="注销"><i class="fas fa-power-off"></i></a>
+        </div>
+    </div>
+
+    <!-- 右侧详情 -->
+    <div class="profile-detail-grid">
+        <div class="glass-card detail-block" style="animation-delay: 0.18s;">
+            <h5><i class="fas fa-info-circle"></i> 账户信息</h5>
+            <div class="info-row"><span class="label">注册时间</span><span class="value">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '--' }}</span></div>
+            <div class="info-row"><span class="label">最后登录</span><span class="value">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '暂无记录' }}</span></div>
+            <div class="info-row"><span class="label">安全等级</span><span class="value" style="color:#34d399;">高</span></div>
+        </div>
+
+        <div class="glass-card detail-block" style="animation-delay: 0.26s;">
+            <h5><i class="fas fa-sliders-h"></i> 偏好设置</h5>
+            <div class="pref-grid">
+                <div class="pref-card">
+                    <div class="pref-icon"><i class="fas fa-moon"></i></div>
+                    <div class="pref-text">
+                        <h6>外观主题</h6>
+                        <small>
+                            {% if user.preferences and user.preferences.get('theme') == 'light' %}日间模式
+                            {% elif user.preferences and user.preferences.get('theme') == 'dark' %}夜间模式
+                            {% else %}跟随系统{% endif %}
+                        </small>
+                    </div>
+                </div>
+                <div class="pref-card">
+                    <div class="pref-icon" style="background:rgba(16,185,129,0.12); color:#34d399;"><i class="fas fa-language"></i></div>
+                    <div class="pref-text">
+                        <h6>界面语言</h6>
+                        <small>
+                            {% if user.preferences and user.preferences.get('language') == 'en-US' %}English
+                            {% else %}简体中文{% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if user.bio %}
+        <div class="glass-card detail-block" style="animation-delay: 0.34s; grid-column: 1 / -1;">
+            <h5><i class="fas fa-feather"></i> 个人简介</h5>
+            <div class="bio-block">{{ user.bio }}</div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block modals %}
+<!-- 修改密码模态框 -->
+<div id="passwordModal" class="modal-overlay" onclick="closePasswordModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closePasswordModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="modal-header">
+            <div class="modal-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h2>修改密码</h2>
+            <p>请输入当前密码和新密码</p>
+        </div>
+        
+        <form id="passwordForm" onsubmit="submitPasswordChange(event)">
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> 当前密码</label>
+                <input type="password" name="current_password" class="form-input" required placeholder="请输入当前密码">
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-key"></i> 新密码</label>
+                <input type="password" name="new_password" class="form-input" required placeholder="至少6位字符" minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-check-double"></i> 确认新密码</label>
+                <input type="password" name="confirm_password" class="form-input" required placeholder="再次输入新密码">
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="fas fa-check"></i> 确认修改
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openPasswordModal() {
+    document.getElementById('passwordModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closePasswordModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('passwordModal').classList.remove('show');
+    document.body.style.overflow = '';
+    document.getElementById('passwordForm').reset();
+}
+
+async function submitPasswordChange(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitBtn = document.getElementById('submitBtn');
+    const newPass = form.new_password.value;
+    const confirmPass = form.confirm_password.value;
+    
+    if (newPass !== confirmPass) {
+        alert('两次输入的新密码不一致');
+        return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+    
+    try {
+        const response = await fetch('{{ url_for("profile.change_password") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                current_password: form.current_password.value,
+                new_password: newPass,
+                confirm_password: confirmPass
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('密码修改成功！');
+            closePasswordModal();
+        } else {
+            alert(data.message || '修改失败');
+        }
+    } catch (err) {
+        alert('请求失败：' + err.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> 确认修改';
+    }
+}
+
+// ESC 键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePasswordModal();
+});
+</script>
+{% endblock %}

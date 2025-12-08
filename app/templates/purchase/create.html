@@ -1,0 +1,833 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}新建采购单 - NEXUS{% endblock %}
+{% block breadcrumb %}采购管理 / 新建采购单{% endblock %}
+
+{% block styles %}
+<style>
+/* ===== 禁用主题切换时的过渡动画 ===== */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* ===== 页面容器 ===== */
+.create-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* ===== 返回导航 ===== */
+.back-nav { margin-bottom: 1.5rem; }
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+}
+.back-link:hover { color: #f59e0b; }
+
+/* ===== 表单卡片 ===== */
+.form-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    overflow: visible;
+}
+
+/* ===== 表单头部 - 简洁风格 ===== */
+.form-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.header-text p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+/* ===== 表单区块 ===== */
+.form-section {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    overflow: visible;
+}
+.form-section:last-of-type { border-bottom: none; }
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+}
+.section-title i { 
+    color: #f59e0b; 
+    font-size: 0.9rem;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 158, 11, 0.12);
+    border-radius: 8px;
+}
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+/* ===== 表单网格 ===== */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    overflow: visible;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow: visible;
+}
+.form-group.full-width { grid-column: span 2; }
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+.form-label i { 
+    color: #f59e0b; 
+    font-size: 0.8rem;
+}
+
+/* ===== 输入框 - 亮暗主题适配 ===== */
+.form-input {
+    width: 100%;
+    padding: 0.9rem 1.1rem;
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+[data-theme="light"] .form-input {
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .form-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+[data-theme="light"] .form-input:focus {
+    background: white;
+}
+
+[data-theme="dark"] .form-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.form-input::placeholder { color: var(--text-muted); }
+
+/* ===== 组合输入框（支持输入+选择） ===== */
+.combo-box {
+    position: relative;
+    width: 100%;
+}
+.combo-box .combo-input {
+    width: 100%;
+    padding: 0.9rem 2.5rem 0.9rem 1.1rem;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    background: var(--input-bg, #ffffff);
+    border: 1px solid var(--input-border, rgba(0,0,0,0.1));
+    border-radius: 10px;
+}
+.combo-box .combo-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.combo-box .combo-input::placeholder { color: var(--text-muted); }
+
+.combo-box .combo-toggle {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.combo-box .combo-toggle:hover { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.combo-box.open .combo-toggle i { transform: rotate(180deg); }
+
+.combo-box .combo-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+.combo-box.open .combo-dropdown { display: block; }
+
+.combo-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+.combo-list::-webkit-scrollbar { width: 6px; }
+.combo-list::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.3); border-radius: 3px; }
+
+.combo-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+.combo-item:hover { background: rgba(245, 158, 11, 0.1); }
+.combo-item.hidden { display: none; }
+
+.combo-item .item-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.combo-item .item-info { flex: 1; min-width: 0; }
+.combo-item .item-name { color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.combo-item .item-sub { font-size: 0.75rem; color: var(--text-muted); }
+.combo-item .item-price { color: #f59e0b; font-weight: 500; flex-shrink: 0; }
+
+.combo-empty {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    display: none;
+}
+.combo-empty.show { display: block; }
+
+.combo-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.combo-hint i { color: #f59e0b; font-size: 0.7rem; }
+
+/* ===== 商品列表 ===== */
+.items-section { margin-top: 0.5rem; }
+.add-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 8px;
+    color: #f59e0b;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.add-item-btn:hover { background: rgba(245, 158, 11, 0.2); }
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 44px;
+    gap: 0.75rem;
+    align-items: end;
+    padding: 1rem;
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+.item-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow: visible;
+}
+.item-label { font-size: 0.75rem; color: var(--text-muted); }
+.item-field .form-input { background: var(--bg-surface); }
+.item-field .combo-box .combo-input { background: var(--bg-surface); }
+
+.remove-item-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.1);
+    border: none;
+    border-radius: 10px;
+    color: #ef4444;
+    cursor: pointer;
+}
+.remove-item-btn:hover { background: rgba(239, 68, 68, 0.2); }
+
+.items-empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+}
+.items-empty i { font-size: 2rem; margin-bottom: 0.75rem; color: #f59e0b; opacity: 0.5; }
+
+/* ===== 表单操作 ===== */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-elevated);
+}
+.btn-cancel, .btn-submit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn-cancel {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+.btn-cancel:hover { background: var(--bg-surface); color: var(--text-main); }
+.btn-submit {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: white;
+}
+.btn-submit:hover { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+
+/* ===== 暗色主题 ===== */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .combo-input {
+    background: rgba(0,0,0,0.2);
+    border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .item-row {
+    background: rgba(0,0,0,0.15);
+    border-color: rgba(255,255,255,0.05);
+}
+[data-theme="dark"] .item-field .form-input,
+[data-theme="dark"] .item-field .combo-input {
+    background: rgba(0,0,0,0.25);
+}
+[data-theme="dark"] .form-actions {
+    background: rgba(0,0,0,0.15);
+}
+[data-theme="dark"] .combo-dropdown {
+    background: #1e1e2e;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 640px) {
+    .form-header, .form-section, .form-actions { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full-width { grid-column: span 1; }
+    .item-row { grid-template-columns: 1fr; gap: 0.75rem; }
+    .remove-item-btn { width: 100%; }
+    .form-actions { flex-direction: column; }
+    .btn-cancel, .btn-submit { justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('purchase.index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回采购列表</span>
+        </a>
+    </div>
+    
+    <form method="POST" action="{{ url_for('purchase.create') }}" class="form-card" id="purchaseForm">
+        {{ form.hidden_tag() }}
+        
+        <!-- 表单头部 -->
+        <div class="form-header">
+            <div class="header-icon">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div class="header-text">
+                <h1>新建采购单</h1>
+                <p>CREATE PURCHASE ORDER</p>
+            </div>
+        </div>
+        
+        <!-- 基本信息 -->
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                <span>基本信息</span>
+            </h3>
+            
+            <div class="form-grid">
+                <!-- 供应商（组合框：可输入+可选择） -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-truck-loading"></i>
+                        <span>供应商 *</span>
+                    </label>
+                    <div class="combo-box" id="supplierCombo">
+                        <input type="text" 
+                               class="combo-input" 
+                               id="supplierInput"
+                               name="supplier_name"
+                               placeholder="输入或选择供应商..."
+                               autocomplete="off"
+                               oninput="filterCombo('supplierCombo')"
+                               onfocus="openCombo('supplierCombo')">
+                        <input type="hidden" name="supplier_id" id="supplierValue">
+                        <button type="button" class="combo-toggle" onclick="toggleCombo('supplierCombo')">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="combo-dropdown">
+                            <div class="combo-list">
+                                {% for supplier in form.supplier_id.choices %}
+                                <div class="combo-item" 
+                                     data-value="{{ supplier[0] }}" 
+                                     data-name="{{ supplier[1] }}"
+                                     onclick="selectComboItem('supplierCombo', '{{ supplier[0] }}', '{{ supplier[1] }}')">
+                                    <div class="item-avatar">{{ supplier[1][0] }}</div>
+                                    <div class="item-info">
+                                        <div class="item-name">{{ supplier[1] }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="combo-empty">未找到匹配的供应商</div>
+                        </div>
+                    </div>
+                    <div class="combo-hint">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>可直接输入新供应商或从列表选择</span>
+                    </div>
+                </div>
+                
+                <!-- 入库仓库 -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-warehouse"></i>
+                        <span>入库仓库 *</span>
+                    </label>
+                    <div class="combo-box" id="warehouseCombo">
+                        <input type="text" 
+                               class="combo-input" 
+                               id="warehouseInput"
+                               placeholder="选择仓库..."
+                               autocomplete="off"
+                               oninput="filterCombo('warehouseCombo')"
+                               onfocus="openCombo('warehouseCombo')">
+                        <input type="hidden" name="warehouse_id" id="warehouseValue" required>
+                        <button type="button" class="combo-toggle" onclick="toggleCombo('warehouseCombo')">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="combo-dropdown">
+                            <div class="combo-list">
+                                {% for warehouse in form.warehouse_id.choices %}
+                                <div class="combo-item" 
+                                     data-value="{{ warehouse[0] }}" 
+                                     data-name="{{ warehouse[1] }}"
+                                     onclick="selectComboItem('warehouseCombo', '{{ warehouse[0] }}', '{{ warehouse[1] }}')">
+                                    <div class="item-avatar"><i class="fas fa-warehouse" style="font-size:0.8rem;"></i></div>
+                                    <div class="item-info">
+                                        <div class="item-name">{{ warehouse[1] }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="combo-empty">未找到匹配的仓库</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 备注 -->
+                <div class="form-group full-width">
+                    <label class="form-label">
+                        <i class="fas fa-sticky-note"></i>
+                        <span>备注</span>
+                    </label>
+                    <textarea name="remark" class="form-input" placeholder="输入采购单备注..." rows="2">{{ form.remark.data or '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 商品明细 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3 class="section-title" style="margin-bottom:0;">
+                    <i class="fas fa-cubes"></i>
+                    <span>商品明细</span>
+                </h3>
+                <button type="button" class="add-item-btn" onclick="addItem()">
+                    <i class="fas fa-plus"></i>
+                    <span>添加商品</span>
+                </button>
+            </div>
+            
+            <div class="items-section">
+                <div class="items-list" id="itemsList"></div>
+                <div class="items-empty" id="itemsEmpty">
+                    <i class="fas fa-box-open"></i>
+                    <p>暂无商品，点击上方按钮添加</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 表单操作 -->
+        <div class="form-actions">
+            <a href="{{ url_for('purchase.index') }}" class="btn-cancel">
+                <i class="fas fa-times"></i>
+                <span>取消</span>
+            </a>
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-check"></i>
+                <span>创建采购单</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- 商品数据 -->
+<script>
+const productsData = [
+    {% for product in products %}
+    { id: {{ product.id }}, name: "{{ product.name }}", sku: "{{ product.sku or '' }}", price: {{ product.cost_price or 0 }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let itemIndex = 0;
+
+// ===== 组合框功能 =====
+function toggleCombo(comboId) {
+    const combo = document.getElementById(comboId);
+    if (combo.classList.contains('open')) {
+        closeCombo(comboId);
+    } else {
+        openCombo(comboId);
+    }
+}
+
+function openCombo(comboId) {
+    // 关闭其他
+    document.querySelectorAll('.combo-box.open').forEach(c => {
+        if (c.id !== comboId) c.classList.remove('open');
+    });
+    document.getElementById(comboId).classList.add('open');
+}
+
+function closeCombo(comboId) {
+    document.getElementById(comboId).classList.remove('open');
+}
+
+function filterCombo(comboId) {
+    const combo = document.getElementById(comboId);
+    const input = combo.querySelector('.combo-input');
+    const items = combo.querySelectorAll('.combo-item');
+    const emptyEl = combo.querySelector('.combo-empty');
+    const search = input.value.toLowerCase().trim();
+    
+    let hasVisible = false;
+    items.forEach(item => {
+        const name = (item.dataset.name || '').toLowerCase();
+        if (!search || name.includes(search)) {
+            item.classList.remove('hidden');
+            hasVisible = true;
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    if (emptyEl) {
+        emptyEl.classList.toggle('show', !hasVisible);
+    }
+    
+    // 如果用户输入了内容，清除已选择的ID（表示自定义输入）
+    const hiddenInput = combo.querySelector('input[type="hidden"]');
+    if (hiddenInput && search) {
+        hiddenInput.value = '';
+    }
+    
+    combo.classList.add('open');
+}
+
+function selectComboItem(comboId, value, name) {
+    const combo = document.getElementById(comboId);
+    const input = combo.querySelector('.combo-input');
+    const hiddenInput = combo.querySelector('input[type="hidden"]');
+    
+    input.value = name;
+    if (hiddenInput) hiddenInput.value = value;
+    combo.classList.remove('open');
+}
+
+// ===== 商品行 =====
+function addItem() {
+    const list = document.getElementById('itemsList');
+    const empty = document.getElementById('itemsEmpty');
+    
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.dataset.index = itemIndex;
+    
+    // 生成商品选项HTML
+    const productOptions = productsData.map(p => `
+        <div class="combo-item" 
+             data-value="${p.id}" 
+             data-name="${p.name}"
+             data-price="${p.price}"
+             onclick="selectProduct(${itemIndex}, ${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price})">
+            <div class="item-info">
+                <div class="item-name">${p.name}</div>
+                <div class="item-sub">${p.sku || '无SKU'}</div>
+            </div>
+            <span class="item-price">¥${p.price.toFixed(2)}</span>
+        </div>
+    `).join('');
+    
+    row.innerHTML = `
+        <div class="item-field">
+            <span class="item-label">商品（可输入或选择）</span>
+            <div class="combo-box" id="productCombo${itemIndex}">
+                <input type="text" 
+                       class="combo-input" 
+                       name="product_name[]"
+                       placeholder="输入或选择商品..."
+                       autocomplete="off"
+                       oninput="filterProductCombo(${itemIndex})"
+                       onfocus="openCombo('productCombo${itemIndex}')">
+                <input type="hidden" name="product_id[]">
+                <button type="button" class="combo-toggle" onclick="toggleCombo('productCombo${itemIndex}')">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="combo-dropdown">
+                    <div class="combo-list">${productOptions}</div>
+                    <div class="combo-empty">未找到匹配商品，将作为新商品</div>
+                </div>
+            </div>
+        </div>
+        <div class="item-field">
+            <span class="item-label">数量</span>
+            <input type="number" name="quantity[]" class="form-input" placeholder="0" min="1" value="1" required>
+        </div>
+        <div class="item-field">
+            <span class="item-label">单价</span>
+            <input type="number" name="unit_price[]" class="form-input" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <button type="button" class="remove-item-btn" onclick="removeItem(this)">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    `;
+    
+    list.appendChild(row);
+    empty.style.display = 'none';
+    itemIndex++;
+}
+
+function filterProductCombo(index) {
+    const combo = document.getElementById(`productCombo${index}`);
+    if (!combo) return;
+    
+    const input = combo.querySelector('.combo-input');
+    const items = combo.querySelectorAll('.combo-item');
+    const emptyEl = combo.querySelector('.combo-empty');
+    const search = input.value.toLowerCase().trim();
+    
+    let hasVisible = false;
+    items.forEach(item => {
+        const name = (item.dataset.name || '').toLowerCase();
+        if (!search || name.includes(search)) {
+            item.classList.remove('hidden');
+            hasVisible = true;
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    if (emptyEl) {
+        emptyEl.classList.toggle('show', !hasVisible && search);
+    }
+    
+    // 清除已选择的ID
+    const hiddenInput = combo.querySelector('input[type="hidden"]');
+    if (hiddenInput) hiddenInput.value = '';
+    
+    combo.classList.add('open');
+}
+
+function selectProduct(index, id, name, price) {
+    const combo = document.getElementById(`productCombo${index}`);
+    const input = combo.querySelector('.combo-input');
+    const hiddenInput = combo.querySelector('input[type="hidden"]');
+    const row = combo.closest('.item-row');
+    const priceInput = row.querySelector('input[name="unit_price[]"]');
+    
+    input.value = name;
+    hiddenInput.value = id;
+    if (priceInput && price > 0) {
+        priceInput.value = price.toFixed(2);
+    }
+    combo.classList.remove('open');
+}
+
+function removeItem(btn) {
+    const row = btn.closest('.item-row');
+    row.remove();
+    
+    const list = document.getElementById('itemsList');
+    const empty = document.getElementById('itemsEmpty');
+    if (list.children.length === 0) {
+        empty.style.display = 'block';
+    }
+}
+
+// ===== 点击外部关闭 =====
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.combo-box.open').forEach(combo => {
+        if (!combo.contains(e.target)) {
+            combo.classList.remove('open');
+        }
+    });
+});
+
+// ===== 表单验证 =====
+document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+    const supplierInput = document.getElementById('supplierInput');
+    const warehouseValue = document.getElementById('warehouseValue').value;
+    const items = document.querySelectorAll('#itemsList .item-row');
+    
+    if (!supplierInput.value.trim()) {
+        e.preventDefault();
+        alert('请输入或选择供应商');
+        supplierInput.focus();
+        return;
+    }
+    
+    if (!warehouseValue) {
+        e.preventDefault();
+        alert('请选择入库仓库');
+        return;
+    }
+    
+    if (items.length === 0) {
+        e.preventDefault();
+        alert('请添加至少一件商品');
+        return;
+    }
+    
+    // 检查商品是否填写
+    let hasEmpty = false;
+    items.forEach(item => {
+        const productInput = item.querySelector('input[name="product_name[]"]');
+        if (!productInput.value.trim()) {
+            hasEmpty = true;
+        }
+    });
+    
+    if (hasEmpty) {
+        e.preventDefault();
+        alert('请为所有行输入或选择商品');
+        return;
+    }
+});
+
+// ===== 页面加载 =====
+document.addEventListener('DOMContentLoaded', function() {
+    addItem();
+});
+</script>
+{% endblock %}

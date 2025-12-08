@@ -1,0 +1,1841 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}AI 设置 - NEXUS PRIME{% endblock %}
+{% block breadcrumb %}AI 设置{% endblock %}
+
+{% block content %}
+<div class="ai-settings-page">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="header-icon">
+                <i class="fas fa-brain"></i>
+                <span class="icon-pulse"></span>
+            </div>
+            <div>
+                <h1>AI 智能助手设置</h1>
+                <p>配置您的 DeepSeek API Key 以启用 AI 功能</p>
+            </div>
+        </div>
+        <a href="{{ url_for('ai.chat_page') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            返回 AI 助手
+        </a>
+    </div>
+
+    <!-- 状态卡片 -->
+    <div class="status-cards">
+        <div class="status-card {{ 'active' if has_key else 'inactive' }}">
+            <div class="status-icon">
+                <i class="fas fa-{{ 'check-circle' if has_key else 'times-circle' }}"></i>
+            </div>
+            <div class="status-info">
+                <span class="status-label">API Key 状态</span>
+                <span class="status-value">{{ '已配置' if has_key else '未配置' }}</span>
+            </div>
+        </div>
+        
+        <div class="status-card info">
+            <div class="status-icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <div class="status-info">
+                <span class="status-label">AI 服务商</span>
+                <span class="status-value">DeepSeek</span>
+            </div>
+        </div>
+        
+        <div class="status-card info">
+            <div class="status-icon">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <div class="status-info">
+                <span class="status-label">模型版本</span>
+                <span class="status-value">deepseek-chat</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置表单 -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2><i class="fas fa-key"></i> API Key 配置</h2>
+            <span class="section-badge">私密存储</span>
+        </div>
+        
+        <div class="section-content">
+            <form method="POST" class="api-form" id="apiForm">
+                <div class="form-group">
+                    <label for="api_key">DeepSeek API Key</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="api_key" 
+                            name="api_key" 
+                            placeholder="{{ saved_key if has_key else '请输入您的 API Key (sk-...)' }}"
+                            class="form-input"
+                        >
+                        <button type="button" class="toggle-visibility" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="toggleIcon"></i>
+                        </button>
+                    </div>
+                    {% if has_key %}
+                    <p class="form-hint success">
+                        <i class="fas fa-check-circle"></i>
+                        已保存的 Key: {{ saved_key }}
+                    </p>
+                    {% else %}
+                    <p class="form-hint">
+                        <i class="fas fa-info-circle"></i>
+                        您的 API Key 将被安全加密存储，仅用于调用 AI 服务
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i>
+                        保存设置
+                    </button>
+                    {% if has_key %}
+                    <button type="button" class="btn-danger" onclick="clearApiKey()">
+                        <i class="fas fa-trash-alt"></i>
+                        清除 Key
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 获取 API Key 指南 -->
+    <div class="guide-section">
+        <div class="section-header">
+            <h2><i class="fas fa-book"></i> 如何获取 API Key</h2>
+        </div>
+        
+        <div class="guide-steps">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>访问 DeepSeek 官网</h4>
+                    <p>前往 <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a> 注册账号</p>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>进入 API 控制台</h4>
+                    <p>登录后点击"API Keys"菜单</p>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>创建 API Key</h4>
+                    <p>点击"Create new API key"生成密钥</p>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>复制并保存</h4>
+                    <p>将生成的 Key 粘贴到上方输入框</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能说明 -->
+    <div class="features-section">
+        <div class="section-header">
+            <h2><i class="fas fa-magic"></i> AI 功能一览</h2>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-comments"></i></div>
+                <h4>智能对话</h4>
+                <p>与 AI 进行自然语言对话，获取即时帮助</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+                <h4>数据分析</h4>
+                <p>AI 自动分析业务数据，提供洞察建议</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
+                <h4>报告生成</h4>
+                <p>一键生成各类业务报告和分析文档</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-boxes"></i></div>
+                <h4>库存优化</h4>
+                <p>智能分析库存，提供补货和优化建议</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token 计算器 -->
+    <div class="token-calculator-section">
+        <div class="section-header">
+            <h2><i class="fas fa-calculator"></i> Token 计算器</h2>
+            <span class="section-badge">费用估算</span>
+        </div>
+        
+        <div class="section-content">
+            <div class="calculator-layout">
+                <div class="calculator-input">
+                    <label for="tokenText">输入文本计算 Token</label>
+                    <textarea 
+                        id="tokenText" 
+                        placeholder="在此输入或粘贴文本，实时计算 Token 数量和预估费用..."
+                        rows="6"
+                    ></textarea>
+                    <div class="input-actions">
+                        <button type="button" class="btn-secondary" onclick="clearTokenText()">
+                            <i class="fas fa-eraser"></i> 清空
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="pasteFromClipboard()">
+                            <i class="fas fa-paste"></i> 粘贴
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="calculator-results">
+                    <div class="result-card primary">
+                        <div class="result-icon"><i class="fas fa-coins"></i></div>
+                        <div class="result-data">
+                            <span class="result-value" id="tokenCount">0</span>
+                            <span class="result-label">Tokens</span>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-icon"><i class="fas fa-font"></i></div>
+                        <div class="result-data">
+                            <span class="result-value" id="charCount">0</span>
+                            <span class="result-label">字符数</span>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-icon"><i class="fas fa-align-left"></i></div>
+                        <div class="result-data">
+                            <span class="result-value" id="wordCount">0</span>
+                            <span class="result-label">词数</span>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card cost">
+                        <div class="result-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="result-data">
+                            <span class="result-value" id="costEstimate">$0.000000</span>
+                            <span class="result-label">预估费用 (输入)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pricing-info">
+                <div class="pricing-title"><i class="fas fa-info-circle"></i> DeepSeek 定价参考</div>
+                <div class="pricing-grid">
+                    <div class="pricing-item">
+                        <span class="pricing-label">输入 (Input)</span>
+                        <span class="pricing-value">$0.14 / 百万 tokens</span>
+                    </div>
+                    <div class="pricing-item">
+                        <span class="pricing-label">输出 (Output)</span>
+                        <span class="pricing-value">$0.28 / 百万 tokens</span>
+                    </div>
+                    <div class="pricing-item">
+                        <span class="pricing-label">计算方法</span>
+                        <span class="pricing-value" id="calcMethod">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 预设 Prompt 管理 -->
+    <div class="settings-section prompt-section">
+        <div class="section-header">
+            <h2><i class="fas fa-comment-dots"></i> 预设 Prompt 模板</h2>
+            <button type="button" class="btn-add-prompt" onclick="addNewPrompt()">
+                <i class="fas fa-plus"></i> 添加模板
+            </button>
+        </div>
+        
+        <div class="section-content">
+            <div class="prompt-list" id="promptList">
+                <!-- 默认模板 -->
+                <div class="prompt-card" data-id="default-1">
+                    <div class="prompt-header">
+                        <span class="prompt-name">📊 数据分析助手</span>
+                        <div class="prompt-actions">
+                            <button type="button" class="prompt-btn use" onclick="usePrompt(this)" title="使用"><i class="fas fa-play"></i></button>
+                            <button type="button" class="prompt-btn edit" onclick="editPrompt(this)" title="编辑"><i class="fas fa-edit"></i></button>
+                            <button type="button" class="prompt-btn delete" onclick="deletePrompt(this)" title="删除"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="prompt-content">你是一个专业的数据分析师，擅长从复杂数据中提取有价值的洞察。请分析提供的数据并给出专业建议。</div>
+                </div>
+                
+                <div class="prompt-card" data-id="default-2">
+                    <div class="prompt-header">
+                        <span class="prompt-name">📝 报告撰写助手</span>
+                        <div class="prompt-actions">
+                            <button type="button" class="prompt-btn use" onclick="usePrompt(this)" title="使用"><i class="fas fa-play"></i></button>
+                            <button type="button" class="prompt-btn edit" onclick="editPrompt(this)" title="编辑"><i class="fas fa-edit"></i></button>
+                            <button type="button" class="prompt-btn delete" onclick="deletePrompt(this)" title="删除"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="prompt-content">你是一个专业的商业报告撰写专家。请根据提供的信息生成专业、清晰、有条理的报告内容。</div>
+                </div>
+                
+                <div class="prompt-card" data-id="default-3">
+                    <div class="prompt-header">
+                        <span class="prompt-name">🏪 库存管理顾问</span>
+                        <div class="prompt-actions">
+                            <button type="button" class="prompt-btn use" onclick="usePrompt(this)" title="使用"><i class="fas fa-play"></i></button>
+                            <button type="button" class="prompt-btn edit" onclick="editPrompt(this)" title="编辑"><i class="fas fa-edit"></i></button>
+                            <button type="button" class="prompt-btn delete" onclick="deletePrompt(this)" title="删除"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="prompt-content">你是一个库存管理专家，精通供应链优化和库存控制。请分析库存数据并提供补货建议和优化方案。</div>
+                </div>
+            </div>
+            
+            <p class="section-hint"><i class="fas fa-lightbulb"></i> 预设模板可以快速启动特定场景的AI对话，提高工作效率</p>
+        </div>
+    </div>
+    
+    <!-- MCP 服务器配置 -->
+    <div class="settings-section mcp-section">
+        <div class="section-header">
+            <h2><i class="fas fa-server"></i> MCP 服务器配置</h2>
+            <span class="section-badge beta">Beta</span>
+        </div>
+        
+        <div class="section-content">
+            <div class="mcp-info-banner">
+                <div class="mcp-info-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="mcp-info-text">
+                    <strong>什么是 MCP？</strong>
+                    <p>Model Context Protocol (MCP) 允许 AI 连接外部工具和数据源，扩展其能力。配置 MCP 服务器后，AI 可以访问数据库、文件系统等资源。</p>
+                </div>
+            </div>
+            
+            <div class="mcp-servers" id="mcpServers">
+                <div class="mcp-server-card" data-id="local">
+                    <div class="server-status online">
+                        <span class="status-dot"></span>
+                        本地服务
+                    </div>
+                    <div class="server-info">
+                        <h4>NEXUS 内置服务</h4>
+                        <p class="server-url">localhost:5000/mcp</p>
+                        <div class="server-capabilities">
+                            <span class="capability"><i class="fas fa-database"></i> 数据库</span>
+                            <span class="capability"><i class="fas fa-chart-bar"></i> 报表</span>
+                            <span class="capability"><i class="fas fa-boxes"></i> 库存</span>
+                        </div>
+                    </div>
+                    <div class="server-actions">
+                        <button type="button" class="server-btn test" onclick="testMcpServer('local')">
+                            <i class="fas fa-plug"></i> 测试连接
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mcp-add-server">
+                <h4><i class="fas fa-plus-circle"></i> 添加外部 MCP 服务器</h4>
+                <div class="mcp-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>服务器名称</label>
+                            <input type="text" id="mcpServerName" placeholder="如: 文件系统服务" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>服务器 URL</label>
+                            <input type="text" id="mcpServerUrl" placeholder="如: http://localhost:3000" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>API Key (可选)</label>
+                        <input type="password" id="mcpServerKey" placeholder="如需验证请输入" class="form-input">
+                    </div>
+                    <button type="button" class="btn-primary" onclick="addMcpServer()">
+                        <i class="fas fa-plus"></i> 添加服务器
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ai-settings-page {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.header-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 20px;
+    border: 2px solid var(--color-primary);
+    opacity: 0.5;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #fff, var(--color-primary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.page-header p {
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+}
+
+.btn-back {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateX(-4px);
+}
+
+/* 状态卡片 */
+.status-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.status-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.status-card.active {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent);
+}
+
+.status-card.inactive {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent);
+}
+
+.status-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.status-card.active .status-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.status-card.inactive .status-icon {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.status-card.info .status-icon {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--color-primary);
+}
+
+.status-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.125rem;
+}
+
+.status-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* 设置区块 */
+.settings-section, .guide-section, .features-section {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.section-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.section-header h2 i {
+    color: var(--color-primary);
+}
+
+.section-badge {
+    padding: 0.35rem 0.75rem;
+    background: rgba(16, 185, 129, 0.2);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: #10b981;
+    font-weight: 500;
+}
+
+.section-content {
+    padding: 1.5rem;
+}
+
+/* 表单 */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.875rem 3rem 0.875rem 1rem;
+    background: var(--bg-dark);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 15px var(--color-primary-glow);
+}
+
+.toggle-visibility {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.toggle-visibility:hover {
+    color: var(--color-primary);
+}
+
+.form-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.form-hint i {
+    color: var(--color-primary);
+}
+
+.form-hint.success {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.form-hint.success i {
+    color: #10b981;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-primary, .btn-danger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px var(--color-primary-glow);
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+/* 指南步骤 */
+.guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+.guide-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.step-number {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.step-content h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: var(--text-main);
+}
+
+.step-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.step-content a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.step-content a:hover {
+    text-decoration: underline;
+}
+
+/* 功能网格 */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+.feature-item {
+    padding: 1.25rem;
+    background: var(--bg-dark);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-3px);
+}
+
+.feature-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--color-primary);
+    margin-bottom: 0.875rem;
+}
+
+.feature-item h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.375rem 0;
+    color: var(--text-main);
+}
+
+.feature-item p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .status-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .calculator-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .calculator-results {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Token 计算器样式 */
+.token-calculator-section {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.calculator-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.calculator-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.calculator-input label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.calculator-input textarea {
+    width: 100%;
+    padding: 1rem;
+    background: var(--bg-dark);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 150px;
+    transition: all 0.3s ease;
+}
+
+.calculator-input textarea:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 15px var(--color-primary-glow);
+}
+
+.input-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-main);
+    border-color: var(--color-primary);
+}
+
+.calculator-results {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.result-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-dark);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.1);
+}
+
+.result-card.primary {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.result-card.cost {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.result-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.05);
+    color: var(--color-primary);
+}
+
+.result-card.primary .result-icon {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.result-card.cost .result-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.result-data {
+    display: flex;
+    flex-direction: column;
+}
+
+.result-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.result-card.primary .result-value {
+    color: var(--color-primary);
+}
+
+.result-card.cost .result-value {
+    color: #10b981;
+}
+
+.result-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.125rem;
+}
+
+.pricing-info {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: rgba(255,255,255,0.02);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.pricing-title {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pricing-title i {
+    color: var(--color-primary);
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.pricing-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.pricing-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.pricing-value {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+/* 预设 Prompt 样式 */
+.btn-add-prompt {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-add-prompt:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
+
+.prompt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.prompt-card {
+    padding: 1rem 1.25rem;
+    background: var(--bg-dark);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.3s ease;
+}
+
+.prompt-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.prompt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.prompt-name {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+.prompt-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.prompt-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.prompt-btn.use {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+.prompt-btn.use:hover {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.prompt-btn.edit {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+}
+.prompt-btn.edit:hover {
+    background: rgba(99, 102, 241, 0.3);
+}
+
+.prompt-btn.delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+.prompt-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.prompt-content {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    background: rgba(255,255,255,0.03);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+}
+
+.section-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #f59e0b;
+}
+
+/* MCP 服务器配置样式 */
+.section-badge.beta {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.mcp-info-banner {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.mcp-info-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.mcp-info-text strong {
+    display: block;
+    color: var(--text-main);
+    margin-bottom: 0.35rem;
+}
+
+.mcp-info-text p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.mcp-servers {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.mcp-server-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-dark);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.server-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.server-status.online {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.server-status .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+}
+
+.server-info {
+    flex: 1;
+}
+
+.server-info h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.server-url {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.5rem 0;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.server-capabilities {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.capability {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 6px;
+    font-size: 0.7rem;
+    color: var(--color-primary);
+}
+
+.server-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.server-btn:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
+
+.mcp-add-server {
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 12px;
+}
+
+.mcp-add-server h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem 0;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.mcp-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.mcp-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.mcp-form .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+/* ============================================
+   亮色主题适配
+============================================ */
+[data-theme="light"] .page-header {
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .page-header h1 {
+    background: linear-gradient(135deg, #1e293b, var(--color-primary));
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+[data-theme="light"] .btn-back {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #475569;
+}
+
+[data-theme="light"] .btn-back:hover {
+    background: #f1f5f9;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+[data-theme="light"] .status-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .status-card.active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), #ffffff);
+}
+
+[data-theme="light"] .status-card.inactive {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), #ffffff);
+}
+
+[data-theme="light"] .settings-section,
+[data-theme="light"] .guide-section,
+[data-theme="light"] .features-section,
+[data-theme="light"] .token-calculator-section,
+[data-theme="light"] .prompt-section,
+[data-theme="light"] .mcp-section {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .section-header {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), transparent);
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .section-header h2 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-input {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-input:focus {
+    background: #ffffff;
+    border-color: var(--color-primary);
+}
+
+[data-theme="light"] .form-input::placeholder {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .toggle-visibility {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .feature-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .feature-item h4 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .result-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .result-card.primary {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.04));
+}
+
+[data-theme="light"] .result-card.cost {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02));
+}
+
+[data-theme="light"] .result-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .calculator-input textarea {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .calculator-input textarea:focus {
+    background: #ffffff;
+    border-color: var(--color-primary);
+}
+
+[data-theme="light"] .btn-secondary {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #475569;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+    background: #e2e8f0;
+    color: var(--color-primary);
+}
+
+[data-theme="light"] .pricing-info {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .pricing-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .prompt-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .prompt-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .prompt-content {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+[data-theme="light"] .mcp-server-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .mcp-add-server {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .mcp-info-banner {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.02));
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .server-info h4 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .guide-step .step-content h4 {
+    color: #1e293b;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePassword() {
+    const input = document.getElementById('api_key');
+    const icon = document.getElementById('toggleIcon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function clearApiKey() {
+    if (confirm('确定要清除 API Key 吗？')) {
+        document.getElementById('api_key').value = '';
+        document.getElementById('apiForm').submit();
+    }
+}
+
+// 等待 DOM 完全加载后再绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('apiForm');
+    const saveBtn = document.getElementById('saveBtn');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const apiKey = document.getElementById('api_key').value.trim();
+            
+            if (!apiKey) {
+                alert('请输入 API Key');
+                e.preventDefault();
+                return false;
+            }
+            
+            // 禁用按钮防止重复提交
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            }
+        });
+    }
+    
+    // Token 计算器 - 实时计算
+    const tokenTextArea = document.getElementById('tokenText');
+    if (tokenTextArea) {
+        let debounceTimer;
+        tokenTextArea.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                calculateTokens(this.value);
+            }, 300);
+        });
+    }
+});
+
+// 计算 Token
+async function calculateTokens(text) {
+    const tokenCount = document.getElementById('tokenCount');
+    const charCount = document.getElementById('charCount');
+    const wordCount = document.getElementById('wordCount');
+    const costEstimate = document.getElementById('costEstimate');
+    const calcMethod = document.getElementById('calcMethod');
+    
+    if (!text || text.trim() === '') {
+        tokenCount.textContent = '0';
+        charCount.textContent = '0';
+        wordCount.textContent = '0';
+        costEstimate.textContent = '$0.000000';
+        calcMethod.textContent = '-';
+        return;
+    }
+    
+    try {
+        const response = await fetch('{{ url_for("ai.api_count_tokens") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, method: 'auto' })
+        });
+        
+        if (!response.ok) {
+            console.error('API 请求失败:', response.status, response.statusText);
+            calcMethod.textContent = '错误: ' + response.status;
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            tokenCount.textContent = data.tokens.toLocaleString();
+            charCount.textContent = data.characters.toLocaleString();
+            wordCount.textContent = data.words.toLocaleString();
+            costEstimate.textContent = '$' + data.cost_estimate.input.toFixed(6);
+            calcMethod.textContent = data.method === 'tiktoken' ? 'Tiktoken (精确)' : '估算';
+            
+            // 添加动画效果
+            [tokenCount, charCount, wordCount, costEstimate].forEach(el => {
+                el.classList.add('updated');
+                setTimeout(() => el.classList.remove('updated'), 300);
+            });
+        } else {
+            console.error('计算失败:', data.error);
+            calcMethod.textContent = '错误';
+        }
+    } catch (error) {
+        console.error('Token 计算失败:', error);
+        calcMethod.textContent = '网络错误';
+    }
+}
+
+// 清空文本
+function clearTokenText() {
+    const textarea = document.getElementById('tokenText');
+    textarea.value = '';
+    calculateTokens('');
+    textarea.focus();
+}
+
+// 从剪贴板粘贴
+async function pasteFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        const textarea = document.getElementById('tokenText');
+        textarea.value = text;
+        calculateTokens(text);
+    } catch (error) {
+        alert('无法访问剪贴板，请手动粘贴');
+    }
+}
+
+// ============================================
+// 预设 Prompt 管理功能
+// ============================================
+let prompts = JSON.parse(localStorage.getItem('nexus_ai_prompts') || '[]');
+
+function savePrompts() {
+    localStorage.setItem('nexus_ai_prompts', JSON.stringify(prompts));
+}
+
+function addNewPrompt() {
+    const name = prompt('请输入模板名称：');
+    if (!name) return;
+    
+    const content = prompt('请输入 Prompt 内容：');
+    if (!content) return;
+    
+    const newPrompt = {
+        id: 'custom-' + Date.now(),
+        name: name,
+        content: content
+    };
+    
+    prompts.push(newPrompt);
+    savePrompts();
+    renderCustomPrompts();
+}
+
+function usePrompt(btn) {
+    const card = btn.closest('.prompt-card');
+    const content = card.querySelector('.prompt-content').textContent;
+    
+    // 复制到剪贴板
+    navigator.clipboard.writeText(content).then(() => {
+        // 显示成功提示
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.background = 'rgba(16, 185, 129, 0.3)';
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.style.background = '';
+        }, 1500);
+        
+        // 提示用户
+        alert('Prompt 已复制到剪贴板！\n\n您可以在 AI 对话中粘贴使用。');
+    });
+}
+
+function editPrompt(btn) {
+    const card = btn.closest('.prompt-card');
+    const id = card.dataset.id;
+    
+    // 检查是否为默认模板
+    if (id.startsWith('default-')) {
+        alert('默认模板不可编辑，您可以创建自定义模板');
+        return;
+    }
+    
+    const prompt_item = prompts.find(p => p.id === id);
+    if (!prompt_item) return;
+    
+    const newName = prompt(prompt_item.name, '修改模板名称：');
+    if (newName === null) return;
+    
+    const newContent = prompt('修改 Prompt 内容：', prompt_item.content);
+    if (newContent === null) return;
+    
+    prompt_item.name = newName || prompt_item.name;
+    prompt_item.content = newContent || prompt_item.content;
+    savePrompts();
+    renderCustomPrompts();
+}
+
+function deletePrompt(btn) {
+    const card = btn.closest('.prompt-card');
+    const id = card.dataset.id;
+    
+    // 检查是否为默认模板
+    if (id.startsWith('default-')) {
+        alert('默认模板不可删除');
+        return;
+    }
+    
+    if (!confirm('确定要删除此模板吗？')) return;
+    
+    prompts = prompts.filter(p => p.id !== id);
+    savePrompts();
+    card.remove();
+}
+
+function renderCustomPrompts() {
+    const container = document.getElementById('promptList');
+    
+    // 移除自定义模板（保留默认模板）
+    container.querySelectorAll('.prompt-card[data-id^="custom-"]').forEach(el => el.remove());
+    
+    // 添加自定义模板
+    prompts.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'prompt-card';
+        card.dataset.id = p.id;
+        card.innerHTML = `
+            <div class="prompt-header">
+                <span class="prompt-name">✨ ${p.name}</span>
+                <div class="prompt-actions">
+                    <button type="button" class="prompt-btn use" onclick="usePrompt(this)" title="使用"><i class="fas fa-play"></i></button>
+                    <button type="button" class="prompt-btn edit" onclick="editPrompt(this)" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button type="button" class="prompt-btn delete" onclick="deletePrompt(this)" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="prompt-content">${p.content}</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// ============================================
+// MCP 服务器管理功能
+// ============================================
+let mcpServers = JSON.parse(localStorage.getItem('nexus_mcp_servers') || '[]');
+
+function saveMcpServers() {
+    localStorage.setItem('nexus_mcp_servers', JSON.stringify(mcpServers));
+}
+
+function testMcpServer(serverId) {
+    const btn = event.target.closest('.server-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试中...';
+    btn.disabled = true;
+    
+    // 模拟测试（实际应调用后端 API）
+    setTimeout(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> 连接成功';
+        btn.style.background = 'rgba(16, 185, 129, 0.25)';
+        btn.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+        btn.style.color = '#10b981';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.style.background = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.disabled = false;
+        }, 2000);
+    }, 1500);
+}
+
+function addMcpServer() {
+    const name = document.getElementById('mcpServerName').value.trim();
+    const url = document.getElementById('mcpServerUrl').value.trim();
+    const key = document.getElementById('mcpServerKey').value.trim();
+    
+    if (!name || !url) {
+        alert('请填写服务器名称和 URL');
+        return;
+    }
+    
+    const newServer = {
+        id: 'mcp-' + Date.now(),
+        name: name,
+        url: url,
+        key: key ? '***' : ''
+    };
+    
+    mcpServers.push(newServer);
+    saveMcpServers();
+    renderMcpServers();
+    
+    // 清空表单
+    document.getElementById('mcpServerName').value = '';
+    document.getElementById('mcpServerUrl').value = '';
+    document.getElementById('mcpServerKey').value = '';
+    
+    alert('MCP 服务器添加成功！');
+}
+
+function deleteMcpServer(serverId) {
+    if (!confirm('确定要删除此服务器吗？')) return;
+    
+    mcpServers = mcpServers.filter(s => s.id !== serverId);
+    saveMcpServers();
+    renderMcpServers();
+}
+
+function renderMcpServers() {
+    const container = document.getElementById('mcpServers');
+    
+    // 移除自定义服务器（保留本地服务）
+    container.querySelectorAll('.mcp-server-card[data-id^="mcp-"]').forEach(el => el.remove());
+    
+    // 添加自定义服务器
+    mcpServers.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'mcp-server-card';
+        card.dataset.id = s.id;
+        card.innerHTML = `
+            <div class="server-status">
+                <span class="status-dot"></span>
+                外部服务
+            </div>
+            <div class="server-info">
+                <h4>${s.name}</h4>
+                <p class="server-url">${s.url}</p>
+            </div>
+            <div class="server-actions">
+                <button type="button" class="server-btn test" onclick="testMcpServer('${s.id}')">
+                    <i class="fas fa-plug"></i> 测试
+                </button>
+                <button type="button" class="server-btn" style="background: rgba(239,68,68,0.15); color: #ef4444;" onclick="deleteMcpServer('${s.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// 页面加载时渲染自定义数据
+document.addEventListener('DOMContentLoaded', function() {
+    renderCustomPrompts();
+    renderMcpServers();
+});
+</script>
+{% endblock %}

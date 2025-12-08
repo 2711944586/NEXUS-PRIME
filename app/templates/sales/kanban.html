@@ -1,0 +1,898 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}订单看板 - NEXUS{% endblock %}
+{% block breadcrumb %}商业订单{% endblock %}
+
+{% block content %}
+<div class="kanban-dashboard">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-area">
+                <div class="title-icon">
+                    <i class="fas fa-stream"></i>
+                    <span class="icon-wave"></span>
+                </div>
+                <div>
+                    <h1 class="page-title">订单流转看板</h1>
+                    <p class="page-subtitle">ORDER PIPELINE BOARD</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <div class="export-dropdown-wrapper">
+                <button class="action-btn outline" id="exportBtn">
+                    <i class="fas fa-download"></i>
+                    <span>导出</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="export-dropdown" id="exportDropdown">
+                    <a href="{{ url_for('sales.export_orders', format='excel') }}" class="dropdown-item">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Excel 格式</span>
+                    </a>
+                    <a href="{{ url_for('sales.export_orders', format='csv') }}" class="dropdown-item">
+                        <i class="fas fa-file-csv"></i>
+                        <span>CSV 格式</span>
+                    </a>
+                </div>
+            </div>
+            
+            <a href="{{ url_for('sales.create') }}" class="action-btn primary">
+                <span class="btn-glow"></span>
+                <i class="fas fa-plus"></i>
+                <span>新建订单</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 统计概览 -->
+    <div class="stats-overview">
+        <div class="stat-item pending">
+            <span class="stat-count">{{ pending|length }}</span>
+            <span class="stat-name">待付款</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item paid">
+            <span class="stat-count">{{ paid|length }}</span>
+            <span class="stat-name">已付款</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item shipped">
+            <span class="stat-count">{{ shipped|length }}</span>
+            <span class="stat-name">已发货</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item done">
+            <span class="stat-count">{{ done|length }}</span>
+            <span class="stat-name">已完成</span>
+        </div>
+    </div>
+    
+    <!-- 看板容器 -->
+    <div class="kanban-board">
+        <!-- 待付款列 -->
+        <div class="kanban-column pending">
+            <div class="column-header">
+                <div class="header-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="header-info">
+                    <span class="column-title">待付款</span>
+                    <span class="column-subtitle">PENDING</span>
+                </div>
+                <span class="column-count">{{ pending|length }}</span>
+            </div>
+            
+            <div class="column-body">
+                {% for order in pending %}
+                <div class="order-card">
+                    <div class="card-glow"></div>
+                    <div class="card-top">
+                        <span class="order-no">{{ order.order_no }}</span>
+                        <span class="order-date">{{ order.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <div class="customer-avatar">
+                            {{ order.customer.name[0] if order.customer else '?' }}
+                        </div>
+                        <div class="customer-info">
+                            <span class="customer-name">{{ order.customer.name if order.customer else '未知客户' }}</span>
+                            <span class="item-count"><i class="fas fa-cube"></i> {{ order.items|length }} 件商品</span>
+                        </div>
+                    </div>
+                    <div class="card-amount">
+                        <span class="order-amount">¥{{ "{:,.2f}".format(order.total_amount) }}</span>
+                    </div>
+                    <div class="card-actions">
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link view-btn" target="_blank" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                            <span>详情</span>
+                        </a>
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link print-btn" target="_blank" title="打印发票">
+                            <i class="fas fa-print"></i>
+                            <span>发票</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-column">
+                    <i class="fas fa-inbox"></i>
+                    <span>暂无订单</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- 已付款列 -->
+        <div class="kanban-column paid">
+            <div class="column-header">
+                <div class="header-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="header-info">
+                    <span class="column-title">已付款</span>
+                    <span class="column-subtitle">PAID</span>
+                </div>
+                <span class="column-count">{{ paid|length }}</span>
+            </div>
+            
+            <div class="column-body">
+                {% for order in paid %}
+                <div class="order-card">
+                    <div class="card-glow"></div>
+                    <div class="card-top">
+                        <span class="order-no">{{ order.order_no }}</span>
+                        <span class="order-date">{{ order.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <div class="customer-avatar">
+                            {{ order.customer.name[0] if order.customer else '?' }}
+                        </div>
+                        <div class="customer-info">
+                            <span class="customer-name">{{ order.customer.name if order.customer else '未知客户' }}</span>
+                            <span class="item-count"><i class="fas fa-cube"></i> {{ order.items|length }} 件商品</span>
+                        </div>
+                    </div>
+                    <div class="card-amount">
+                        <span class="order-amount">¥{{ "{:,.2f}".format(order.total_amount) }}</span>
+                    </div>
+                    <div class="card-actions">
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link view-btn" target="_blank" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                            <span>详情</span>
+                        </a>
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link print-btn" target="_blank" title="打印发票">
+                            <i class="fas fa-print"></i>
+                            <span>发票</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-column">
+                    <i class="fas fa-inbox"></i>
+                    <span>暂无订单</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- 已发货列 -->
+        <div class="kanban-column shipped">
+            <div class="column-header">
+                <div class="header-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="header-info">
+                    <span class="column-title">已发货</span>
+                    <span class="column-subtitle">SHIPPED</span>
+                </div>
+                <span class="column-count">{{ shipped|length }}</span>
+            </div>
+            
+            <div class="column-body">
+                {% for order in shipped %}
+                <div class="order-card">
+                    <div class="card-glow"></div>
+                    <div class="card-top">
+                        <span class="order-no">{{ order.order_no }}</span>
+                        <span class="order-date">{{ order.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <div class="customer-avatar">
+                            {{ order.customer.name[0] if order.customer else '?' }}
+                        </div>
+                        <div class="customer-info">
+                            <span class="customer-name">{{ order.customer.name if order.customer else '未知客户' }}</span>
+                            <span class="item-count"><i class="fas fa-cube"></i> {{ order.items|length }} 件商品</span>
+                        </div>
+                    </div>
+                    <div class="card-amount">
+                        <span class="order-amount">¥{{ "{:,.2f}".format(order.total_amount) }}</span>
+                    </div>
+                    <div class="card-actions">
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link view-btn" target="_blank" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                            <span>详情</span>
+                        </a>
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link print-btn" target="_blank" title="打印发票">
+                            <i class="fas fa-print"></i>
+                            <span>发票</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-column">
+                    <i class="fas fa-inbox"></i>
+                    <span>暂无订单</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- 已完成列 -->
+        <div class="kanban-column done">
+            <div class="column-header">
+                <div class="header-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="header-info">
+                    <span class="column-title">已完成</span>
+                    <span class="column-subtitle">COMPLETED</span>
+                </div>
+                <span class="column-count">{{ done|length }}</span>
+            </div>
+            
+            <div class="column-body">
+                {% for order in done %}
+                <div class="order-card">
+                    <div class="card-glow"></div>
+                    <div class="card-top">
+                        <span class="order-no">{{ order.order_no }}</span>
+                        <span class="order-date">{{ order.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <div class="customer-avatar">
+                            {{ order.customer.name[0] if order.customer else '?' }}
+                        </div>
+                        <div class="customer-info">
+                            <span class="customer-name">{{ order.customer.name if order.customer else '未知客户' }}</span>
+                            <span class="item-count"><i class="fas fa-cube"></i> {{ order.items|length }} 件商品</span>
+                        </div>
+                    </div>
+                    <div class="card-amount">
+                        <span class="order-amount">¥{{ "{:,.2f}".format(order.total_amount) }}</span>
+                    </div>
+                    <div class="card-actions">
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link view-btn" target="_blank" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                            <span>详情</span>
+                        </a>
+                        <a href="{{ url_for('sales.invoice', order_id=order.id) }}" class="action-link print-btn" target="_blank" title="打印发票">
+                            <i class="fas fa-print"></i>
+                            <span>发票</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-column">
+                    <i class="fas fa-inbox"></i>
+                    <span>暂无订单</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.kanban-dashboard {
+    padding: 0 0.5rem;
+    min-height: calc(100vh - var(--header-height, 60px) - 4rem);
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+}
+
+.title-icon .icon-wave {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+    animation: waveShine 3s ease-in-out infinite;
+}
+
+@keyframes waveShine {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), var(--color-primary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 1px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.action-btn.outline {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-btn.outline:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px var(--color-primary-glow);
+}
+
+.action-btn .btn-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.2), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.action-btn.primary:hover .btn-glow { opacity: 1; }
+
+/* 导出下拉菜单 */
+.export-dropdown-wrapper {
+    position: relative;
+}
+
+.export-dropdown-wrapper .dropdown-arrow {
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.export-dropdown-wrapper.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.export-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 160px;
+    background: #1e1e2e;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    padding: 0.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.export-dropdown-wrapper.open .export-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.export-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    color: var(--text-main);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.export-dropdown .dropdown-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--color-primary);
+}
+
+.export-dropdown .dropdown-item .fa-file-excel { color: #10b981; }
+.export-dropdown .dropdown-item .fa-file-csv { color: #06b6d4; }
+
+[data-theme="light"] .export-dropdown {
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 统计概览 */
+.stats-overview {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.stat-count {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.stat-item.pending .stat-count { color: #f59e0b; }
+.stat-item.paid .stat-count { color: #06b6d4; }
+.stat-item.shipped .stat-count { color: #8b5cf6; }
+.stat-item.done .stat-count { color: #10b981; }
+
+.stat-name {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.stat-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+}
+
+/* 看板 */
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    flex: 1;
+    min-height: 500px;
+}
+
+.kanban-column {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    min-height: 400px;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+}
+
+.kanban-column.pending .header-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.kanban-column.paid .header-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.kanban-column.shipped .header-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.kanban-column.done .header-icon { background: linear-gradient(135deg, #10b981, #059669); }
+
+.header-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.column-title {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+.column-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.column-count {
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.column-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.column-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.column-body::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+}
+
+/* 订单卡片 */
+.order-card {
+    position: relative;
+    padding: 1rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.order-card:hover {
+    transform: translateY(-3px) translateZ(0);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.kanban-column.pending .order-card:hover { border-color: #f59e0b; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15); }
+.kanban-column.paid .order-card:hover { border-color: #06b6d4; box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15); }
+.kanban-column.shipped .order-card:hover { border-color: #8b5cf6; box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15); }
+.kanban-column.done .order-card:hover { border-color: #10b981; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15); }
+
+.order-card:hover .card-glow {
+    opacity: 1;
+}
+
+.card-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.kanban-column.pending .card-glow { background: linear-gradient(90deg, transparent, #f59e0b, transparent); }
+.kanban-column.paid .card-glow { background: linear-gradient(90deg, transparent, #06b6d4, transparent); }
+.kanban-column.shipped .card-glow { background: linear-gradient(90deg, transparent, #8b5cf6, transparent); }
+.kanban-column.done .card-glow { background: linear-gradient(90deg, transparent, #10b981, transparent); }
+
+/* 卡片顶部区域 */
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.85rem;
+}
+
+.order-no {
+    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+
+.order-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+/* 客户信息区域 */
+.customer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.customer-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.kanban-column.pending .customer-avatar { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.kanban-column.paid .customer-avatar { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.kanban-column.shipped .customer-avatar { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.kanban-column.done .customer-avatar { background: linear-gradient(135deg, #10b981, #059669); }
+
+.customer-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.customer-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.item-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.item-count i {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+/* 金额区域 */
+.card-amount {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.order-amount {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.kanban-column.pending .order-amount { color: #f59e0b; }
+.kanban-column.paid .order-amount { color: #06b6d4; }
+.kanban-column.shipped .order-amount { color: #8b5cf6; }
+.kanban-column.done .order-amount { color: #10b981; }
+
+/* 操作按钮区域 */
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.action-link i {
+    font-size: 0.75rem;
+}
+
+.action-link.view-btn:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.action-link.print-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+[data-theme="light"] .card-amount {
+    border-bottom-color: rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .action-link {
+    background: rgba(0,0,0,0.04);
+}
+
+/* 卡片底部区域 - 保留兼容性 */
+.card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* 亮色主题 */
+[data-theme="light"] .order-card {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .order-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] .order-no {
+    background: rgba(0,0,0,0.04);
+}
+
+[data-theme="light"] .card-bottom {
+    border-top-color: rgba(0,0,0,0.06);
+}
+
+/* 空状态 */
+.empty-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.empty-column i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.empty-column span {
+    font-size: 0.85rem;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .kanban-board {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .stats-overview {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .stat-divider {
+        display: none;
+    }
+    
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+    
+    .kanban-column {
+        max-height: 400px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 导出下拉菜单
+const exportBtn = document.getElementById('exportBtn');
+const exportWrapper = exportBtn?.closest('.export-dropdown-wrapper');
+
+if (exportBtn && exportWrapper) {
+    exportBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        exportWrapper.classList.toggle('open');
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!exportWrapper.contains(e.target)) {
+            exportWrapper.classList.remove('open');
+        }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            exportWrapper.classList.remove('open');
+        }
+    });
+}
+</script>
+{% endblock %}

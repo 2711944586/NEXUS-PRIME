@@ -1,0 +1,247 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}通知详情 - NEXUS{% endblock %}
+{% block breadcrumb %}通知中心 / 详情{% endblock %}
+
+{% block styles %}
+<style>
+.detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.detail-header {
+    padding: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.notification-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.notification-icon.info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.notification-icon.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.notification-icon.alert {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.notification-icon.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.meta-item i {
+    color: #6366f1;
+}
+
+.category-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.category-badge.system { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+.category-badge.stock { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.category-badge.order { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.category-badge.approval { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+.category-badge.report { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+.detail-body {
+    padding: 2rem;
+}
+
+.notification-content {
+    color: #e2e8f0;
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.detail-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    color: #a5b4fc;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    transform: translateX(-4px);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+}
+
+.status-badge.read {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+.status-badge.unread {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+}
+
+/* 亮色模式 */
+[data-theme="light"] .detail-card {
+    background: #fff;
+    border-color: rgba(99, 102, 241, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .notification-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .notification-content {
+    color: #475569;
+}
+
+[data-theme="light"] .detail-header,
+[data-theme="light"] .detail-footer {
+    border-color: rgba(99, 102, 241, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-card">
+        <div class="detail-header">
+            <div class="notification-icon {{ notification.priority or 'info' }}">
+                {% if notification.category == 'system' %}
+                <i class="fas fa-cog"></i>
+                {% elif notification.category == 'stock' %}
+                <i class="fas fa-boxes"></i>
+                {% elif notification.category == 'order' %}
+                <i class="fas fa-shopping-cart"></i>
+                {% elif notification.category == 'approval' %}
+                <i class="fas fa-clipboard-check"></i>
+                {% elif notification.category == 'report' %}
+                <i class="fas fa-chart-bar"></i>
+                {% else %}
+                <i class="fas fa-bell"></i>
+                {% endif %}
+            </div>
+            
+            <div class="header-content">
+                <h1 class="notification-title">{{ notification.title }}</h1>
+                <div class="notification-meta">
+                    <span class="category-badge {{ notification.category or 'system' }}">
+                        {{ notification.category or '系统' }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M') if notification.created_at else '--' }}
+                    </span>
+                    {% if notification.is_read and notification.read_at %}
+                    <span class="meta-item">
+                        <i class="fas fa-eye"></i>
+                        已读于 {{ notification.read_at.strftime('%Y-%m-%d %H:%M') }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-body">
+            <div class="notification-content">
+                {{ notification.content | safe }}
+            </div>
+        </div>
+        
+        <div class="detail-footer">
+            <a href="{{ url_for('notification.index') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回列表
+            </a>
+            
+            <span class="status-badge {{ 'read' if notification.is_read else 'unread' }}">
+                <i class="fas fa-{{ 'check-circle' if notification.is_read else 'circle' }}"></i>
+                {{ '已读' if notification.is_read else '未读' }}
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}

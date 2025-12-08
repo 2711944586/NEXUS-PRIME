@@ -1,0 +1,645 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}报表订阅 - NEXUS{% endblock %}
+{% block breadcrumb %}报表订阅{% endblock %}
+
+{% block styles %}
+<style>
+/* 页面动画 */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.warehouse-panel {
+    animation: fadeInUp 0.5s ease;
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+}
+
+.title-icon::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 19px;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), #8b5cf6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin: 0.25rem 0 0 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.header-btn {
+    padding: 0.65rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.header-btn.outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.header-btn.outline:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #6366f1;
+}
+
+/* 主内容布局 */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* 卡片样式 */
+.panel-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header i {
+    color: #6366f1;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 订阅列表 */
+.subscription-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.subscription-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.subscription-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.subscription-info h4 {
+    margin: 0 0 0.35rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.subscription-schedule {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: rgba(99, 102, 241, 0.1);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+}
+
+.subscription-schedule i {
+    color: #6366f1;
+    font-size: 0.7rem;
+}
+
+.cancel-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    color: var(--text-muted);
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+.empty-title {
+    font-size: 1rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.empty-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 添加订阅表单 */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    outline: none;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+}
+
+/* 可订阅报表选项 */
+.report-option {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.report-option:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.report-option.selected {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: #6366f1;
+}
+
+.report-option h5 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.report-option p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* 频率选择 */
+.frequency-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.frequency-tab {
+    flex: 1;
+    padding: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.frequency-tab:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.frequency-tab.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.frequency-tab input {
+    display: none;
+}
+
+.conditional-group {
+    display: none;
+    animation: fadeIn 0.2s ease;
+}
+
+.conditional-group.show {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 亮色主题适配 ===== */
+[data-theme="light"] .page-header {
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .page-title {
+    background: linear-gradient(135deg, #1e293b, #6366f1);
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+[data-theme="light"] .panel-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .card-header {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), transparent);
+    border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .card-header h5 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .subscription-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .subscription-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="light"] .subscription-info h4 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus {
+    background: #ffffff;
+    border-color: #6366f1;
+}
+
+[data-theme="light"] .frequency-tab {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .frequency-tab:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+[data-theme="light"] .frequency-tab.active {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+[data-theme="light"] .header-btn.outline {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .header-btn.outline:hover {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+[data-theme="light"] .empty-state {
+    color: #64748b;
+}
+
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="warehouse-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="title-area">
+            <div class="title-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div>
+                <h1 class="page-title">报表订阅</h1>
+                <p class="page-subtitle">REPORT SUBSCRIPTIONS</p>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('notification.reports') }}" class="header-btn outline">
+                <i class="fas fa-history"></i> 历史报表
+            </a>
+        </div>
+    </div>
+    
+    <div class="content-grid">
+        <!-- 我的订阅 -->
+        <div class="panel-card">
+            <div class="card-header">
+                <i class="fas fa-bookmark"></i>
+                <h5>我的订阅</h5>
+            </div>
+            <div class="card-body">
+                {% if subscriptions %}
+                <div class="subscription-list">
+                    {% for sub in subscriptions %}
+                    <div class="subscription-item">
+                        <div class="subscription-info">
+                            <h4>{{ sub.report_name }}</h4>
+                            <span class="subscription-schedule">
+                                <i class="fas fa-clock"></i>
+                                {% if sub.frequency == 'daily' %}
+                                每天 {{ "%02d:00"|format(sub.send_hour) }}
+                                {% elif sub.frequency == 'weekly' %}
+                                每周{{ ['一','二','三','四','五','六','日'][sub.send_weekday] }} {{ "%02d:00"|format(sub.send_hour) }}
+                                {% else %}
+                                每月 {{ sub.send_day }} 日 {{ "%02d:00"|format(sub.send_hour) }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <form action="{{ url_for('notification.cancel_subscription', subscription_id=sub.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="cancel-btn" onclick="return confirm('确定取消订阅？')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3 class="empty-title">暂无订阅</h3>
+                    <p class="empty-desc">添加报表订阅，定期接收业务报表</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 添加订阅 -->
+        <div class="panel-card">
+            <div class="card-header">
+                <i class="fas fa-plus"></i>
+                <h5>添加订阅</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('notification.create_subscription') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="form-group">
+                        <label class="form-label">选择报表</label>
+                        <select class="form-select" name="report_type" required>
+                            <option value="">请选择报表类型...</option>
+                            {% for key, report in available_reports.items() %}
+                            <option value="{{ key }}">{{ report.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">发送频率</label>
+                        <div class="frequency-tabs">
+                            <label class="frequency-tab active">
+                                <input type="radio" name="frequency" value="daily" checked>
+                                <i class="fas fa-sun"></i> 每天
+                            </label>
+                            <label class="frequency-tab">
+                                <input type="radio" name="frequency" value="weekly">
+                                <i class="fas fa-calendar-week"></i> 每周
+                            </label>
+                            <label class="frequency-tab">
+                                <input type="radio" name="frequency" value="monthly">
+                                <i class="fas fa-calendar-alt"></i> 每月
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">发送时间</label>
+                            <select class="form-select" name="send_hour">
+                                {% for h in range(24) %}
+                                <option value="{{ h }}" {{ 'selected' if h == 8 }}>{{ "%02d:00"|format(h) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group conditional-group" id="weekday-group">
+                            <label class="form-label">星期</label>
+                            <select class="form-select" name="send_weekday">
+                                <option value="0">周一</option>
+                                <option value="1">周二</option>
+                                <option value="2">周三</option>
+                                <option value="3">周四</option>
+                                <option value="4">周五</option>
+                                <option value="5">周六</option>
+                                <option value="6">周日</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group conditional-group" id="day-group">
+                            <label class="form-label">日期</label>
+                            <select class="form-select" name="send_day">
+                                {% for d in range(1, 29) %}
+                                <option value="{{ d }}">{{ d }} 日</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-plus"></i> 添加订阅
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const frequencyTabs = document.querySelectorAll('.frequency-tab');
+    const weekdayGroup = document.getElementById('weekday-group');
+    const dayGroup = document.getElementById('day-group');
+    
+    frequencyTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // 更新激活状态
+            frequencyTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 获取选中的值
+            const value = this.querySelector('input').value;
+            
+            // 显示/隐藏条件字段
+            weekdayGroup.classList.toggle('show', value === 'weekly');
+            dayGroup.classList.toggle('show', value === 'monthly');
+        });
+    });
+});
+</script>
+{% endblock %}

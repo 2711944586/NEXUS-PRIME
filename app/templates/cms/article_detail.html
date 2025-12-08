@@ -1,0 +1,183 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ article.title }}{% endblock %}
+{% block breadcrumb %}CMS / Article{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="n-card">
+            <div class="mb-4 pb-3 border-bottom border-white-10">
+                <h1 class="mb-3">{{ article.title }}</h1>
+                <div class="d-flex align-items-center gap-4 text-sm text-muted">
+                    <span><i class="fas fa-user me-1"></i> {{ article.author.username }}</span>
+                    <span><i class="fas fa-calendar me-1"></i> {{ article.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <span><i class="fas fa-eye me-1"></i> {{ article.view_count }} Views</span>
+                </div>
+            </div>
+            
+            <div class="article-content">
+                <!-- 安全渲染 HTML 内容 -->
+                {{ article.content | safe }}
+            </div>
+            
+            <div class="mt-5 pt-4 border-top border-white-10 text-center">
+                <a href="{{ url_for('cms.index') }}" class="btn btn-ghost">
+                    <i class="fas fa-arrow-left me-2"></i> 返回列表
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .article-content { 
+        line-height: 1.8; 
+        font-size: 1.05rem; 
+        color: var(--text-primary);
+    }
+    
+    /* 强制覆盖富文本编辑器生成的内联样式 */
+    .article-content * {
+        color: inherit !important;
+        background-color: transparent !important;
+    }
+    
+    .article-content h1,
+    .article-content h2,
+    .article-content h3,
+    .article-content h4,
+    .article-content h5,
+    .article-content h6 { 
+        margin-top: 1.5rem; 
+        margin-bottom: 0.75rem;
+        color: var(--text-primary) !important;
+        font-weight: 600;
+    }
+    
+    .article-content h2 { 
+        color: var(--color-primary) !important; 
+    }
+    
+    .article-content p {
+        margin-bottom: 1rem;
+        color: var(--text-secondary) !important;
+    }
+    
+    .article-content blockquote { 
+        border-left: 4px solid var(--color-primary); 
+        padding-left: 1rem; 
+        margin: 1rem 0;
+        color: var(--text-muted) !important; 
+        font-style: italic; 
+        background: var(--bg-tertiary);
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .article-content img { 
+        max-width: 100%; 
+        border-radius: 8px; 
+        margin: 1rem 0; 
+    }
+    
+    .article-content a {
+        color: var(--color-primary) !important;
+        text-decoration: underline;
+    }
+    
+    .article-content a:hover {
+        color: var(--color-primary-light) !important;
+    }
+    
+    .article-content ul,
+    .article-content ol {
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+        color: var(--text-secondary) !important;
+    }
+    
+    .article-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .article-content pre,
+    .article-content code {
+        background: var(--bg-tertiary) !important;
+        color: var(--color-primary) !important;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: 'Consolas', 'Monaco', monospace;
+    }
+    
+    .article-content pre {
+        padding: 1rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+    
+    .article-content pre code {
+        padding: 0;
+        background: transparent !important;
+    }
+    
+    .article-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+    }
+    
+    .article-content th,
+    .article-content td {
+        border: 1px solid var(--border-color) !important;
+        padding: 0.75rem;
+        text-align: left;
+        color: var(--text-secondary) !important;
+        background: transparent !important;
+    }
+    
+    .article-content th {
+        background: var(--bg-tertiary) !important;
+        color: var(--text-primary) !important;
+        font-weight: 600;
+    }
+    
+    .article-content hr {
+        border: none;
+        border-top: 1px solid var(--border-color);
+        margin: 2rem 0;
+    }
+    
+    /* 亮色主题适配 */
+    [data-theme="light"] .article-content {
+        color: var(--text-primary);
+    }
+    
+    [data-theme="light"] .article-content * {
+        color: inherit !important;
+    }
+    
+    [data-theme="light"] .article-content h2 {
+        color: var(--color-primary) !important;
+    }
+    
+    [data-theme="light"] .article-content p,
+    [data-theme="light"] .article-content li {
+        color: var(--text-secondary) !important;
+    }
+    
+    [data-theme="light"] .article-content blockquote {
+        background: var(--bg-secondary);
+        color: var(--text-muted) !important;
+    }
+    
+    [data-theme="light"] .article-content pre,
+    [data-theme="light"] .article-content code {
+        background: var(--bg-secondary) !important;
+    }
+    
+    [data-theme="light"] .article-content th {
+        background: var(--bg-secondary) !important;
+    }
+</style>
+{% endblock %}

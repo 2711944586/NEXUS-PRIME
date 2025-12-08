@@ -1,0 +1,810 @@
+{% extends "layouts/base.html" %}
+
+{% block breadcrumb %}系统管理 / 审计日志{% endblock %}
+
+{% block content %}
+<div class="audit-page">
+    <!-- 页面标题 -->
+    <div class="page-header glass-panel mb-lg">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-history gradient-icon"></i>
+                <span class="gradient-text">审计日志</span>
+            </h1>
+            <p class="page-subtitle">追踪所有系统操作和库存变动</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="exportLogs()">
+                <i class="fas fa-download"></i> 导出
+            </button>
+        </div>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="stats-grid mb-lg">
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #6366f1;">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value counter">{{ "{:,}".format(stats.total_logs) }}</span>
+                <span class="stat-label">总日志数</span>
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #10b981;">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value counter">{{ "{:,}".format(stats.today_logs) }}</span>
+                <span class="stat-label">今日操作</span>
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #10b981;">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value counter">{{ "{:,}".format(stats.inbound_count) }}</span>
+                <span class="stat-label">入库记录</span>
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #ef4444;">
+                <i class="fas fa-arrow-up"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value counter">{{ "{:,}".format(stats.outbound_count) }}</span>
+                <span class="stat-label">出库记录</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日志表格 -->
+    <div class="glass-panel log-container">
+        <div class="table-header">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="搜索事务码、产品、仓库..." id="searchInput">
+                <button class="search-clear" id="searchClear" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="view-options">
+                <button class="view-btn active" data-view="table" title="表格视图">
+                    <i class="fas fa-table"></i>
+                </button>
+                <button class="view-btn" data-view="timeline" title="时间线视图">
+                    <i class="fas fa-stream"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 表格视图 -->
+        <div class="table-wrapper" id="tableView">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>事务码</th>
+                        <th>类型</th>
+                        <th>产品</th>
+                        <th>仓库</th>
+                        <th>数量变化</th>
+                        <th>结余</th>
+                        <th>操作员</th>
+                        <th>时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs.items %}
+                    <tr class="log-row" style="animation-delay: {{ loop.index0 * 0.02 }}s;">
+                        <td>
+                            <code class="tx-code">{{ log.transaction_code[:12] }}...</code>
+                        </td>
+                        <td>
+                            <span class="type-badge {{ log.move_type }}">
+                                <i class="fas fa-{% if log.move_type == 'inbound' %}arrow-down{% else %}arrow-up{% endif %}"></i>
+                                {{ '入库' if log.move_type == 'inbound' else '出库' }}
+                            </span>
+                        </td>
+                        <td class="product-cell">
+                            {{ log.product.name[:20] if log.product else 'N/A' }}...
+                        </td>
+                        <td>{{ log.warehouse.name[:15] if log.warehouse else 'N/A' }}...</td>
+                        <td class="qty-change {{ 'positive' if log.move_type == 'inbound' else 'negative' }}">
+                            {{ '+' if log.move_type == 'inbound' else '-' }}{{ log.qty_change }}
+                        </td>
+                        <td class="balance">{{ log.balance_after }}</td>
+                        <td>
+                            <div class="operator">
+                                <span class="avatar-mini">{{ log.operator.username[0].upper() if log.operator else '?' }}</span>
+                                {{ log.operator.username if log.operator else 'System' }}
+                            </div>
+                        </td>
+                        <td class="time-cell">{{ log.created_at.strftime('%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-row">
+                            <i class="fas fa-inbox"></i>
+                            <span>暂无日志记录</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        {% if logs.pages > 1 %}
+        <div class="pagination">
+            {% if logs.has_prev %}
+            <a href="?page={{ logs.prev_num }}" class="page-btn">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            <span class="page-info">
+                第 {{ logs.page }} / {{ logs.pages }} 页
+            </span>
+            
+            {% if logs.has_next %}
+            <a href="?page={{ logs.next_num }}" class="page-btn">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- 时间线视图 (默认隐藏) -->
+        <div class="timeline-view" id="timelineView" style="display: none;">
+            <div class="timeline-list">
+                {% for log in logs.items %}
+                <div class="timeline-item {{ log.move_type }}">
+                    <div class="timeline-marker">
+                        <i class="fas fa-{% if log.move_type == 'inbound' %}arrow-down{% else %}arrow-up{% endif %}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <span class="type-badge {{ log.move_type }}">
+                                {{ '入库' if log.move_type == 'inbound' else '出库' }}
+                            </span>
+                            <span class="timeline-time">{{ log.created_at.strftime('%m-%d %H:%M') }}</span>
+                        </div>
+                        <div class="timeline-body">
+                            <div class="timeline-product">{{ log.product.name if log.product else 'N/A' }}</div>
+                            <div class="timeline-details">
+                                <span class="qty-change {{ 'positive' if log.move_type == 'inbound' else 'negative' }}">
+                                    {{ '+' if log.move_type == 'inbound' else '-' }}{{ log.qty_change }}
+                                </span>
+                                <span class="timeline-warehouse">{{ log.warehouse.name if log.warehouse else 'N/A' }}</span>
+                                <span class="timeline-operator">
+                                    <span class="avatar-mini">{{ log.operator.username[0].upper() if log.operator else '?' }}</span>
+                                    {{ log.operator.username if log.operator else 'System' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-timeline">
+                    <i class="fas fa-inbox"></i>
+                    <span>暂无日志记录</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.audit-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.gradient-icon { color: #6366f1; }
+.gradient-text {
+    background: linear-gradient(135deg, #fff, #9ca3af);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.page-subtitle {
+    color: #9ca3af;
+    margin: 0.5rem 0 0 2.25rem;
+    font-size: 0.875rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: var(--stat-color)20;
+    color: var(--stat-color);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* Log Container */
+.log-container {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+}
+
+.search-box:focus-within {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.search-box i { color: #6366f1; }
+
+.search-box input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    outline: none;
+    width: 260px;
+    font-size: 0.9rem;
+}
+
+.search-box input::placeholder {
+    color: #6b7280;
+}
+
+.search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-clear:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.view-options {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.view-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover, .view-btn.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #fff;
+}
+
+/* Table */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9ca3af;
+    background: rgba(15, 23, 42, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.data-table td {
+    padding: 1rem 1.5rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.log-row {
+    animation: fadeIn 0.3s ease-out backwards;
+    transition: background 0.2s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.log-row:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.tx-code {
+    padding: 0.25rem 0.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #a5b4fc;
+}
+
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.type-badge.inbound {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.type-badge.outbound {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.qty-change {
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.qty-change.positive { color: #10b981; }
+.qty-change.negative { color: #ef4444; }
+
+.balance {
+    color: #6366f1;
+    font-family: 'Courier New', monospace;
+}
+
+.operator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.avatar-mini {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.time-cell {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+.empty-row {
+    text-align: center;
+    padding: 3rem !important;
+    color: #6b7280;
+}
+
+.empty-row i {
+    font-size: 2rem;
+    opacity: 0.3;
+    margin-right: 0.5rem;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.page-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.page-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    color: #fff;
+}
+
+.page-info {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+}
+
+.btn-outline:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #fff;
+}
+
+.glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+}
+
+.mb-lg { margin-bottom: 1.5rem; }
+
+@media (max-width: 1024px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
+}
+
+/* ========== 时间线视图 ========== */
+.timeline-view {
+    padding: 1.5rem;
+}
+
+.timeline-list {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-list::before {
+    content: '';
+    position: absolute;
+    left: 0.6rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6, #a855f7);
+}
+
+.timeline-item {
+    position: relative;
+    padding: 1rem 0;
+    animation: fadeIn 0.3s ease-out backwards;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.65rem;
+    top: 1.2rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: white;
+    z-index: 1;
+}
+
+.timeline-item.inbound .timeline-marker {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.timeline-item.outbound .timeline-marker {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.timeline-content {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-left: 0.5rem;
+    transition: all 0.2s;
+}
+
+.timeline-content:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.timeline-time {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.timeline-product {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.timeline-warehouse {
+    color: #9ca3af;
+}
+
+.timeline-operator {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #9ca3af;
+}
+
+.empty-timeline {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.empty-timeline i {
+    font-size: 2rem;
+    opacity: 0.3;
+    margin-right: 0.5rem;
+}
+
+/* ========== 表单样式 (保留导出用) ========== */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.form-group label i {
+    color: #6366f1;
+    font-size: 0.8rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+</style>
+
+<script>
+// 搜索功能
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+
+searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase();
+    searchClear.style.display = query ? 'flex' : 'none';
+    
+    document.querySelectorAll('.log-row').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
+    
+    // 同时搜索时间线视图
+    document.querySelectorAll('.timeline-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(query) ? '' : 'none';
+    });
+});
+
+searchClear.addEventListener('click', function() {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    document.querySelectorAll('.log-row').forEach(row => row.style.display = '');
+    document.querySelectorAll('.timeline-item').forEach(item => item.style.display = '');
+});
+
+// 视图切换
+document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const view = this.dataset.view;
+        
+        // 更新按钮状态
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // 切换视图
+        const tableView = document.getElementById('tableView');
+        const timelineView = document.getElementById('timelineView');
+        const pagination = document.querySelector('.pagination');
+        
+        if (view === 'table') {
+            tableView.style.display = '';
+            timelineView.style.display = 'none';
+            if (pagination) pagination.style.display = '';
+        } else {
+            tableView.style.display = 'none';
+            timelineView.style.display = 'block';
+            if (pagination) pagination.style.display = 'none';
+        }
+    });
+});
+
+// 导出日志
+function exportLogs() {
+    // 收集当前页面的日志数据
+    const rows = document.querySelectorAll('.log-row');
+    if (rows.length === 0) {
+        alert('没有可导出的数据');
+        return;
+    }
+    
+    let csv = '\ufeff事务码,类型,产品,仓库,数量变化,结余,操作员,时间\n';
+    
+    rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        const cells = row.querySelectorAll('td');
+        const rowData = [
+            cells[0]?.textContent.trim().replace('...', ''),
+            cells[1]?.textContent.trim(),
+            cells[2]?.textContent.trim().replace('...', ''),
+            cells[3]?.textContent.trim().replace('...', ''),
+            cells[4]?.textContent.trim(),
+            cells[5]?.textContent.trim(),
+            cells[6]?.textContent.trim(),
+            cells[7]?.textContent.trim()
+        ];
+        csv += rowData.map(d => `"${d}"`).join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `审计日志_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

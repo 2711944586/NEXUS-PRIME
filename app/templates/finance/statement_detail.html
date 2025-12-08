@@ -1,0 +1,846 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}对账单详情 - {{ statement.statement_no }} - NEXUS{% endblock %}
+{% block breadcrumb %}财务管理 / 对账单 / 详情{% endblock %}
+
+{% block content %}
+<div class="statement-detail-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('finance.statements') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回对账单列表</span>
+        </a>
+    </div>
+    
+    <!-- 对账单头部 -->
+    <div class="statement-header-card">
+        <div class="header-main">
+            <div class="header-icon">
+                <i class="fas fa-file-invoice"></i>
+                <div class="icon-pulse"></div>
+            </div>
+            <div class="header-info">
+                <div class="header-badges">
+                    <span class="statement-no-badge">{{ statement.statement_no }}</span>
+                    <span class="status-badge {{ 'confirmed' if statement.confirmed else 'pending' }}">
+                        {% if statement.confirmed %}
+                        <i class="fas fa-check"></i> 已确认
+                        {% else %}
+                        <i class="fas fa-clock"></i> 待确认
+                        {% endif %}
+                    </span>
+                </div>
+                <h1 class="statement-title">客户对账单</h1>
+                <div class="statement-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-building"></i>
+                        {{ statement.customer.name if statement.customer else '未知客户' }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        {{ statement.period_start.strftime('%Y-%m-%d') }} ~ {{ statement.period_end.strftime('%Y-%m-%d') }}
+                    </span>
+                </div>
+            </div>
+            <div class="header-actions">
+                {% if not statement.confirmed %}
+                <form action="{{ url_for('finance.confirm_statement', statement_id=statement.id) }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="action-btn primary">
+                        <i class="fas fa-check-circle"></i>
+                        <span>确认对账单</span>
+                    </button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('finance.unconfirm_statement', statement_id=statement.id) }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="action-btn warning" onclick="return confirm('确定要取消确认吗？')">
+                        <i class="fas fa-undo"></i>
+                        <span>取消确认</span>
+                    </button>
+                </form>
+                {% endif %}
+                <button class="action-btn outline" onclick="printStatement()">
+                    <i class="fas fa-print"></i>
+                    <span>打印</span>
+                </button>
+                <button class="action-btn outline" onclick="exportPDF()">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>导出PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 金额汇总 -->
+    <div class="amount-summary">
+        <div class="summary-card">
+            <div class="summary-icon blue">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="summary-content">
+                <span class="summary-label">期初余额</span>
+                <span class="summary-value">¥{{ "{:,.2f}".format(statement.opening_balance) }}</span>
+            </div>
+        </div>
+        
+        <div class="summary-arrow">
+            <i class="fas fa-plus"></i>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon purple">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="summary-content">
+                <span class="summary-label">本期发生</span>
+                <span class="summary-value">¥{{ "{:,.2f}".format(statement.sales_amount) }}</span>
+            </div>
+        </div>
+        
+        <div class="summary-arrow">
+            <i class="fas fa-minus"></i>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon green">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <div class="summary-content">
+                <span class="summary-label">本期收款</span>
+                <span class="summary-value">¥{{ "{:,.2f}".format(statement.payment_amount) }}</span>
+            </div>
+        </div>
+        
+        <div class="summary-arrow">
+            <i class="fas fa-equals"></i>
+        </div>
+        
+        <div class="summary-card highlight">
+            <div class="summary-icon orange">
+                <i class="fas fa-balance-scale"></i>
+            </div>
+            <div class="summary-content">
+                <span class="summary-label">期末余额</span>
+                <span class="summary-value large">¥{{ "{:,.2f}".format(statement.closing_balance) }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 明细内容 -->
+    <div class="detail-grid">
+        <!-- 订单明细 -->
+        <div class="detail-section">
+            <div class="section-header">
+                <h3><i class="fas fa-shopping-bag"></i> 本期订单明细</h3>
+                <span class="section-count">{{ orders|length }} 笔</span>
+            </div>
+            <div class="table-container">
+                {% if orders %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>订单号</th>
+                            <th>日期</th>
+                            <th>商品数</th>
+                            <th class="text-right">金额</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>
+                                <span class="order-no">{{ order.order_no }}</span>
+                            </td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else '-' }}</td>
+                            <td>{{ order.items|length if order.items else 0 }} 件</td>
+                            <td class="text-right">
+                                <span class="amount">¥{{ "{:,.2f}".format(order.total_amount) }}</span>
+                            </td>
+                            <td>
+                                <span class="status-tag {{ order.status }}">
+                                    {% if order.status == 'paid' %}已付款
+                                    {% elif order.status == 'shipped' %}已发货
+                                    {% elif order.status == 'done' %}已完成
+                                    {% else %}{{ order.status }}{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3"><strong>合计</strong></td>
+                            <td class="text-right"><strong>¥{{ "{:,.2f}".format(orders|sum(attribute='total_amount')) }}</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% else %}
+                <div class="empty-data">
+                    <i class="fas fa-inbox"></i>
+                    <p>本期无订单记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 收款明细 -->
+        <div class="detail-section">
+            <div class="section-header">
+                <h3><i class="fas fa-money-bill-wave"></i> 本期收款明细</h3>
+                <span class="section-count">{{ payments|length }} 笔</span>
+            </div>
+            <div class="table-container">
+                {% if payments %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>收款单号</th>
+                            <th>日期</th>
+                            <th>方式</th>
+                            <th class="text-right">金额</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>
+                                <span class="payment-no">{{ payment.payment_no }}</span>
+                            </td>
+                            <td>{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '-' }}</td>
+                            <td>
+                                <span class="method-tag">
+                                    {% if payment.payment_method == 'cash' %}
+                                    <i class="fas fa-money-bill"></i> 现金
+                                    {% elif payment.payment_method == 'bank' %}
+                                    <i class="fas fa-university"></i> 银行转账
+                                    {% elif payment.payment_method == 'wechat' %}
+                                    <i class="fab fa-weixin"></i> 微信
+                                    {% elif payment.payment_method == 'alipay' %}
+                                    <i class="fab fa-alipay"></i> 支付宝
+                                    {% else %}
+                                    {{ payment.payment_method }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="text-right">
+                                <span class="amount green">¥{{ "{:,.2f}".format(payment.amount) }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3"><strong>合计</strong></td>
+                            <td class="text-right"><strong class="green">¥{{ "{:,.2f}".format(payments|sum(attribute='amount')) }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% else %}
+                <div class="empty-data">
+                    <i class="fas fa-inbox"></i>
+                    <p>本期无收款记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部信息 -->
+    <div class="footer-info">
+        <div class="info-item">
+            <span class="info-label">创建时间</span>
+            <span class="info-value">{{ statement.generated_at.strftime('%Y-%m-%d %H:%M:%S') if statement.generated_at else '-' }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">创建人</span>
+            <span class="info-value">{{ statement.generator.username if statement.generator else '-' }}</span>
+        </div>
+        {% if statement.confirmed_at %}
+        <div class="info-item">
+            <span class="info-label">确认时间</span>
+            <span class="info-value">{{ statement.confirmed_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.statement-detail-page {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+/* 对账单头部 */
+.statement-header-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.header-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+}
+
+.header-icon {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.header-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 20px;
+    border: 2px solid #8b5cf6;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.header-info {
+    flex: 1;
+}
+
+.header-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.statement-no-badge {
+    padding: 0.25rem 0.75rem;
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.status-badge.confirmed {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.status-badge.cancelled {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.statement-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+}
+
+.statement-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.meta-item i {
+    color: #8b5cf6;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.action-btn.outline {
+    background: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.action-btn.outline:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+.action-btn.warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.action-btn.warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+/* 金额汇总 */
+.amount-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow-x: auto;
+}
+
+.summary-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 160px;
+}
+
+.summary-card.highlight {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05));
+    padding: 1rem;
+    border-radius: 12px;
+    margin: -0.5rem;
+}
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.summary-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.summary-icon.purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.summary-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.summary-icon.orange { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+.summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.summary-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.summary-value.large {
+    font-size: 1.35rem;
+    color: #f59e0b;
+}
+
+.summary-arrow {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* 明细区域 */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1000px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detail-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-header h3 i {
+    color: #8b5cf6;
+}
+
+.section-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-card);
+}
+
+.data-table td {
+    font-size: 0.875rem;
+    color: var(--text-main);
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-card);
+}
+
+.data-table tfoot td {
+    background: var(--bg-card);
+    font-weight: 600;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.order-no, .payment-no {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #8b5cf6;
+}
+
+.amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+}
+
+.amount.green, .green {
+    color: #10b981;
+}
+
+.status-tag {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-tag.paid {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.status-tag.shipped {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.status-tag.done {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.method-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.empty-data {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+}
+
+.empty-data i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-data p {
+    margin: 0;
+}
+
+/* 底部信息 */
+.footer-info {
+    display: flex;
+    gap: 2rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.info-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.info-value {
+    font-size: 0.8rem;
+    color: var(--text-main);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .header-main {
+        flex-direction: column;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .amount-summary {
+        flex-direction: column;
+    }
+    
+    .summary-arrow {
+        transform: rotate(90deg);
+    }
+    
+    .footer-info {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .back-nav, .header-actions {
+        display: none;
+    }
+    
+    .statement-detail-page {
+        padding: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function printStatement() {
+    window.print();
+}
+
+function exportPDF() {
+    // 使用浏览器打印功能导出 PDF
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert('请允许弹出窗口以导出PDF');
+        return;
+    }
+    
+    const statement = {
+        no: '{{ statement.statement_no }}',
+        customerName: '{{ statement.customer.name if statement.customer else "未知客户" }}',
+        customerContact: '{{ statement.customer.contact_person if statement.customer else "-" }}',
+        periodStart: '{{ statement.period_start.strftime("%Y-%m-%d") }}',
+        periodEnd: '{{ statement.period_end.strftime("%Y-%m-%d") }}',
+        openingBalance: '{{ "{:,.2f}".format(statement.opening_balance) }}',
+        salesAmount: '{{ "{:,.2f}".format(statement.sales_amount) }}',
+        paymentAmount: '{{ "{:,.2f}".format(statement.payment_amount) }}',
+        closingBalance: '{{ "{:,.2f}".format(statement.closing_balance) }}',
+        generatedAt: '{{ statement.generated_at.strftime("%Y-%m-%d") if statement.generated_at else "-" }}'
+    };
+    
+    // 构建订单明细 HTML
+    let ordersHtml = '';
+    {% for order in orders %}
+    ordersHtml += '<tr><td>{{ order.order_no }}</td><td>{{ order.created_at.strftime("%Y-%m-%d") if order.created_at else "-" }}</td><td>{{ order.items|length if order.items else 0 }} 件</td><td style="text-align: right;">¥{{ "{:,.2f}".format(order.total_amount) }}</td></tr>';
+    {% endfor %}
+    
+    // 构建收款明细 HTML
+    let paymentsHtml = '';
+    {% for payment in payments %}
+    paymentsHtml += '<tr><td>{{ payment.payment_no }}</td><td>{{ payment.payment_date.strftime("%Y-%m-%d") if payment.payment_date else "-" }}</td><td>{% if payment.payment_method == "cash" %}现金{% elif payment.payment_method == "bank" %}银行转账{% elif payment.payment_method == "wechat" %}微信{% elif payment.payment_method == "alipay" %}支付宝{% else %}{{ payment.payment_method }}{% endif %}</td><td style="text-align: right;">¥{{ "{:,.2f}".format(payment.amount) }}</td></tr>';
+    {% endfor %}
+    
+    // 使用字符串拼接避免 script 标签嵌套问题
+    const scriptTag = '<' + 'script>window.onload=function(){window.print();}</' + 'script>';
+    
+    const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>对账单 - ' + statement.no + '</title>' +
+        '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Microsoft YaHei","SimHei",Arial,sans-serif;padding:40px;color:#333}' +
+        '.header{text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #8b5cf6}' +
+        '.header h1{font-size:28px;color:#8b5cf6;margin-bottom:5px}.header .statement-no{font-size:14px;color:#666}' +
+        '.info-section{display:flex;justify-content:space-between;margin-bottom:30px}' +
+        '.info-box{padding:15px;background:#f8f9fa;border-radius:8px;flex:1;margin:0 10px}' +
+        '.info-box:first-child{margin-left:0}.info-box:last-child{margin-right:0}' +
+        '.info-box h3{font-size:12px;color:#666;margin-bottom:5px}.info-box p{font-size:14px;font-weight:600}' +
+        '.summary-section{display:flex;justify-content:space-around;margin-bottom:30px;padding:20px;background:linear-gradient(135deg,#f8f5ff,#f0f0ff);border-radius:12px}' +
+        '.summary-item{text-align:center}.summary-item .label{font-size:12px;color:#666;margin-bottom:5px}' +
+        '.summary-item .value{font-size:20px;font-weight:700;color:#8b5cf6}.summary-item .value.green{color:#10b981}.summary-item .value.blue{color:#3b82f6}' +
+        '.detail-section{margin-bottom:30px}.detail-section h3{font-size:16px;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid #eee}' +
+        'table{width:100%;border-collapse:collapse}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #eee;font-size:13px}' +
+        'th{background:#f8f9fa;font-weight:600;color:#666}tfoot td{font-weight:600;background:#f8f9fa}' +
+        '.footer{margin-top:40px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#999}' +
+        '.footer-row{display:flex;justify-content:space-between}@media print{body{padding:20px}.no-print{display:none}}</style></head>' +
+        '<body><div class="header"><h1>客户对账单</h1><p class="statement-no">单号: ' + statement.no + '</p></div>' +
+        '<div class="info-section"><div class="info-box"><h3>客户名称</h3><p>' + statement.customerName + '</p></div>' +
+        '<div class="info-box"><h3>联系人</h3><p>' + statement.customerContact + '</p></div>' +
+        '<div class="info-box"><h3>账期范围</h3><p>' + statement.periodStart + ' ~ ' + statement.periodEnd + '</p></div></div>' +
+        '<div class="summary-section"><div class="summary-item"><div class="label">期初余额</div><div class="value">¥' + statement.openingBalance + '</div></div>' +
+        '<div class="summary-item"><div class="label">本期发生</div><div class="value" style="color:#8b5cf6;">¥' + statement.salesAmount + '</div></div>' +
+        '<div class="summary-item"><div class="label">本期收款</div><div class="value green">¥' + statement.paymentAmount + '</div></div>' +
+        '<div class="summary-item"><div class="label">期末余额</div><div class="value blue">¥' + statement.closingBalance + '</div></div></div>' +
+        '<div class="detail-section"><h3>📦 本期订单明细</h3><table><thead><tr><th>订单号</th><th>日期</th><th>商品数</th><th style="text-align:right;">金额</th></tr></thead>' +
+        '<tbody>' + (ordersHtml || '<tr><td colspan="4" style="text-align:center;color:#999;">本期无订单</td></tr>') + '</tbody>' +
+        '<tfoot><tr><td colspan="3">合计</td><td style="text-align:right;">¥' + statement.salesAmount + '</td></tr></tfoot></table></div>' +
+        '<div class="detail-section"><h3>💰 本期收款明细</h3><table><thead><tr><th>收款单号</th><th>日期</th><th>方式</th><th style="text-align:right;">金额</th></tr></thead>' +
+        '<tbody>' + (paymentsHtml || '<tr><td colspan="4" style="text-align:center;color:#999;">本期无收款</td></tr>') + '</tbody>' +
+        '<tfoot><tr><td colspan="3">合计</td><td style="text-align:right;">¥' + statement.paymentAmount + '</td></tr></tfoot></table></div>' +
+        '<div class="footer"><div class="footer-row"><span>生成日期: ' + statement.generatedAt + '</span><span>NEXUS PRIME 财务系统</span></div></div>' +
+        scriptTag + '</body></html>';
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+}
+</script>
+{% endblock %}

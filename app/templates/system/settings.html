@@ -1,0 +1,772 @@
+{% extends "layouts/base.html" %}
+
+{% block breadcrumb %}系统管理 / 系统设置{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <!-- 页面标题 -->
+    <div class="page-header glass-panel mb-lg">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-cogs gradient-icon"></i>
+                <span class="gradient-text">系统设置</span>
+            </h1>
+            <p class="page-subtitle">配置您的 NEXUS PRIME 系统偏好</p>
+        </div>
+    </div>
+
+    <div class="settings-grid">
+        <!-- 外观设置 -->
+        <div class="settings-section glass-panel">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-palette"></i>
+                    外观设置
+                </h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">深色模式</span>
+                        <span class="setting-desc">启用后界面切换为深色主题，更护眼</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkMode">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">粒子背景</span>
+                        <span class="setting-desc">显示动态粒子效果</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="particles" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">动画效果</span>
+                        <span class="setting-desc">启用界面动画过渡</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="animations" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知设置 -->
+        <div class="settings-section glass-panel">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-bell"></i>
+                    通知设置
+                </h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">订单通知</span>
+                        <span class="setting-desc">收到新订单时发送通知</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">库存预警</span>
+                        <span class="setting-desc">库存低于阈值时提醒</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">系统更新</span>
+                        <span class="setting-desc">接收系统更新通知</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 助手设置 -->
+        <div class="settings-section glass-panel">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-robot"></i>
+                    AI 助手设置
+                </h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">API 密钥</span>
+                        <span class="setting-desc">配置 DeepSeek API 密钥</span>
+                    </div>
+                    <button class="btn btn-outline" onclick="location.href='{{ url_for('system.ai_settings') }}'">
+                        <i class="fas fa-key"></i> 配置
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">对话记忆</span>
+                        <span class="setting-desc">保存历史对话记录</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">自动建议</span>
+                        <span class="setting-desc">AI 自动提供操作建议</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据设置 -->
+        <div class="settings-section glass-panel">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-database"></i>
+                    数据设置
+                </h2>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">数据备份</span>
+                        <span class="setting-desc">导出系统数据</span>
+                    </div>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-download"></i> 导出
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">缓存清理</span>
+                        <span class="setting-desc">清除系统缓存数据</span>
+                    </div>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-broom"></i> 清理
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-name">数据重置</span>
+                        <span class="setting-desc">重置所有数据（危险）</span>
+                    </div>
+                    <button class="btn btn-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统信息 -->
+    <div class="system-info glass-panel">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                系统信息
+            </h2>
+        </div>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">版本</span>
+                <span class="info-value">NEXUS PRIME</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Python</span>
+                <span class="info-value">3.11.x</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Flask</span>
+                <span class="info-value">3.0.0</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">数据库</span>
+                <span class="info-value">SQLite</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">用户数</span>
+                <span class="info-value" id="user-count">Loading...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">订单数</span>
+                <span class="info-value" id="order-count">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    padding: 1.5rem;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.gradient-icon { color: #6366f1; }
+
+.gradient-text {
+    background: linear-gradient(135deg, #fff, #9ca3af);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: #9ca3af;
+    margin: 0.5rem 0 0 2.25rem;
+    font-size: 0.875rem;
+}
+
+/* Settings Grid */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section {
+    padding: 1.5rem;
+}
+
+.section-header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #fff;
+}
+
+.section-title i { color: #6366f1; }
+
+/* Settings List */
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.setting-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.setting-name {
+    font-weight: 600;
+    color: #fff;
+}
+
+.setting-desc {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 26px;
+    transition: all 0.3s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+}
+
+.btn-outline:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #fff;
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+/* System Info */
+.system-info {
+    padding: 1.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6366f1;
+}
+
+/* Glass Panel */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+}
+
+.mb-lg { margin-bottom: 1.5rem; }
+
+/* ========== 日间模式覆盖 ========== */
+[data-theme="light"] .glass-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .gradient-text {
+    background: linear-gradient(135deg, #1e293b, #4f46e5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .page-subtitle {
+    color: #64748b;
+}
+
+[data-theme="light"] .section-header {
+    border-bottom-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .section-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .setting-item {
+    background: rgba(248, 250, 252, 0.8);
+}
+
+[data-theme="light"] .setting-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .setting-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .setting-desc {
+    color: #64748b;
+}
+
+[data-theme="light"] .toggle-slider {
+    background: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme="light"] .btn-outline {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.2);
+    color: #475569;
+}
+
+[data-theme="light"] .btn-outline:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #4f46e5;
+}
+
+[data-theme="light"] .info-item {
+    background: rgba(248, 250, 252, 0.8);
+}
+
+[data-theme="light"] .info-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .info-value {
+    color: #4f46e5;
+}
+
+@media (max-width: 1024px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+// 设置管理器 - 统一管理所有设置的保存和恢复
+const SettingsManager = {
+    // 默认设置
+    defaults: {
+        'theme': 'dark',
+        'particles': true,
+        'animations': true,
+        'notification_orders': true,
+        'notification_stock': true,
+        'notification_system': true,
+        'ai_memory': true,
+        'ai_suggestions': false
+    },
+    
+    // 获取设置
+    get(key) {
+        const saved = localStorage.getItem('nexus-settings');
+        if (saved) {
+            try {
+                const settings = JSON.parse(saved);
+                return settings[key] !== undefined ? settings[key] : this.defaults[key];
+            } catch (e) {
+                return this.defaults[key];
+            }
+        }
+        return this.defaults[key];
+    },
+    
+    // 保存设置
+    set(key, value) {
+        let settings = {};
+        const saved = localStorage.getItem('nexus-settings');
+        if (saved) {
+            try {
+                settings = JSON.parse(saved);
+            } catch (e) {}
+        }
+        settings[key] = value;
+        localStorage.setItem('nexus-settings', JSON.stringify(settings));
+        console.log(`设置已保存: ${key} = ${value}`);
+    },
+    
+    // 获取所有设置
+    getAll() {
+        const saved = localStorage.getItem('nexus-settings');
+        if (saved) {
+            try {
+                return { ...this.defaults, ...JSON.parse(saved) };
+            } catch (e) {}
+        }
+        return { ...this.defaults };
+    }
+};
+
+// 加载系统统计
+fetch('{{ url_for("system.api_stats") }}')
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('user-count').textContent = data.users.toLocaleString();
+        document.getElementById('order-count').textContent = data.orders.toLocaleString();
+    })
+    .catch(() => {
+        document.getElementById('user-count').textContent = '--';
+        document.getElementById('order-count').textContent = '--';
+    });
+
+// 页面加载时恢复所有设置
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取所有开关元素
+    const switches = {
+        'darkMode': 'theme',
+        'particles': 'particles',
+        'animations': 'animations'
+    };
+    
+    // 初始化深色模式
+    const darkModeSwitch = document.getElementById('darkMode');
+    if (darkModeSwitch) {
+        // 使用统一的主题存储
+        const currentTheme = localStorage.getItem('nexus-theme') || SettingsManager.get('theme');
+        darkModeSwitch.checked = currentTheme === 'dark';
+    }
+    
+    // 初始化粒子开关
+    const particlesSwitch = document.getElementById('particles');
+    if (particlesSwitch) {
+        particlesSwitch.checked = SettingsManager.get('particles');
+        const particlesJs = document.getElementById('particles-js');
+        if (particlesJs) {
+            particlesJs.style.display = particlesSwitch.checked ? 'block' : 'none';
+        }
+    }
+    
+    // 初始化动画开关
+    const animationsSwitch = document.getElementById('animations');
+    if (animationsSwitch) {
+        animationsSwitch.checked = SettingsManager.get('animations');
+        if (!animationsSwitch.checked) {
+            document.body.classList.add('no-animations');
+        }
+    }
+    
+    // 初始化通知开关
+    document.querySelectorAll('.settings-list input[type="checkbox"]').forEach((checkbox, index) => {
+        const settingItem = checkbox.closest('.setting-item');
+        if (settingItem) {
+            const settingName = settingItem.querySelector('.setting-name')?.textContent.trim();
+            const key = 'setting_' + index;
+            const saved = localStorage.getItem(key);
+            if (saved !== null) {
+                checkbox.checked = saved === 'true';
+            }
+        }
+    });
+});
+
+// 深色模式开关
+const darkModeSwitch = document.getElementById('darkMode');
+if (darkModeSwitch) {
+    darkModeSwitch.addEventListener('change', function() {
+        const newTheme = this.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('nexus-theme', newTheme);
+        SettingsManager.set('theme', newTheme);
+        
+        // 更新顶部栏主题按钮图标
+        const themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+            const icon = themeBtn.querySelector('i');
+            if (newTheme === 'dark') {
+                icon.className = 'fas fa-sun';
+                themeBtn.title = '切换到日间模式';
+            } else {
+                icon.className = 'fas fa-moon';
+                themeBtn.title = '切换到夜间模式';
+            }
+        }
+        
+        // 更新粒子颜色
+        if(window.pJSDom && window.pJSDom.length) {
+            const particleColor = newTheme === 'dark' ? '#6366f1' : '#8b5cf6';
+            window.pJSDom[0].pJS.particles.color.value = particleColor;
+            window.pJSDom[0].pJS.particles.line_linked.color = particleColor;
+            window.pJSDom[0].pJS.fn.particlesRefresh();
+        }
+        
+        showSaveNotification('主题设置已保存');
+    });
+}
+
+// 粒子背景开关
+const particlesSwitch = document.getElementById('particles');
+if (particlesSwitch) {
+    particlesSwitch.addEventListener('change', function() {
+        const particlesJs = document.getElementById('particles-js');
+        if (particlesJs) {
+            particlesJs.style.display = this.checked ? 'block' : 'none';
+        }
+        SettingsManager.set('particles', this.checked);
+        showSaveNotification('粒子背景设置已保存');
+    });
+}
+
+// 动画效果开关
+const animationsSwitch = document.getElementById('animations');
+if (animationsSwitch) {
+    animationsSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.remove('no-animations');
+        } else {
+            document.body.classList.add('no-animations');
+        }
+        SettingsManager.set('animations', this.checked);
+        showSaveNotification('动画设置已保存');
+    });
+}
+
+// 为所有其他开关添加保存功能
+document.querySelectorAll('.settings-list input[type="checkbox"]').forEach((checkbox, index) => {
+    if (checkbox.id && ['darkMode', 'particles', 'animations'].includes(checkbox.id)) {
+        return; // 跳过已处理的开关
+    }
+    
+    checkbox.addEventListener('change', function() {
+        localStorage.setItem('setting_' + index, this.checked);
+        showSaveNotification('设置已保存');
+    });
+});
+
+// 显示保存通知
+function showSaveNotification(message) {
+    // 移除旧的通知
+    const oldNotif = document.querySelector('.save-notification');
+    if (oldNotif) oldNotif.remove();
+    
+    // 创建新通知
+    const notif = document.createElement('div');
+    notif.className = 'save-notification';
+    notif.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+    document.body.appendChild(notif);
+    
+    // 动画显示
+    setTimeout(() => notif.classList.add('show'), 10);
+    
+    // 3秒后移除
+    setTimeout(() => {
+        notif.classList.remove('show');
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
+}
+</script>
+
+<style>
+/* 保存通知样式 */
+.save-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.save-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 无动画模式 */
+.no-animations * {
+    animation: none !important;
+    transition: none !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,539 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}客户分析报表 - NEXUS{% endblock %}
+{% block breadcrumb %}数据分析 / 客户分析{% endblock %}
+
+{% block content %}
+<div class="report-page">
+    <!-- 页面头部 -->
+    <div class="report-header">
+        <a href="{{ url_for('reports.index') }}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            返回报表中心
+        </a>
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <h1>客户分析报表</h1>
+                <p>Customer Analytics · 深度洞察客户行为与价值</p>
+            </div>
+        </div>
+        <button class="export-btn" onclick="window.print()">
+            <i class="fas fa-print"></i>
+            打印报表
+        </button>
+    </div>
+
+    <!-- 核心指标 -->
+    <div class="metrics-grid">
+        <div class="metric-card purple">
+            <div class="metric-icon"><i class="fas fa-users"></i></div>
+            <div class="metric-info">
+                <span class="metric-value">{{ total_customers }}</span>
+                <span class="metric-label">客户总数</span>
+            </div>
+        </div>
+        <div class="metric-card green">
+            <div class="metric-icon"><i class="fas fa-user-plus"></i></div>
+            <div class="metric-info">
+                <span class="metric-value">{{ new_customers }}</span>
+                <span class="metric-label">本月新增</span>
+            </div>
+        </div>
+        <div class="metric-card blue">
+            <div class="metric-icon"><i class="fas fa-user-check"></i></div>
+            <div class="metric-info">
+                <span class="metric-value">{{ active_customers }}</span>
+                <span class="metric-label">活跃客户(30天)</span>
+            </div>
+        </div>
+        <div class="metric-card orange">
+            <div class="metric-icon"><i class="fas fa-percentage"></i></div>
+            <div class="metric-info">
+                <span class="metric-value">{{ "%.1f"|format(active_customers / total_customers * 100 if total_customers > 0 else 0) }}%</span>
+                <span class="metric-label">活跃率</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-grid">
+        <!-- 客户消费排行 -->
+        <div class="report-card">
+            <div class="card-header">
+                <h3><i class="fas fa-trophy"></i> 客户消费排行 TOP 20</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th width="50">#</th>
+                                <th>客户名称</th>
+                                <th>联系方式</th>
+                                <th>订单数</th>
+                                <th>消费总额</th>
+                                <th>注册时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in top_customers %}
+                            <tr>
+                                <td>
+                                    <span class="rank-badge rank-{{ loop.index }}">{{ loop.index }}</span>
+                                </td>
+                                <td><strong>{{ customer.name }}</strong></td>
+                                <td>{{ customer.phone or '-' }}</td>
+                                <td>{{ customer.order_count }}</td>
+                                <td class="amount">¥ {{ "{:,.2f}".format(customer.total_amount or 0) }}</td>
+                                <td>{{ customer.created_at.strftime('%Y-%m-%d') if customer.created_at else '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="empty-data">暂无客户数据</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 消费分布 -->
+        <div class="report-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> 消费金额分布</h3>
+            </div>
+            <div class="card-body">
+                <div id="distributionChart" style="height: 300px;"></div>
+                <div class="distribution-legend">
+                    {% for item in consumption_distribution %}
+                    <div class="legend-item">
+                        <span class="legend-dot" style="--color: {{ ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'][loop.index0 % 5] }}"></span>
+                        <span class="legend-label">{{ item.range }}</span>
+                        <span class="legend-value">{{ item.count }} 人</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近新增客户 -->
+    <div class="report-card full-width">
+        <div class="card-header">
+            <h3><i class="fas fa-user-clock"></i> 最近新增客户</h3>
+        </div>
+        <div class="card-body">
+            <div class="customer-grid">
+                {% for customer in recent_customers %}
+                <div class="customer-card">
+                    <div class="customer-avatar">
+                        {{ customer.name[:1] if customer.name else 'C' }}
+                    </div>
+                    <div class="customer-info">
+                        <strong>{{ customer.name }}</strong>
+                        <span>{{ customer.phone or customer.email or '-' }}</span>
+                        <small>{{ customer.created_at.strftime('%Y-%m-%d %H:%M') if customer.created_at else '-' }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-message">暂无新增客户</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-page {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 头部 */
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.header-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #ec4899, #f43f5e);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.header-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.header-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px var(--color-primary-glow);
+}
+
+/* 指标卡片 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.metric-card.purple .metric-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.metric-card.green .metric-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.metric-card.blue .metric-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.metric-card.orange .metric-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.metric-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* 报表卡片 */
+.report-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.report-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.report-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent);
+}
+
+.card-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header h3 i {
+    color: var(--color-primary);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 数据表格 */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.data-table th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.data-table td {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.data-table .amount {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+}
+
+.rank-badge.rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1f2937; }
+.rank-badge.rank-2 { background: linear-gradient(135deg, #9ca3af, #6b7280); color: white; }
+.rank-badge.rank-3 { background: linear-gradient(135deg, #d97706, #b45309); color: white; }
+
+.empty-data {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2rem !important;
+}
+
+/* 分布图例 */
+.distribution-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--color);
+}
+
+.legend-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.legend-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* 客户网格 */
+.customer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.customer-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.customer-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.customer-avatar {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #ec4899, #f43f5e);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.customer-info {
+    flex: 1;
+}
+
+.customer-info strong {
+    display: block;
+    color: var(--text-main);
+    margin-bottom: 0.2rem;
+}
+
+.customer-info span {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.customer-info small {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .report-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media print {
+    .back-btn, .export-btn { display: none !important; }
+}
+</style>
+
+<script>
+// 消费分布图
+const distributionChart = echarts.init(document.getElementById('distributionChart'));
+distributionChart.setOption({
+    tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+        textStyle: { color: '#e5e7eb' }
+    },
+    series: [{
+        type: 'pie',
+        radius: ['45%', '75%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+            borderRadius: 8,
+            borderColor: 'rgba(0,0,0,0.3)',
+            borderWidth: 2
+        },
+        label: { show: false },
+        emphasis: {
+            label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#fff' }
+        },
+        data: [
+            {% for item in consumption_distribution %}
+            { 
+                name: '{{ item.range }}', 
+                value: {{ item.count }},
+                itemStyle: { color: ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'][{{ loop.index0 }} % 5] }
+            },
+            {% endfor %}
+        ]
+    }]
+});
+window.addEventListener('resize', () => distributionChart.resize());
+</script>
+{% endblock %}

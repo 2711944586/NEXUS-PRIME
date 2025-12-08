@@ -1,0 +1,317 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}报表详情 - NEXUS{% endblock %}
+{% block breadcrumb %}通知中心 / 订阅报表 / 详情{% endblock %}
+
+{% block styles %}
+<style>
+.report-container {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.report-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.report-header {
+    padding: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.report-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+}
+
+.header-content {
+    flex: 1;
+}
+
+.report-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+}
+
+.report-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.meta-item i {
+    color: #6366f1;
+}
+
+.type-badge {
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.report-body {
+    padding: 2rem;
+}
+
+.report-section {
+    margin-bottom: 2rem;
+}
+
+.report-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-title i {
+    color: #6366f1;
+}
+
+.report-content {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.report-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #e2e8f0;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.report-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    color: #a5b4fc;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    transform: translateX(-4px);
+}
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
+
+/* 亮色模式 */
+[data-theme="light"] .report-card {
+    background: #fff;
+    border-color: rgba(99, 102, 241, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .report-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .report-content {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .report-content pre {
+    color: #334155;
+}
+
+[data-theme="light"] .info-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .info-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .report-header,
+[data-theme="light"] .report-footer {
+    border-color: rgba(99, 102, 241, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-card">
+        <div class="report-header">
+            <div class="report-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            
+            <div class="header-content">
+                <h1 class="report-title">{{ report.subscription.report_type | replace('_', ' ') | title }} 报表</h1>
+                <div class="report-meta">
+                    <span class="type-badge">
+                        {{ report.subscription.frequency }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        {{ report.generated_at.strftime('%Y-%m-%d %H:%M') if report.generated_at else '--' }}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-user"></i>
+                        {{ report.subscription.user.username if report.subscription.user else '系统' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="report-body">
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    报表信息
+                </h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">报表类型</div>
+                        <div class="info-value">{{ report.subscription.report_type | replace('_', ' ') | title }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">生成频率</div>
+                        <div class="info-value">{{ report.subscription.frequency }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">生成时间</div>
+                        <div class="info-value">{{ report.generated_at.strftime('%Y-%m-%d %H:%M:%S') if report.generated_at else '--' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">报表 ID</div>
+                        <div class="info-value">#{{ report.id }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="fas fa-file-code"></i>
+                    报表内容
+                </h3>
+                <div class="report-content">
+                    <pre>{{ report.content | default('暂无内容', true) }}</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="report-footer">
+            <a href="{{ url_for('notification.reports') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回列表
+            </a>
+            
+            {% if report.file_path %}
+            <a href="{{ url_for('static', filename=report.file_path) }}" class="download-btn" download>
+                <i class="fas fa-download"></i>
+                下载报表
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
