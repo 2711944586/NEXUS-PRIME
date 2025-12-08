@@ -36,8 +36,8 @@ def create_app(config_name='default'):
     # 6. 注册 CLI 命令
     register_commands(app)
 
-    # 7. 生产环境自动初始化数据库
-    auto_init_database(app)
+    # 7. 生产环境自动初始化数据库（已禁用，全部使用本地数据库内容）
+    # auto_init_database(app)
 
     return app
 

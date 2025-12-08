@@ -10,7 +10,7 @@ ENV/
 
 # Flask
 instance/
-*.db
+## *.db 已允许上传，nexus_prime.db 需纳入版本控制
 .webassets-cache
 
 # 环境变量
