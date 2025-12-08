@@ -143,8 +143,14 @@ python run.py
 ```env
 FLASK_ENV=production
 SECRET_KEY=<运行 python -c "import secrets; print(secrets.token_hex(32))" 生成>
+DEEPSEEK_API_KEY=<你的DeepSeek API密钥，可选>
 AI_FALLBACK=true
 ```
+
+> 💡 **AI 功能说明**：
+> - 如果有 DeepSeek API Key，填入 `DEEPSEEK_API_KEY` 即可使用 AI 助手
+> - 如果没有，设置 `AI_FALLBACK=true` 使用本地回退模式
+> - DeepSeek API 申请：https://platform.deepseek.com
 
 ### 步骤 4: 初始化数据库
 

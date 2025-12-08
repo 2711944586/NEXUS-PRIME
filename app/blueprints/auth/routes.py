@@ -212,154 +212,212 @@ def init_admin():
 
 @auth_bp.route('/init-full-data')
 def init_full_data():
-    """生成完整测试数据（包含用户、产品、订单等）- 仅首次使用"""
+    """
+    生成完整测试数据（和本地 flask forge 一样的规模）
+    包含：用户、产品、订单、库存、图表数据等
+    """
     import random
     from datetime import datetime, timedelta
-    from app.models.biz import Category, Product, Partner
+    from app.models.biz import Category, Product, Partner, Tag
     from app.models.stock import Warehouse, Stock, InventoryLog
     from app.models.trade import Order, OrderItem
+    from app.models.content import Article
+    
+    scale = 3  # 数据规模倍数（Railway用小一点，避免超时）
     
     try:
         # 检查是否已有数据
-        if Product.query.count() > 0:
+        if Product.query.count() > 10:
             return jsonify({
                 'status': 'exists',
                 'message': '数据已存在，无需重复生成',
                 'stats': {
                     'users': User.query.count(),
                     'products': Product.query.count(),
-                    'orders': Order.query.count()
+                    'orders': Order.query.count(),
+                    'warehouses': Warehouse.query.count()
                 }
             })
         
-        # 1. 确保有角色和部门
-        admin_role = Role.query.filter_by(name='Admin').first()
-        if not admin_role:
-            admin_role = Role(name='Admin', is_admin=True)
-            manager_role = Role(name='Manager', is_admin=False)
-            user_role = Role(name='User', is_admin=False)
-            db.session.add_all([admin_role, manager_role, user_role])
-        else:
-            manager_role = Role.query.filter_by(name='Manager').first()
-            user_role = Role.query.filter_by(name='User').first()
+        # ========== 1. 角色和部门 ==========
+        roles = {}
+        for r in ['Admin', 'Manager', 'User']:
+            role = Role.query.filter_by(name=r).first()
+            if not role:
+                role = Role(name=r, is_admin=(r == 'Admin'))
+                db.session.add(role)
+            roles[r] = role
         
-        # 部门
-        dept_names = ['指挥部', '研发部', '市场部', '后勤部', '量子计算中心']
+        dept_names = ['指挥部', '研发部', '市场部', '后勤部', '深空探索部', 
+                      '量子计算中心', '生物工程实验室', '防御系统部', '能源管理部', '星际贸易部']
         depts = []
-        for i, name in enumerate(dept_names):
-            d = Department.query.filter_by(name=name).first()
+        for i, d_name in enumerate(dept_names):
+            d = Department.query.filter_by(name=d_name).first()
             if not d:
-                d = Department(name=name, code=f'D{i+1:02d}')
+                d = Department(name=d_name, code=f'DEPT{i:02d}')
                 db.session.add(d)
             depts.append(d)
         db.session.commit()
         
-        # 2. 创建管理员（如果不存在）
+        # ========== 2. 管理员和用户 ==========
         if not User.query.filter_by(email='admin@nexus.com').first():
             admin = User(
                 username='Commander',
                 email='admin@nexus.com',
                 password='admin',
-                role=admin_role,
-                department=depts[0]
+                role=roles['Admin'],
+                department=depts[0],
+                avatar='https://ui-avatars.com/api/?name=Commander&background=6366f1&color=fff'
             )
             db.session.add(admin)
         
-        # 3. 创建测试用户 (20个)
-        for i in range(20):
-            u = User(
-                username=f'user_{i+1}',
-                email=f'user{i+1}@nexus.com',
-                password='password',
-                role=random.choice([manager_role, user_role]),
-                department=random.choice(depts)
-            )
-            db.session.add(u)
+        # 生成员工 (50 * scale)
+        user_count = 50 * scale
+        for i in range(user_count):
+            if not User.query.filter_by(email=f'user{i}@nexus.com').first():
+                u = User(
+                    username=f'employee_{i+1}',
+                    email=f'user{i}@nexus.com',
+                    password='password',
+                    role=random.choice([roles['Manager'], roles['User']]),
+                    department=random.choice(depts),
+                    avatar=f'https://ui-avatars.com/api/?name=U{i}&background=random'
+                )
+                db.session.add(u)
         db.session.commit()
         
-        # 4. 创建分类
-        cat_names = ['能源核心', '生物组件', '防御系统', '计算终端', '原材料']
+        # ========== 3. 分类和标签 ==========
         cats = []
-        for name in cat_names:
-            c = Category(name=name, icon='box')
-            db.session.add(c)
+        category_names = ['能源核心', '生物组件', '防御系统', '计算终端', '原材料',
+                         '量子芯片', '纳米材料', '星际引擎', '通讯设备', '医疗器械']
+        for c_name in category_names:
+            c = Category.query.filter_by(name=c_name).first()
+            if not c:
+                c = Category(name=c_name, icon='box')
+                db.session.add(c)
             cats.append(c)
+        
+        tags = []
+        tag_data = [('热销', 'red'), ('新品', 'green'), ('军用级', 'purple'), ('民用', 'blue'),
+                   ('限量版', 'orange'), ('预售', 'cyan'), ('折扣', 'yellow'), ('VIP专属', 'pink')]
+        for t_name, color in tag_data:
+            t = Tag.query.filter_by(name=t_name).first()
+            if not t:
+                t = Tag(name=t_name, color=color)
+                db.session.add(t)
+            tags.append(t)
         db.session.commit()
         
-        # 5. 创建供应商/客户
+        # ========== 4. 合作伙伴 ==========
         partners = []
-        for i in range(10):
+        partner_count = 30 * scale // 5
+        for i in range(partner_count):
             p = Partner(
-                name=f'合作伙伴-{i+1}',
-                type=random.choice(['supplier', 'customer', 'both']),
+                name=f'星际企业-{i+1:03d}',
+                type=random.choice(['customer', 'supplier']),
                 contact=f'联系人{i+1}',
                 phone=f'1380000{i:04d}',
-                email=f'partner{i+1}@example.com'
+                email=f'partner{i}@galaxy.com',
+                address=f'深空站点-{random.randint(1,100)}区'
             )
             db.session.add(p)
             partners.append(p)
         db.session.commit()
         
-        # 6. 创建产品 (50个)
+        # ========== 5. 产品 ==========
         products = []
-        product_names = ['量子芯片', '纳米材料', '等离子电池', '生物传感器', '引力模块',
-                        '超导线圈', '反物质容器', '神经接口', '全息投影仪', '时空稳定器']
-        for i in range(50):
+        product_names = ['量子处理器', '反物质电池', '曲率引擎', '神经接口', '全息投影仪',
+                        '等离子护盾', '引力发生器', '时空稳定器', '生物芯片', '纳米修复液']
+        product_count = 100 * scale
+        suppliers = [p for p in partners if p.type == 'supplier']
+        
+        for i in range(product_count):
             p = Product(
-                name=f'{random.choice(product_names)}-{i+1:03d}',
-                sku=f'SKU{i+1:05d}',
+                sku=f'SKU-{i+1:05d}',
+                name=f'{random.choice(product_names)}-MK{random.randint(1,99):02d}',
+                price=round(random.uniform(100, 50000), 2),
+                cost=round(random.uniform(50, 25000), 2),
                 category=random.choice(cats),
-                price=round(random.uniform(100, 10000), 2),
-                cost=round(random.uniform(50, 5000), 2),
                 unit='件',
                 min_stock=random.randint(10, 50),
-                max_stock=random.randint(100, 500)
+                max_stock=random.randint(200, 1000),
+                description=f'高科技产品，适用于深空探索和星际贸易。'
             )
+            if tags:
+                p.tags = random.sample(tags, k=random.randint(0, 3))
             db.session.add(p)
             products.append(p)
+            if (i + 1) % 100 == 0:
+                db.session.commit()
         db.session.commit()
         
-        # 7. 创建仓库
+        # ========== 6. 仓库和库存 ==========
+        warehouse_data = [
+            ('主枢纽仓 (Alpha)', 'Sector 1 - 地球轨道'),
+            ('保税仓 (Beta)', 'Sector 7 - 拉格朗日点'),
+            ('深空冷库 (Zero)', 'Moon Base - 月球背面'),
+            ('火星中转站 (Mars-1)', 'Mars Colony - 奥林帕斯'),
+        ]
         warehouses = []
-        wh_names = ['主仓库 (Alpha)', '备用仓库 (Beta)', '冷链仓库 (Gamma)']
-        for name in wh_names:
-            w = Warehouse(name=name, code=name.split()[0], address='深空站点')
-            db.session.add(w)
-            warehouses.append(w)
+        for name, loc in warehouse_data:
+            wh = Warehouse.query.filter_by(name=name).first()
+            if not wh:
+                wh = Warehouse(name=name, location=loc, address=loc)
+                db.session.add(wh)
+            warehouses.append(wh)
         db.session.commit()
         
-        # 8. 创建库存
-        for p in products:
-            for w in warehouses:
-                s = Stock(
-                    product_id=p.id,
-                    warehouse_id=w.id,
-                    quantity=random.randint(50, 500)
-                )
-                db.session.add(s)
+        # 库存和流水
+        admin_user = User.query.filter_by(email='admin@nexus.com').first()
+        for i, prod in enumerate(products):
+            for wh in random.sample(warehouses, k=random.randint(1, 3)):
+                qty = random.randint(50, 2000)
+                stock = Stock.query.filter_by(product_id=prod.id, warehouse_id=wh.id).first()
+                if not stock:
+                    stock = Stock(product_id=prod.id, warehouse_id=wh.id, quantity=qty)
+                    db.session.add(stock)
+                    
+                    # 库存流水
+                    log = InventoryLog(
+                        transaction_code=f'INIT-{i:05d}-{wh.id}',
+                        move_type='inbound',
+                        product_id=prod.id,
+                        warehouse_id=wh.id,
+                        qty_change=qty,
+                        balance_after=qty,
+                        operator_id=admin_user.id if admin_user else 1,
+                        remark='系统初始化入库'
+                    )
+                    db.session.add(log)
+            if (i + 1) % 100 == 0:
+                db.session.commit()
         db.session.commit()
         
-        # 9. 创建订单 (30个)
-        customers = [p for p in partners if p.type in ('customer', 'both')]
+        # ========== 7. 订单 ==========
+        customers = [p for p in partners if p.type == 'customer']
         users = User.query.all()
-        for i in range(30):
+        order_count = 200 * scale
+        
+        for i in range(order_count):
+            delta_days = random.randint(0, 60)
+            order_date = datetime.utcnow() - timedelta(days=delta_days)
+            
             order = Order(
-                order_no=f'ORD{datetime.now().strftime("%Y%m%d")}{i+1:04d}',
+                order_no=f'ORD-{20250000+i}',
                 type=random.choice(['sale', 'purchase']),
-                status=random.choice(['pending', 'confirmed', 'shipped', 'completed']),
+                status=random.choice(['pending', 'confirmed', 'shipped', 'completed', 'completed', 'completed']),
                 partner_id=random.choice(customers).id if customers else None,
                 user_id=random.choice(users).id,
                 total_amount=0,
-                created_at=datetime.now() - timedelta(days=random.randint(0, 30))
+                created_at=order_date
             )
             db.session.add(order)
             db.session.flush()
             
-            # 订单明细
             total = 0
-            for j in range(random.randint(1, 5)):
+            for j in range(random.randint(1, 8)):
                 prod = random.choice(products)
-                qty = random.randint(1, 10)
+                qty = random.randint(1, 20)
                 item = OrderItem(
                     order_id=order.id,
                     product_id=prod.id,
@@ -369,22 +427,48 @@ def init_full_data():
                 db.session.add(item)
                 total += qty * float(prod.price)
             order.total_amount = total
+            
+            if (i + 1) % 50 == 0:
+                db.session.commit()
+        db.session.commit()
         
+        # ========== 8. 文章/公告 ==========
+        articles_data = [
+            ("关于系统升级至 NEXUS V3.0 的通知", "重大更新：全新科幻界面，强大AI助手。"),
+            ("2025年度 Q1 销售冠军表彰", "恭喜深空探索部创造历史最高销售记录！"),
+            ("新产品线【泰坦机甲】即将上线", "最新军用级装备，预计下月投入量产。"),
+            ("量子计算中心扩容完成", "算力提升100倍，支持更复杂的星际导航计算。"),
+            ("AI智脑系统全面升级", "集成DeepSeek最新模型，对话能力大幅提升。"),
+        ]
+        for title, content in articles_data:
+            if not Article.query.filter_by(title=title).first():
+                article = Article(
+                    title=title,
+                    content=content,
+                    author_id=admin_user.id if admin_user else 1,
+                    status='published'
+                )
+                db.session.add(article)
         db.session.commit()
         
         return jsonify({
             'status': 'success',
-            'message': '✅ 完整测试数据生成成功！',
+            'message': '✅ 完整测试数据生成成功！和本地 flask forge 效果一致',
             'stats': {
                 'users': User.query.count(),
+                'departments': Department.query.count(),
                 'products': Product.query.count(),
+                'categories': Category.query.count(),
+                'partners': Partner.query.count(),
+                'warehouses': Warehouse.query.count(),
                 'orders': Order.query.count(),
-                'warehouses': Warehouse.query.count()
+                'inventory_logs': InventoryLog.query.count()
             },
             'admin': {
                 'email': 'admin@nexus.com',
                 'password': 'admin'
-            }
+            },
+            'scale': f'{scale}x (用户:{50*scale}, 产品:{100*scale}, 订单:{200*scale})'
         })
         
     except Exception as e:
