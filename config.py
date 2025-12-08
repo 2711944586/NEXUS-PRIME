@@ -45,7 +45,7 @@ class ProductionConfig(Config):
     
     # Railway 数据库 URL 兼容
     DATABASE_URL = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'instance', 'nexus_prod.db')
+        'sqlite:///' + os.path.join(basedir, 'instance', 'nexus_prime.db')
     # PostgreSQL URL 修正（Railway 使用 postgres://）
     if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
