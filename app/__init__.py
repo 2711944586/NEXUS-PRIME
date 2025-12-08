@@ -47,37 +47,121 @@ def auto_init_database(app):
     import os
     import random
     from datetime import datetime, timedelta
-    
     flask_env = os.environ.get('FLASK_ENV', '')
-    # 生产环境或检测到 DATABASE_URL 时自动初始化
     if flask_env == 'production' or os.environ.get('DATABASE_URL'):
         with app.app_context():
             try:
                 from sqlalchemy import inspect
+                from app.extensions import db
                 from app.models.auth import User, Role, Department
                 from app.models.biz import Category, Product, Partner, Tag
                 from app.models.stock import Warehouse, Stock, InventoryLog
                 from app.models.trade import Order, OrderItem
                 from app.models.content import Article
+                from app.models.finance import AccountStatement, Receivable, PaymentRecord, CustomerCredit
+                from app.models.notification import Notification, StockAlert
+                from app.models.stocktake import StockTake, StockTakeItem, StockTakeHistory
+                from app.services.report_service import ReportService
+                from app.utils.fake_gen import fake
                 
                 inspector = inspect(db.engine)
                 tables = inspector.get_table_names()
-                
-                # 如果表不存在，创建所有表
                 if 'auth_users' not in tables:
                     app.logger.info('🚀 首次启动，正在创建数据库表...')
                     db.create_all()
-                    tables = []  # 标记需要生成数据
-                
-                # 检查是否已有数据
+                    tables = []
                 user_count = 0
                 try:
                     user_count = User.query.count()
                 except:
                     pass
-                
                 if user_count == 0:
-                    app.logger.info('📦 正在生成完整测试数据...')
+                    app.logger.info('📦 正在生成全量演示数据...')
+                    # 1. 组织架构
+                    scale = 100
+                    from app.commands import init_auth, init_biz, init_stock, init_trade, init_cms
+                    init_auth(scale)
+                    products = init_biz(scale)
+                    init_stock(products, scale)
+                    init_trade(products, scale)
+                    init_cms(scale)
+                    db.session.commit()
+                    # 2. 财务对账单
+                    try:
+                        from app.commands import forge_finance
+                        forge_finance.callback()
+                    except Exception as e:
+                        app.logger.warning(f'生成财务数据失败: {e}')
+                    # 3. 盘点单
+                    admin = User.query.filter_by(email='admin@nexus.com').first() or User.query.first()
+                    warehouses = Warehouse.query.limit(10).all()
+                    for i, wh in enumerate(warehouses):
+                        for j in range(10):
+                            take = StockTake(
+                                take_no=f"ST-{wh.id}-{i*10+j}",
+                                warehouse_id=wh.id,
+                                take_type='full',
+                                status='completed',
+                                planned_date=datetime.now().date(),
+                                started_at=datetime.now(),
+                                completed_at=datetime.now(),
+                                created_by=admin.id,
+                                total_items=100,
+                                counted_items=100,
+                                variance_items=random.randint(0, 5),
+                                remark="系统自动生成盘点单"
+                            )
+                            db.session.add(take)
+                    db.session.commit()
+                    # 4. 通知
+                    for i in range(1000):
+                        n = Notification(
+                            user_id=admin.id,
+                            title=f"系统通知 {i+1}",
+                            content=f"这是第{i+1}条自动生成的系统通知。",
+                            type=random.choice(['info','warning','alert','success']),
+                            category=random.choice(['system','stock','order','approval','report']),
+                            related_type=random.choice(['product','order','purchase_order','report']),
+                            related_id=random.randint(1, 10000),
+                            is_read=random.choice([True, False]),
+                            read_at=datetime.now() if random.random()>0.5 else None
+                        )
+                        db.session.add(n)
+                    db.session.commit()
+                    # 5. 库存预警
+                    for i in range(500):
+                        sa = StockAlert(
+                            product_id=random.randint(1, 10000),
+                            warehouse_id=random.randint(1, 20),
+                            alert_level=random.choice(['yellow','red']),
+                            status=random.choice(['active','resolved','ignored'])
+                        )
+                        db.session.add(sa)
+                    db.session.commit()
+                    # 6. AI摘要
+                    for p in Product.query.limit(1000):
+                        p.ai_summary = fake.paragraph(nb_sentences=5)
+                    db.session.commit()
+                    # 7. 报表/订阅
+                    try:
+                        for rt in ReportService.REPORT_TYPES.keys():
+                            for i in range(10):
+                                data, err = ReportService.generate_report(rt)
+                                if data:
+                                    from app.models.notification import GeneratedReport
+                                    gr = GeneratedReport(
+                                        subscription_id=None,
+                                        report_type=rt,
+                                        report_name=ReportService.REPORT_TYPES[rt]['name'],
+                                        report_data=data,
+                                        generated_at=datetime.utcnow(),
+                                        generated_by=admin.id
+                                    )
+                                    db.session.add(gr)
+                        db.session.commit()
+                    except Exception as e:
+                        app.logger.warning(f'生成报表数据失败: {e}')
+                    app.logger.info('✅ 全量演示数据生成完毕！')
                     _generate_full_data(app, db)
                     app.logger.info('✅ 数据初始化完成！管理员: admin@nexus.com / admin')
                     
