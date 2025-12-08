@@ -233,8 +233,7 @@ MIT License
 ---
 
 ## 👨‍💻 作者
-
-NEXUS PRIME Team
+庄颂
 
 ---
 

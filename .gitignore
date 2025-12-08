@@ -9,7 +9,8 @@ env/
 ENV/
 
 # Flask
-instance/
+instance/*
+!instance/nexus_prime.db
 ## *.db 已允许上传，nexus_prime.db 需纳入版本控制
 .webassets-cache
 
