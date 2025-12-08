@@ -152,3 +152,59 @@ def terms():
 def privacy():
     """隐私政策页面"""
     return render_template('auth/privacy.html')
+
+
+@auth_bp.route('/init-admin')
+def init_admin():
+    """初始化管理员账户（仅首次使用）"""
+    try:
+        # 检查是否已有管理员
+        admin = User.query.filter_by(email='admin@nexus.com').first()
+        if admin:
+            return jsonify({
+                'status': 'exists',
+                'message': '管理员已存在，请使用 admin@nexus.com / admin 登录'
+            })
+        
+        # 创建角色
+        admin_role = Role.query.filter_by(name='Admin').first()
+        if not admin_role:
+            admin_role = Role(name='Admin', is_admin=True)
+            db.session.add(admin_role)
+        
+        user_role = Role.query.filter_by(name='User').first()
+        if not user_role:
+            user_role = Role(name='User', is_admin=False)
+            db.session.add(user_role)
+        
+        # 创建部门
+        dept = Department.query.first()
+        if not dept:
+            dept = Department(name='总部', code='HQ')
+            db.session.add(dept)
+        
+        db.session.commit()
+        
+        # 创建管理员
+        admin = User(
+            username='Commander',
+            email='admin@nexus.com',
+            password='admin',
+            role=admin_role,
+            department=dept
+        )
+        db.session.add(admin)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': '✅ 管理员创建成功！请使用 admin@nexus.com / admin 登录',
+            'email': 'admin@nexus.com',
+            'password': 'admin'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': f'创建失败: {str(e)}'
+        })
