@@ -36,7 +36,48 @@ def create_app(config_name='default'):
     # 6. 注册 CLI 命令
     register_commands(app)
 
+    # 7. 生产环境自动初始化数据库
+    auto_init_database(app)
+
     return app
+
+
+def auto_init_database(app):
+    """生产环境自动初始化数据库表和管理员账户"""
+    import os
+    if os.environ.get('FLASK_ENV') == 'production':
+        with app.app_context():
+            try:
+                from app.models.auth import User, Role, Department
+                # 检查是否已有表
+                inspector = db.inspect(db.engine)
+                if not inspector.has_table('auth_users'):
+                    app.logger.info('🚀 首次启动，正在创建数据库表...')
+                    db.create_all()
+                    
+                    # 创建基础角色
+                    admin_role = Role(name='Admin', is_admin=True)
+                    user_role = Role(name='User', is_admin=False)
+                    db.session.add_all([admin_role, user_role])
+                    
+                    # 创建默认部门
+                    dept = Department(name='总部', code='HQ')
+                    db.session.add(dept)
+                    db.session.commit()
+                    
+                    # 创建管理员
+                    admin = User(
+                        username='Commander',
+                        email='admin@nexus.com',
+                        password='admin',
+                        role=admin_role,
+                        department=dept
+                    )
+                    db.session.add(admin)
+                    db.session.commit()
+                    app.logger.info('✅ 数据库初始化完成！管理员: admin@nexus.com / admin')
+            except Exception as e:
+                app.logger.warning(f'数据库初始化检查: {e}')
 
 
 def register_blueprints(app):
