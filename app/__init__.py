@@ -45,13 +45,18 @@ def create_app(config_name='default'):
 def auto_init_database(app):
     """生产环境自动初始化数据库表和管理员账户"""
     import os
-    if os.environ.get('FLASK_ENV') == 'production':
+    flask_env = os.environ.get('FLASK_ENV', '')
+    # 生产环境或检测到 DATABASE_URL 时自动初始化
+    if flask_env == 'production' or os.environ.get('DATABASE_URL'):
         with app.app_context():
             try:
                 from app.models.auth import User, Role, Department
+                from sqlalchemy import inspect
                 # 检查是否已有表
-                inspector = db.inspect(db.engine)
-                if not inspector.has_table('auth_users'):
+                inspector = inspect(db.engine)
+                tables = inspector.get_table_names()
+                
+                if 'auth_users' not in tables:
                     app.logger.info('🚀 首次启动，正在创建数据库表...')
                     db.create_all()
                     
@@ -76,8 +81,35 @@ def auto_init_database(app):
                     db.session.add(admin)
                     db.session.commit()
                     app.logger.info('✅ 数据库初始化完成！管理员: admin@nexus.com / admin')
+                else:
+                    # 表已存在，检查是否有管理员
+                    admin_count = User.query.filter_by(email='admin@nexus.com').count()
+                    if admin_count == 0:
+                        app.logger.info('⚠️ 表存在但无管理员，正在创建...')
+                        admin_role = Role.query.filter_by(name='Admin').first()
+                        if not admin_role:
+                            admin_role = Role(name='Admin', is_admin=True)
+                            db.session.add(admin_role)
+                        dept = Department.query.first()
+                        if not dept:
+                            dept = Department(name='总部', code='HQ')
+                            db.session.add(dept)
+                        db.session.commit()
+                        
+                        admin = User(
+                            username='Commander',
+                            email='admin@nexus.com',
+                            password='admin',
+                            role=admin_role,
+                            department=dept
+                        )
+                        db.session.add(admin)
+                        db.session.commit()
+                        app.logger.info('✅ 管理员创建完成！')
             except Exception as e:
-                app.logger.warning(f'数据库初始化检查: {e}')
+                app.logger.error(f'❌ 数据库初始化错误: {e}')
+                import traceback
+                app.logger.error(traceback.format_exc())
 
 
 def register_blueprints(app):
