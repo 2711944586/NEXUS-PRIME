@@ -1,0 +1,24 @@
+erDiagram
+  auth_users }o--|| auth_roles : "has role"
+  auth_users }o--|| auth_departments : "belongs to"
+
+  biz_products }o--|| biz_categories : "in category"
+  biz_products }o--|| biz_partners : "supplier"
+  biz_products }o--o{ biz_tags : "tagged via biz_product_tags"
+
+  stock_quantities }o--|| biz_products : "product"
+  stock_quantities }o--|| stock_warehouses : "warehouse"
+  stock_logs }o--|| biz_products : "for product"
+  stock_logs }o--|| stock_warehouses : "in warehouse"
+
+  trade_orders }o--|| biz_partners : "customer"
+  trade_order_items }o--|| trade_orders : "in order"
+  trade_order_items }o--|| biz_products : "product"
+
+  cms_attachments }o--|| cms_articles : "belongs to"
+
+  finance_payments }o--|| finance_receivables : "settles"
+  finance_statements }o--|| biz_partners : "for partner"
+
+  sys_ai_messages }o--|| sys_ai_sessions : "in session"
+

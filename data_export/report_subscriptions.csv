@@ -1,0 +1,4 @@
+user_id,report_type,frequency,send_email,send_notification,send_hour,send_weekday,send_day,is_active,last_sent_at,id,created_at,updated_at,is_deleted
+1,sales_daily,daily,1,1,8,1,1,1,,1,2025-12-02 15:26:36.915898,2025-12-02 15:26:36.915900,0
+1,inventory,daily,1,1,7,1,1,1,,2,2025-12-02 15:26:36.918391,2025-12-02 15:26:36.918393,0
+1,receivable,weekly,1,1,9,1,1,1,,3,2025-12-02 15:26:36.918893,2025-12-02 15:26:36.918895,0

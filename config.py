@@ -32,6 +32,10 @@ class Config:
         # 确保上传目录存在
         if not os.path.exists(Config.UPLOAD_FOLDER):
             os.makedirs(Config.UPLOAD_FOLDER)
+        # 确保 instance 目录存在
+        instance_path = os.path.join(basedir, 'instance')
+        if not os.path.exists(instance_path):
+            os.makedirs(instance_path)
 
 class DevelopmentConfig(Config):
     """开发环境配置"""
@@ -60,7 +64,32 @@ class ProductionConfig(Config):
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-        # 生产环境日志配置 (可在此添加邮件通知等)
+        # 生产环境日志配置
+        import logging
+        from logging.handlers import RotatingFileHandler
+        import sys
+
+        # 将日志输出到 stdout
+        log_formatter = logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        )
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(log_formatter)
+        stream_handler.setLevel(logging.INFO)
+        app.logger.addHandler(stream_handler)
+
+        # 如果需要，也可以保留文件日志
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        file_handler = RotatingFileHandler(
+            'logs/nexus_prime.log', maxBytes=10240, backupCount=10
+        )
+        file_handler.setFormatter(log_formatter)
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Nexus Prime startup')
 
 class TestingConfig(Config):
     TESTING = True
