@@ -20,8 +20,4 @@ login_manager.login_message_category = 'warning'  # 消息类别
 login_manager.session_protection = 'strong'
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    """Flask-Login 用户加载回调"""
-    from app.models import User
-    return User.query.get(int(user_id))
+# user_loader 在 app/models/auth.py 中定义，避免重复

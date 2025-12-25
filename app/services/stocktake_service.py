@@ -258,17 +258,15 @@ class StockTakeService:
         stock.quantity = item.actual_qty
         
         # 创建库存日志
-        log_type = 'stocktake_gain' if item.variance_qty > 0 else 'stocktake_loss'
+        log_type = 'check'  # 盘点调整
         log = InventoryLog(
+            transaction_code=stocktake.take_no,
+            move_type=log_type,
             product_id=item.product_id,
             warehouse_id=stocktake.warehouse_id,
-            type=log_type,
-            quantity=abs(item.variance_qty),
-            before_qty=old_qty,
-            after_qty=item.actual_qty,
-            reference_type='stocktake',
-            reference_id=stocktake.id,
-            remark=f"盘点调整: {stocktake.take_no}, 原因: {item.adjustment_reason or '正常盘点'}",
+            qty_change=item.variance_qty,
+            balance_after=item.actual_qty,
+            remark=f"盘点调整: {stocktake.take_no}, 原因: {item.remark or '正常盘点'}",
             operator_id=user.id
         )
         db.session.add(log)

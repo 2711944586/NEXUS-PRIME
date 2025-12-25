@@ -80,7 +80,7 @@ def edit():
     return render_template('profile/edit.html', form=form)
 
 def save_avatar(file):
-    """保存头像图片并生成缩略图"""
+    """保存头像图片（支持云存储和本地存储）"""
     try:
         # 检查文件是否有效
         if not file or not file.filename:
@@ -101,7 +101,20 @@ def save_avatar(file):
         if ext not in ['.jpg', '.jpeg', '.png', '.gif']:
             current_app.logger.warning(f'不支持的文件格式: {ext}')
             return None
-            
+        
+        # 检查是否使用云存储
+        from app.utils.cloud_storage import is_cloud_storage_enabled, upload_avatar_to_cloud
+        
+        if is_cloud_storage_enabled():
+            current_app.logger.info('使用云存储上传头像')
+            cloud_url = upload_avatar_to_cloud(file)
+            if cloud_url:
+                current_app.logger.info(f'头像云存储 URL: {cloud_url}')
+                return cloud_url  # 返回完整的云存储 URL
+            else:
+                current_app.logger.warning('云存储上传失败，回退到本地存储')
+        
+        # 本地存储模式
         filename = f"{uuid.uuid4().hex}{ext}"
         
         # 确保目录存在

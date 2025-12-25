@@ -1,7 +1,7 @@
 """
 系统管理模块 - 系统设置、审计日志、通知中心
 """
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
 from sqlalchemy import desc, func
 from datetime import datetime, timedelta
@@ -11,19 +11,22 @@ from app.models.stock import InventoryLog
 from app.models.trade import Order
 from app.models.auth import User
 from app.models.content import Article
+from app.utils.permissions import admin_required
 
 
 @bp.route('/settings')
 @login_required
+@admin_required
 def settings():
-    """系统设置页面"""
+    """系统设置页面 - 仅管理员"""
     return render_template('system/settings.html')
 
 
 @bp.route('/audit-log')
 @login_required
+@admin_required
 def audit_log():
-    """审计日志查看器"""
+    """审计日志查看器 - 仅管理员"""
     page = request.args.get('page', 1, type=int)
     per_page = 50
     
@@ -142,8 +145,9 @@ def notifications():
 
 @bp.route('/team')
 @login_required
+@admin_required
 def team():
-    """团队仪表板"""
+    """团队仪表板 - 仅管理员"""
     # 按部门统计用户
     from app.models.auth import Department
     
@@ -176,8 +180,9 @@ def team():
 
 @bp.route('/team/add-member', methods=['POST'])
 @login_required
+@admin_required
 def add_member():
-    """添加团队成员"""
+    """添加团队成员 - 仅管理员"""
     from flask import flash, redirect, url_for
     from app.models.auth import Department
     from werkzeug.security import generate_password_hash
@@ -296,8 +301,9 @@ def ai_settings():
 
 @bp.route('/import')
 @login_required
+@admin_required
 def data_import():
-    """数据导入页面"""
+    """数据导入页面 - 仅管理员"""
     from app.services.import_service import ImportService
     templates = ImportService.TEMPLATES
     return render_template('system/import.html', templates=templates)
@@ -305,8 +311,9 @@ def data_import():
 
 @bp.route('/import/template/<template_type>')
 @login_required
+@admin_required
 def download_template(template_type):
-    """下载导入模板"""
+    """下载导入模板 - 仅管理员"""
     from flask import make_response
     from app.services.import_service import ImportService
     
@@ -325,8 +332,9 @@ def download_template(template_type):
 
 @bp.route('/import/upload/<template_type>', methods=['POST'])
 @login_required
+@admin_required
 def upload_import(template_type):
-    """上传导入文件"""
+    """上传导入文件 - 仅管理员"""
     from app.services.import_service import ImportService
     
     if 'file' not in request.files:

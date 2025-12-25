@@ -21,10 +21,10 @@ class ImportService:
     TEMPLATES = {
         'product': {
             'name': '商品导入',
-            'required_fields': ['name', 'sku', 'unit', 'category'],
-            'optional_fields': ['spec', 'cost', 'price', 'min_stock', 'description'],
+            'required_fields': ['name', 'sku', 'category'],
+            'optional_fields': ['cost', 'price', 'min_stock', 'max_stock', 'description'],
             'sample_data': [
-                {'name': '示例商品', 'sku': 'SKU001', 'unit': '个', 'category': '默认分类', 'cost': '10.00', 'price': '15.00'}
+                {'name': '示例商品', 'sku': 'SKU001', 'category': '默认分类', 'cost': '10.00', 'price': '15.00'}
             ]
         },
         'partner': {
@@ -151,11 +151,10 @@ class ImportService:
                 if existing:
                     if update_existing:
                         existing.name = d['name']
-                        existing.unit = d['unit']
-                        existing.spec = d.get('spec', '')
                         existing.cost = float(d.get('cost', 0)) if d.get('cost') else None
                         existing.price = float(d.get('price', 0)) if d.get('price') else None
                         existing.min_stock = int(d.get('min_stock', 0)) if d.get('min_stock') else 0
+                        existing.max_stock = int(d.get('max_stock', 0)) if d.get('max_stock') else 1000
                         existing.description = d.get('description', '')
                         success_count += 1
                     else:
@@ -166,10 +165,7 @@ class ImportService:
                 category_name = d.get('category', '默认分类')
                 category = categories.get(category_name)
                 if not category:
-                    category = Category(
-                        name=category_name,
-                        created_by=user.id
-                    )
+                    category = Category(name=category_name)
                     db.session.add(category)
                     db.session.flush()
                     categories[category_name] = category
@@ -177,14 +173,12 @@ class ImportService:
                 product = Product(
                     name=d['name'],
                     sku=d['sku'],
-                    unit=d['unit'],
-                    spec=d.get('spec', ''),
                     category_id=category.id,
                     cost=float(d.get('cost', 0)) if d.get('cost') else None,
                     price=float(d.get('price', 0)) if d.get('price') else None,
-                    min_stock=int(d.get('min_stock', 0)) if d.get('min_stock') else 0,
-                    description=d.get('description', ''),
-                    created_by=user.id
+                    min_stock=int(d.get('min_stock', 0)) if d.get('min_stock') else 10,
+                    max_stock=int(d.get('max_stock', 0)) if d.get('max_stock') else 1000,
+                    description=d.get('description', '')
                 )
                 db.session.add(product)
                 success_count += 1
@@ -218,7 +212,7 @@ class ImportService:
                 if existing:
                     if update_existing:
                         existing.type = partner_type
-                        existing.contact = d.get('contact', '')
+                        existing.contact_person = d.get('contact', '')
                         existing.phone = d.get('phone', '')
                         existing.address = d.get('address', '')
                         success_count += 1
@@ -229,10 +223,9 @@ class ImportService:
                 partner = Partner(
                     name=d['name'],
                     type=partner_type,
-                    contact=d.get('contact', ''),
+                    contact_person=d.get('contact', ''),
                     phone=d.get('phone', ''),
-                    address=d.get('address', ''),
-                    created_by=user.id
+                    address=d.get('address', '')
                 )
                 db.session.add(partner)
                 success_count += 1
@@ -291,13 +284,12 @@ class ImportService:
                 
                 # 库存日志
                 log = InventoryLog(
+                    transaction_code=f'IMP-{product.id}-{warehouse.id}',
+                    move_type='inbound',
                     product_id=product.id,
                     warehouse_id=warehouse.id,
-                    type='import',
-                    quantity=quantity,
-                    before_qty=old_qty,
-                    after_qty=quantity,
-                    reference_type='import',
+                    qty_change=quantity,
+                    balance_after=quantity,
                     remark='数据导入',
                     operator_id=user.id
                 )

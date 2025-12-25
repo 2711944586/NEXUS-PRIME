@@ -57,8 +57,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/nexus.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/nexus_ultimate.css') }}">
-    
-    <!-- 页面切换优化 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nexus_premium.css') }}">
+        <!-- 页面切换优化 -->
     <style>
         /* 页面加载精美淡入 */
         .content-wrapper {
@@ -219,6 +219,7 @@
                     <span>库存预警</span>
                     <span class="nav-badge">Alert</span>
                 </a>
+                {% if is_admin() %}
                 <a href="{{ url_for('system.data_import') }}" class="nav-item {% if request.endpoint == 'system.data_import' %}active{% endif %}" data-tooltip="数据导入">
                     <i class="fas fa-upload"></i>
                     <span>数据导入</span>
@@ -239,6 +240,7 @@
                     <span>系统设置</span>
                     <span class="nav-badge">Settings</span>
                 </a>
+                {% endif %}
                 
                 <a href="{{ url_for('profile.view') }}" class="nav-item {% if 'profile' in request.endpoint %}active{% endif %}" data-tooltip="个人中心">
                     <i class="fas fa-user-circle"></i>
@@ -295,11 +297,32 @@
                                 {% endif %}
                             </div>
                             <span class="user-name">{{ current_user.username }}</span>
+                            {% if is_admin() %}
+                            <span class="user-role-badge admin">管理员</span>
+                            {% else %}
+                            <span class="user-role-badge">{{ current_user.role.name if current_user.role else '用户' }}</span>
+                            {% endif %}
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="dropdown-menu">
+                            <div class="dropdown-header">
+                                <div class="user-info">
+                                    <span class="user-email">{{ current_user.email }}</span>
+                                    {% if is_admin() %}
+                                    <span class="role-tag admin"><i class="fas fa-shield-alt"></i> 管理员</span>
+                                    {% else %}
+                                    <span class="role-tag"><i class="fas fa-user"></i> {{ current_user.role.name if current_user.role else '普通用户' }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <hr>
                             <a href="{{ url_for('profile.view') }}"><i class="fas fa-id-badge"></i> 个人中心</a>
                             <a href="{{ url_for('profile.edit') }}"><i class="fas fa-pen"></i> 编辑资料</a>
+                            {% if is_admin() %}
+                            <hr>
+                            <a href="{{ url_for('system.settings') }}"><i class="fas fa-cog"></i> 系统设置</a>
+                            <a href="{{ url_for('system.team') }}"><i class="fas fa-users-cog"></i> 团队管理</a>
+                            {% endif %}
                             <hr>
                             <a href="{{ url_for('auth.logout') }}" class="logout"><i class="fas fa-power-off"></i> 注销登录</a>
                         </div>

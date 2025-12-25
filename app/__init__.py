@@ -240,7 +240,7 @@ def _generate_full_data(app, db):
         p = Partner(
             name=p_name,
             type=random.choice(['supplier', 'customer', 'both']),
-            contact=f'联系人{i+1}',
+            contact_person=f'联系人{i+1}',
             phone=f'138{random.randint(10000000, 99999999)}',
             email=f'partner{i+1}@galaxy.com',
             address=f'银河系第{i+1}象限'
@@ -260,7 +260,6 @@ def _generate_full_data(app, db):
             category=random.choice(cats),
             price=round(random.uniform(100, 50000), 2),
             cost=round(random.uniform(50, 25000), 2),
-            unit=random.choice(['件', '个', '套', '组', '台']),
             min_stock=random.randint(10, 50),
             max_stock=random.randint(200, 1000),
             description=f'高科技产品-{i+1}'
@@ -272,14 +271,14 @@ def _generate_full_data(app, db):
     # ========== 8. 仓库 ==========
     warehouses = []
     wh_data = [
-        ('主板舱仓 (Alpha)', 'ALPHA', '空间站A区'),
-        ('备用舱仓 (Beta)', 'BETA', '空间站B区'),
-        ('冷链舱仓 (Gamma)', 'GAMMA', '空间站C区'),
-        ('危险品舱 (Delta)', 'DELTA', '隔离区域'),
-        ('原料舱仓 (Epsilon)', 'EPSILON', '采矿平台')
+        ('主板舱仓 (Alpha)', '空间站A区'),
+        ('备用舱仓 (Beta)', '空间站B区'),
+        ('冷链舱仓 (Gamma)', '空间站C区'),
+        ('危险品舱 (Delta)', '隔离区域'),
+        ('原料舱仓 (Epsilon)', '采矿平台')
     ]
-    for name, code, addr in wh_data:
-        w = Warehouse(name=name, code=code, address=addr, is_active=True)
+    for name, loc in wh_data:
+        w = Warehouse(name=name, location=loc)
         db.session.add(w)
         warehouses.append(w)
     db.session.commit()
@@ -295,14 +294,16 @@ def _generate_full_data(app, db):
     
     # ========== 10. 库存流水日志 (200条) ==========
     users = User.query.all()
-    log_types = ['in', 'out', 'adjust', 'transfer']
+    log_types = ['inbound', 'outbound', 'move', 'check']
     for i in range(200):
         log = InventoryLog(
+            transaction_code=f'LOG-{i+1:05d}',
+            move_type=random.choice(log_types),
             product_id=random.choice(products).id,
             warehouse_id=random.choice(warehouses).id,
-            type=random.choice(log_types),
-            quantity=random.randint(-50, 100),
-            user_id=random.choice(users).id,
+            qty_change=random.randint(-50, 100),
+            balance_after=random.randint(0, 500),
+            operator_id=random.choice(users).id,
             remark=f'操作记录-{i+1}',
             created_at=datetime.now() - timedelta(days=random.randint(0, 60))
         )
@@ -310,17 +311,15 @@ def _generate_full_data(app, db):
     db.session.commit()
     
     # ========== 11. 订单 (200个) ==========
-    order_statuses = ['pending', 'confirmed', 'processing', 'shipped', 'completed', 'cancelled']
+    order_statuses = ['pending', 'paid', 'shipped', 'done', 'cancelled']
+    customers = [p for p in partners if p.type in ['customer', 'both']]
     for i in range(200):
-        order_type = random.choice(['sale', 'purchase'])
         order = Order(
-            order_no=f'{"SO" if order_type == "sale" else "PO"}{datetime.now().strftime("%Y%m")}{i+1:05d}',
-            type=order_type,
+            order_no=f'ORD-{datetime.now().strftime("%Y%m")}{i+1:05d}',
             status=random.choice(order_statuses),
-            partner_id=random.choice(partners).id,
-            user_id=random.choice(users).id,
+            customer_id=random.choice(customers).id if customers else None,
+            seller_id=random.choice(users).id,
             total_amount=0,
-            remark=f'订单备注-{i+1}',
             created_at=datetime.now() - timedelta(days=random.randint(0, 90))
         )
         db.session.add(order)
@@ -336,7 +335,7 @@ def _generate_full_data(app, db):
                 order_id=order.id,
                 product_id=prod.id,
                 quantity=qty,
-                price=round(price, 2)
+                price_snapshot=round(price, 2)
             )
             db.session.add(item)
             total += qty * price
@@ -419,9 +418,23 @@ def register_blueprints(app):
     # 通知与预警蓝图
     from app.blueprints.notification import notification_bp
     app.register_blueprint(notification_bp, url_prefix='/notification')
+    
+    # 注册权限上下文处理器
+    @app.context_processor
+    def inject_permissions():
+        from app.utils.permissions import is_admin, can_access_module, get_user_menu_items
+        return {
+            'is_admin': is_admin,
+            'can_access_module': can_access_module,
+            'get_user_menu_items': get_user_menu_items
+        }
 
 
 def register_error_handlers(app):
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('errors/403.html'), 403
+    
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template('errors/404.html'), 404

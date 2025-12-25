@@ -315,7 +315,7 @@ def init_full_data():
             p = Partner(
                 name=f'星际企业-{i+1:03d}',
                 type=random.choice(['customer', 'supplier']),
-                contact=f'联系人{i+1}',
+                contact_person=f'联系人{i+1}',
                 phone=f'1380000{i:04d}',
                 email=f'partner{i}@galaxy.com',
                 address=f'深空站点-{random.randint(1,100)}区'
@@ -338,7 +338,6 @@ def init_full_data():
                 price=round(random.uniform(100, 50000), 2),
                 cost=round(random.uniform(50, 25000), 2),
                 category=random.choice(cats),
-                unit='件',
                 min_stock=random.randint(10, 50),
                 max_stock=random.randint(200, 1000),
                 description=f'高科技产品，适用于深空探索和星际贸易。'
@@ -362,7 +361,7 @@ def init_full_data():
         for name, loc in warehouse_data:
             wh = Warehouse.query.filter_by(name=name).first()
             if not wh:
-                wh = Warehouse(name=name, location=loc, address=loc)
+                wh = Warehouse(name=name, location=loc)
                 db.session.add(wh)
             warehouses.append(wh)
         db.session.commit()
@@ -404,10 +403,9 @@ def init_full_data():
             
             order = Order(
                 order_no=f'ORD-{20250000+i}',
-                type=random.choice(['sale', 'purchase']),
-                status=random.choice(['pending', 'confirmed', 'shipped', 'completed', 'completed', 'completed']),
-                partner_id=random.choice(customers).id if customers else None,
-                user_id=random.choice(users).id,
+                status=random.choice(['pending', 'paid', 'shipped', 'done', 'done', 'done']),
+                customer_id=random.choice(customers).id if customers else None,
+                seller_id=random.choice(users).id,
                 total_amount=0,
                 created_at=order_date
             )
@@ -422,7 +420,7 @@ def init_full_data():
                     order_id=order.id,
                     product_id=prod.id,
                     quantity=qty,
-                    price=prod.price
+                    price_snapshot=prod.price
                 )
                 db.session.add(item)
                 total += qty * float(prod.price)

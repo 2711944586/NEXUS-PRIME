@@ -104,3 +104,13 @@ user_id,module,action,ip_address,details,id,created_at,updated_at,is_deleted
 1,auth,logout,127.0.0.1,"{""username"": ""Constantine Myles""}",103,2025-12-08 10:15:27.171902,2025-12-08 10:15:27.171906,0
 1,auth,login_success,127.0.0.1,"{""username"": ""Constantine Myles""}",104,2025-12-08 10:15:47.185976,2025-12-08 10:15:47.185978,0
 1,ai,chat,127.0.0.1,"{""session_id"": 2, ""message_preview"": ""什么时候才能放假"", ""tokens"": 219}",105,2025-12-08 10:22:16.542992,2025-12-08 10:22:16.542993,0
+1,ai,chat,127.0.0.1,"{""session_id"": 2, ""message_preview"": ""分析本月销售数据并给出优化建议"", ""tokens"": 1169}",106,2025-12-08 16:59:09.378679,2025-12-08 16:59:09.378681,0
+1,auth,logout,127.0.0.1,"{""username"": ""Constantine Myles""}",107,2025-12-08 16:59:33.987500,2025-12-08 16:59:33.987501,0
+1,auth,login_success,127.0.0.1,"{""username"": ""Constantine Myles""}",108,2025-12-08 17:00:05.467981,2025-12-08 17:00:05.467983,0
+1,auth,login_success,127.0.0.1,"{""username"": ""Constantine Myles""}",109,2025-12-09 16:06:45.239386,2025-12-09 16:06:45.239389,0
+1,auth,login_success,127.0.0.1,"{""username"": ""Constantine Myles""}",110,2025-12-16 09:18:10.155451,2025-12-16 09:18:10.155454,0
+1,auth,login_success,127.0.0.1,"{""username"": ""Constantine Myles""}",111,2025-12-19 09:23:06.537299,2025-12-19 09:23:06.537309,0
+1,auth,login_success,127.0.0.1,"{""username"": ""Constantine Myles""}",112,2025-12-25 17:37:08.281697,2025-12-25 17:37:08.281700,0
+1,inventory,edit,127.0.0.1,"{""args"": ""()"", ""kwargs"": ""{'product_id': 1}""}",113,2025-12-25 17:52:28.234384,2025-12-25 17:52:28.234388,0
+1,auth,logout,127.0.0.1,"{""username"": ""Constantine Myles""}",114,2025-12-25 17:55:48.303026,2025-12-25 17:55:48.303034,0
+5002,auth,login_success,127.0.0.1,"{""username"": ""constantine""}",115,2025-12-25 17:56:51.858367,2025-12-25 17:56:51.858370,0

@@ -18,10 +18,17 @@ def get_file_extension(filename):
         return None
     return filename.rsplit('.', 1)[1].lower()
 
-def save_file(file):
+def save_file(file, folder='attachments'):
     """
-    安全保存文件
-    返回: (original_name, saved_filename, file_size, mimetype)
+    安全保存文件（支持云存储和本地存储）
+    
+    Args:
+        file: 文件对象
+        folder: 子文件夹名称
+    
+    Returns: 
+        tuple: (original_name, saved_path_or_url, file_size, mimetype)
+        None: 保存失败
     """
     try:
         if not file or not file.filename:
@@ -50,7 +57,23 @@ def save_file(file):
             safe_name = f"file_{uuid.uuid4().hex[:8]}.{ext}"
             current_app.logger.info(f'save_file: 使用生成的文件名 = {safe_name}')
         
-        # 生成唯一文件名防止覆盖
+        # 检查是否使用云存储
+        from app.utils.cloud_storage import is_cloud_storage_enabled, upload_to_cloud
+        
+        if is_cloud_storage_enabled():
+            # 云存储模式
+            current_app.logger.info('save_file: 使用云存储')
+            result = upload_to_cloud(file, folder=folder)
+            
+            if result:
+                file_size = result.get('bytes', 0)
+                file_url = result.get('secure_url') or result.get('url')
+                current_app.logger.info(f'save_file: 云存储上传成功, URL = {file_url}')
+                return safe_name, file_url, file_size, file.mimetype or 'application/octet-stream'
+            else:
+                current_app.logger.warning('save_file: 云存储上传失败，回退到本地存储')
+        
+        # 本地存储模式
         unique_name = f"{uuid.uuid4().hex}.{ext}"
         
         # 确保上传目录存在

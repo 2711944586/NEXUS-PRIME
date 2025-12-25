@@ -122,6 +122,7 @@ class ReportSubscription(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey('auth_users.id'))
     
     report_type = db.Column(db.String(32))
+    report_name = db.Column(db.String(128))  # 报表名称
     frequency = db.Column(db.String(20), default=FREQUENCY_DAILY)
     
     # 发送设置
@@ -133,8 +134,12 @@ class ReportSubscription(BaseModel):
     send_weekday = db.Column(db.Integer, default=1)  # 周几发送 (1-7, 仅周报)
     send_day = db.Column(db.Integer, default=1)  # 几号发送 (1-28, 仅月报)
     
+    # 参数配置
+    params = db.Column(db.JSON)  # 报表参数
+    
     is_active = db.Column(db.Boolean, default=True)
-    last_sent_at = db.Column(db.DateTime)
+    last_sent = db.Column(db.DateTime)  # 上次发送时间
+    last_sent_at = db.Column(db.DateTime)  # 兼容字段
     
     user = db.relationship('User')
 
@@ -143,6 +148,7 @@ class GeneratedReport(BaseModel):
     """生成的报表"""
     __tablename__ = 'generated_reports'
     
+    subscription_id = db.Column(db.Integer, db.ForeignKey('report_subscriptions.id'), nullable=True)
     report_type = db.Column(db.String(32))
     report_name = db.Column(db.String(128))
     
@@ -162,3 +168,4 @@ class GeneratedReport(BaseModel):
     sent_count = db.Column(db.Integer, default=0)
     
     generator = db.relationship('User')
+    subscription = db.relationship('ReportSubscription')

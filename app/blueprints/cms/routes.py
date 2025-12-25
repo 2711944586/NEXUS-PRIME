@@ -117,6 +117,13 @@ def files():
 def download_file(id):
     """下载文件"""
     att = Attachment.query.get_or_404(id)
+    
+    # 检查是否是云存储 URL
+    if att.filepath and att.filepath.startswith('http'):
+        # 云存储文件，重定向到云存储 URL
+        return redirect(att.filepath)
+    
+    # 本地文件
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], att.filepath, as_attachment=True, download_name=att.filename)
 
 @cms_bp.route('/files/delete/<int:id>')

@@ -45,3 +45,6 @@ backups/
 # 上传文件（根据需要调整）
 app/static/uploads/*
 !app/static/uploads/.gitkeep
+
+# 数据导出（可选，如需保留则注释此行）
+# data_export/

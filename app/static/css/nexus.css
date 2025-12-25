@@ -418,6 +418,64 @@ body {
     background: rgba(239,68,68,0.15);
 }
 
+/* 用户角色徽章 */
+.user-role-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(100, 116, 139, 0.2);
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-left: -4px;
+}
+
+.user-role-badge.admin {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+/* 下拉菜单头部 */
+.dropdown-header {
+    padding: 8px 14px;
+}
+
+.dropdown-header .user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dropdown-header .user-email {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dropdown-header .role-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(100, 116, 139, 0.15);
+    color: var(--text-muted);
+    width: fit-content;
+}
+
+.dropdown-header .role-tag.admin {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(249, 115, 22, 0.15));
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.dropdown-header .role-tag i {
+    font-size: 0.7rem;
+}
+
 /* 登录按钮 */
 .btn-login {
     padding: 8px 20px;

@@ -79,7 +79,11 @@
         <div class="file-card" data-type="{{ file.mimetype.split('/')[0] }}">
             <div class="file-preview">
                 {% if file.mimetype.startswith('image') %}
-                <img src="{{ url_for('static', filename='uploads/' + file.filepath) }}" alt="{{ file.filename }}" loading="lazy">
+                    {% if file.filepath.startswith('http') %}
+                    <img src="{{ file.filepath }}" alt="{{ file.filename }}" loading="lazy">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='uploads/' + file.filepath) }}" alt="{{ file.filename }}" loading="lazy">
+                    {% endif %}
                 {% else %}
                 <div class="file-icon" style="--icon-color: {{ get_icon(file.mimetype)[1] }}">
                     <i class="{{ get_icon(file.mimetype)[0] }}"></i>
@@ -91,9 +95,15 @@
                         <a href="{{ url_for('cms.download_file', id=file.id) }}" class="overlay-btn" title="下载">
                             <i class="fas fa-download"></i>
                         </a>
+                        {% if file.filepath.startswith('http') %}
+                        <button class="overlay-btn" onclick="copyLink('{{ file.filepath }}')" title="复制链接">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        {% else %}
                         <button class="overlay-btn" onclick="copyLink('{{ url_for('static', filename='uploads/' + file.filepath, _external=True) }}')" title="复制链接">
                             <i class="fas fa-link"></i>
                         </button>
+                        {% endif %}
                         <a href="{{ url_for('cms.delete_file', id=file.id) }}" class="overlay-btn danger" onclick="return confirm('确定删除文件: {{ file.filename }}？')" title="删除">
                             <i class="fas fa-trash-alt"></i>
                         </a>

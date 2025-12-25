@@ -175,8 +175,7 @@ class ReportService:
         # 今日数据
         today_stats = db.session.query(
             func.count(Order.id).label('order_count'),
-            func.sum(Order.total_amount).label('total_amount'),
-            func.sum(Order.total_amount - Order.total_cost).label('profit')
+            func.sum(Order.total_amount).label('total_amount')
         ).filter(
             func.date(Order.created_at) == today,
             Order.status.in_(['paid', 'shipped', 'done'])
@@ -196,20 +195,19 @@ class ReportService:
         top_products = db.session.query(
             Product.name,
             func.sum(OrderItem.quantity).label('qty'),
-            func.sum(OrderItem.subtotal).label('amount')
+            func.sum(OrderItem.quantity * OrderItem.price_snapshot).label('amount')
         ).join(OrderItem, OrderItem.product_id == Product.id
         ).join(Order, Order.id == OrderItem.order_id
         ).filter(
             func.date(Order.created_at) == today,
             Order.status.in_(['paid', 'shipped', 'done'])
-        ).group_by(Product.id).order_by(func.sum(OrderItem.subtotal).desc()).limit(5).all()
+        ).group_by(Product.id).order_by(func.sum(OrderItem.quantity * OrderItem.price_snapshot).desc()).limit(5).all()
         
         return {
             'report_date': str(today),
             'summary': {
                 'order_count': today_stats.order_count or 0,
                 'total_amount': float(today_stats.total_amount or 0),
-                'profit': float(today_stats.profit or 0),
                 'yesterday_amount': float(yesterday_stats.total_amount or 0),
                 'growth_rate': round(
                     ((today_stats.total_amount or 0) - (yesterday_stats.total_amount or 1)) 
@@ -217,7 +215,7 @@ class ReportService:
                 ) if yesterday_stats.total_amount else 0
             },
             'top_products': [
-                {'name': p.name, 'quantity': p.qty, 'amount': float(p.amount)}
+                {'name': p.name, 'quantity': p.qty, 'amount': float(p.amount or 0)}
                 for p in top_products
             ]
         }
@@ -356,17 +354,17 @@ class ReportService:
         today = datetime.now().date()
         
         movements = db.session.query(
-            InventoryLog.type,
+            InventoryLog.move_type,
             func.count(InventoryLog.id).label('count'),
-            func.sum(InventoryLog.quantity).label('total_qty')
+            func.sum(InventoryLog.qty_change).label('total_qty')
         ).filter(
             func.date(InventoryLog.created_at) == today
-        ).group_by(InventoryLog.type).all()
+        ).group_by(InventoryLog.move_type).all()
         
         return {
             'report_date': str(today),
             'movements': [
-                {'type': m.type, 'count': m.count, 'quantity': m.total_qty}
+                {'type': m.move_type, 'count': m.count, 'quantity': m.total_qty}
                 for m in movements
             ]
         }
@@ -442,14 +440,14 @@ class ReportService:
             Product.name,
             Product.sku,
             func.sum(OrderItem.quantity).label('total_qty'),
-            func.sum(OrderItem.subtotal).label('total_amount')
+            func.sum(OrderItem.quantity * OrderItem.price_snapshot).label('total_amount')
         ).join(OrderItem, OrderItem.product_id == Product.id
         ).join(Order, Order.id == OrderItem.order_id
         ).filter(
             func.date(Order.created_at) >= week_start,
             Order.status.in_(['paid', 'shipped', 'done'])
         ).group_by(Product.id
-        ).order_by(func.sum(OrderItem.subtotal).desc()
+        ).order_by(func.sum(OrderItem.quantity * OrderItem.price_snapshot).desc()
         ).limit(20).all()
         
         return {

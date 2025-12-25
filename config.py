@@ -23,6 +23,16 @@ class Config:
     UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 限制最大上传 16MB
     
+    # 云存储配置 (Cloudinary)
+    # 设置 CLOUDINARY_URL 或分别设置 CLOUD_NAME/API_KEY/API_SECRET
+    CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+    
+    # 是否启用云存储（生产环境自动启用，如果配置了 Cloudinary）
+    USE_CLOUD_STORAGE = os.environ.get('USE_CLOUD_STORAGE', 'auto').lower()
+    
     # 缓存配置 (默认使用 SimpleCache，生产环境可改 Redis)
     CACHE_TYPE = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
@@ -36,6 +46,10 @@ class Config:
         instance_path = os.path.join(basedir, 'instance')
         if not os.path.exists(instance_path):
             os.makedirs(instance_path)
+        
+        # 初始化云存储
+        from app.utils.cloud_storage import init_cloud_storage
+        init_cloud_storage(app)
 
 class DevelopmentConfig(Config):
     """开发环境配置"""
