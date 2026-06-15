@@ -100,6 +100,7 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   protected readonly policy = signal<RegisterPolicy | null>(null);
   protected readonly activeDocument = signal<'terms' | 'privacy' | 'data_scope'>('terms');
+  private hasDocumentFragment = false;
 
   ngOnInit(): void {
     this.api.get<RegisterPolicy>('auth/register-policy').pipe(
@@ -107,27 +108,29 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
     ).subscribe(result => {
       if (result) {
         this.policy.set(result);
-        this.queuePolicyScroll(this.activeDocument());
+        this.queueInitialScroll();
       }
     });
     this.route.fragment.subscribe(fragment => {
-      const target = this.validDocumentId(fragment) ?? 'terms';
-      this.activeDocument.set(target);
-      this.queuePolicyScroll(target);
+      const target = this.validDocumentId(fragment);
+      this.hasDocumentFragment = Boolean(target);
+      this.activeDocument.set(target ?? 'terms');
+      this.queueInitialScroll();
     });
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
-      this.queuePolicyScroll(this.activeDocument());
+      this.queueInitialScroll();
     });
   }
 
   ngAfterViewInit(): void {
-    this.queuePolicyScroll(this.activeDocument());
+    this.queueInitialScroll();
   }
 
   scrollToDocument(id: string, updateUrl = true): void {
     const target = this.validDocumentId(id) ?? 'terms';
     this.activeDocument.set(target);
     if (updateUrl) {
+      this.hasDocumentFragment = true;
       this.router.navigate([], { fragment: target, replaceUrl: false });
     }
     this.performPolicyScroll(target, updateUrl ? 'smooth' : 'auto');
@@ -179,6 +182,20 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
 
   private validDocumentId(id: string | null | undefined): 'terms' | 'privacy' | 'data_scope' | null {
     return id === 'terms' || id === 'privacy' || id === 'data_scope' ? id : null;
+  }
+
+  private queueInitialScroll(): void {
+    if (this.hasDocumentFragment) {
+      this.queuePolicyScroll(this.activeDocument());
+      return;
+    }
+    this.queuePageTop();
+  }
+
+  private queuePageTop(): void {
+    [0, 80, 240, 520].forEach(delay => {
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), delay);
+    });
   }
 
   private queuePolicyScroll(id: 'terms' | 'privacy' | 'data_scope'): void {

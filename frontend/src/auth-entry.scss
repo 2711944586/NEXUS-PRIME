@@ -3811,6 +3811,268 @@
     }
   }
 
+  .nexus-login-redesign .login-composition,
+  .nexus-login-redesign .login-composition.register-composition {
+    min-height: clamp(610px, 72dvh, 760px);
+  }
+
+  .nexus-login-redesign .login-composition.register-composition {
+    align-items: start;
+    min-height: auto;
+  }
+
+  .nexus-login-redesign .login-panel.register-mode {
+    align-self: start;
+    max-height: none;
+    overflow: visible;
+    margin-block: clamp(.85rem, 1.8vw, 1.25rem);
+  }
+
+  .nexus-login-redesign .login-identity-panel {
+    position: absolute;
+    inset: 0;
+    display: block;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    overflow: hidden;
+  }
+
+  .nexus-login-redesign .login-photo-card {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .nexus-login-redesign .login-brand-hero {
+    display: none;
+  }
+
+  .brand-lockup .brand-mark,
+  .policy-topbar .brand-mark,
+  .entry-brand-inline .brand-mark {
+    display: inline-grid;
+    place-items: center;
+    line-height: 1;
+    text-align: center;
+    transform: translateZ(0);
+  }
+
+  .nexus-login-redesign .brand-lockup .brand-mark {
+    width: 42px;
+    height: 42px;
+    padding-top: 1px;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title {
+    gap: .09em;
+    font-size: clamp(2.7rem, 5vw, 5.35rem);
+    line-height: .96;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title > span {
+    max-width: min(11ch, 100%);
+    line-height: .96;
+  }
+
+  .nexus-login-redesign .login-capabilities i,
+  .nexus-login-redesign .login-role-switch button i,
+  .nexus-login-redesign .register-assurance-strip i,
+  .nexus-login-redesign .login-alert i,
+  .nexus-login-redesign .captcha-refresh i,
+  .nexus-login-redesign .login-submit i,
+  .nexus-login-redesign .orbit-node i,
+  .policy-topbar nav button i {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .nexus-login-redesign .login-capabilities i::before,
+  .nexus-login-redesign .login-role-switch button i::before,
+  .nexus-login-redesign .register-assurance-strip i::before,
+  .nexus-login-redesign .login-alert i::before,
+  .nexus-login-redesign .captcha-refresh i::before,
+  .nexus-login-redesign .login-submit i::before,
+  .nexus-login-redesign .orbit-node i::before,
+  .policy-topbar nav button i::before {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    line-height: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  .nexus-login-redesign .login-role-switch button i {
+    width: 30px;
+    height: 30px;
+    justify-self: center;
+  }
+
+  .nexus-login-redesign .login-capabilities div {
+    grid-template-columns: 26px minmax(0, 1fr);
+    min-height: 48px;
+  }
+
+  .nexus-login-redesign .login-capabilities i {
+    width: 26px;
+    height: 26px;
+    justify-self: center;
+    align-self: center;
+  }
+
+  .nexus-login-redesign .register-assurance-strip i,
+  .nexus-login-redesign .login-alert i,
+  .nexus-login-redesign .captcha-refresh i,
+  .nexus-login-redesign .login-submit i,
+  .policy-topbar nav button i {
+    width: 1.05em;
+    height: 1.05em;
+    flex: 0 0 auto;
+  }
+
+  .nexus-login-redesign .orbit-node i {
+    width: 1em;
+    height: 1em;
+  }
+
+  .nexus-login-redesign .register-policy-strip button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: .34rem .55rem;
+    border: 1px solid color-mix(in srgb, var(--entry-accent) 28%, transparent);
+    border-radius: var(--entry-radius);
+    color: var(--entry-accent);
+    background: color-mix(in srgb, var(--entry-accent) 8%, transparent);
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 860;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 180ms var(--ease-standard), border-color 180ms var(--ease-standard), background 180ms var(--ease-standard);
+  }
+
+  .nexus-login-redesign .register-policy-strip button:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--entry-accent) 42%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 12%, var(--entry-surface-soft));
+  }
+
+  .nexus-login-redesign .register-verification {
+    grid-template-columns: minmax(170px, .9fr) minmax(220px, 1fr);
+    align-items: center;
+  }
+
+  .nexus-login-redesign .register-verification > div {
+    min-width: 0;
+  }
+
+  .nexus-login-redesign .register-verification img,
+  .nexus-login-redesign .captcha-skeleton {
+    justify-self: stretch;
+    width: 100%;
+    max-width: 240px;
+    min-height: 72px;
+    height: 72px;
+    padding: .18rem;
+    object-fit: contain;
+  }
+
+  .nexus-login-redesign .captcha-answer {
+    grid-column: 1 / 2;
+  }
+
+  .nexus-login-redesign .captcha-refresh {
+    grid-column: 2 / 3;
+    justify-self: start;
+    align-self: end;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .38rem;
+    min-height: 42px;
+    padding: .52rem .8rem;
+  }
+
+  .policy-hero-copy {
+    overflow: visible;
+  }
+
+  .policy-hero h1 {
+    gap: .11em;
+    width: min(8.5ch, 100%);
+    font-size: clamp(3.25rem, 6.2vw, 6.55rem);
+    line-height: .96;
+  }
+
+  .policy-hero h1 span {
+    line-height: .96;
+    white-space: nowrap;
+  }
+
+  .policy-index button span,
+  .policy-document header > span {
+    display: inline-grid;
+    place-items: center;
+    line-height: 1;
+  }
+
+  @media (max-width: 980px) {
+    .nexus-login-redesign .login-composition,
+    .nexus-login-redesign .login-composition.register-composition {
+      min-height: auto;
+    }
+
+    .nexus-login-redesign .login-panel,
+    .nexus-login-redesign .login-panel.register-mode {
+      max-height: none;
+      overflow: visible;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title {
+      gap: .08em;
+      font-size: clamp(2.35rem, 13vw, 4.3rem);
+    }
+
+    .nexus-login-redesign .register-verification {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nexus-login-redesign .register-verification img,
+    .nexus-login-redesign .captcha-skeleton,
+    .nexus-login-redesign .captcha-answer,
+    .nexus-login-redesign .captcha-refresh {
+      grid-column: 1 / -1;
+    }
+
+    .nexus-login-redesign .register-verification img,
+    .nexus-login-redesign .captcha-skeleton {
+      max-width: none;
+      min-height: 66px;
+      height: 66px;
+    }
+
+    .nexus-login-redesign .captcha-refresh {
+      justify-self: stretch;
+    }
+
+    .policy-hero h1 {
+      gap: .09em;
+      width: min(8ch, 100%);
+      font-size: clamp(3rem, 16vw, 4.65rem);
+      line-height: .98;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .entry-title span,
     .entry-title::before,

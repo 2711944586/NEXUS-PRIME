@@ -41,14 +41,6 @@ interface CaptchaChallenge {
 
         <div class="login-composition" [class.register-composition]="authMode() === 'register'">
           <aside class="login-identity-panel" aria-label="入口现场">
-            <div class="login-brand-hero">
-              <span class="brand-mark">NX</span>
-              <div>
-                <span>NEXUS Prime</span>
-                <strong>{{ authMode() === 'login' ? 'Operations access' : 'Member onboarding' }}</strong>
-              </div>
-            </div>
-
             <figure class="login-photo-card">
               <img [src]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'" alt="制造与仓配现场" />
               <figcaption>
@@ -86,7 +78,7 @@ interface CaptchaChallenge {
               @if (authMode() === 'register') {
                 <div class="register-policy-strip">
                   <span>许可版本 {{ registerPolicy()?.terms_version || captcha()?.terms_version || '读取中' }}</span>
-                  <a routerLink="/auth/register-policy">查看许可</a>
+                  <button type="button" (click)="openPolicyTop()">查看许可</button>
                 </div>
               }
             </div>
@@ -601,6 +593,10 @@ export class LoginPage implements OnInit {
 
   openPolicy(fragment: 'terms' | 'privacy' | 'data_scope'): void {
     this.router.navigate(['/auth/register-policy'], { fragment });
+  }
+
+  openPolicyTop(): void {
+    this.router.navigate(['/auth/register-policy']);
   }
 
   private loadRegisterPolicy(): void {
