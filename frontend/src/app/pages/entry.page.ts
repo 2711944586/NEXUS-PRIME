@@ -9,7 +9,7 @@ import { ThemeService } from '../core/theme.service';
   standalone: true,
   imports: [CommonModule, RouterLink, ButtonModule],
   template: `
-    <main class="entry-screen nexus-entry-redesign">
+    <main id="main-content" class="entry-screen nexus-entry-redesign">
       <header class="entry-topline" aria-label="首页导航">
         <a class="entry-brand-inline" routerLink="/" aria-label="NEXUS Prime 首页">
           <span class="brand-mark">NX</span>
@@ -26,16 +26,26 @@ import { ThemeService } from '../core/theme.service';
             <i class="pi pi-sign-in"></i>
             登录
           </a>
-          <button pButton type="button" class="entry-theme-toggle" [text]="true" [rounded]="true" (click)="theme.toggle(false)" aria-label="切换主题">
-            <i class="pi" [ngClass]="theme.mode() === 'dark-cockpit' ? 'pi-moon' : 'pi-sun'"></i>
-          </button>
+          <div class="entry-theme-switch" aria-label="主题切换">
+            <button type="button" [class.active]="theme.mode() === 'light-luxury'" (click)="theme.setTheme('light-luxury', false)" aria-label="切换到亮色主题">
+              <i class="pi pi-sun"></i>
+              <span>亮</span>
+            </button>
+            <button type="button" [class.active]="theme.mode() === 'dark-cockpit'" (click)="theme.setTheme('dark-cockpit', false)" aria-label="切换到暗色主题">
+              <i class="pi pi-moon"></i>
+              <span>暗</span>
+            </button>
+          </div>
         </nav>
       </header>
 
       <section class="entry-hero" aria-label="NEXUS Prime 入场页">
         <div class="entry-story">
           <span class="entry-kicker">Manufacturing command entry</span>
-          <h1>NEXUS Prime</h1>
+          <h1 class="entry-title" aria-label="NEXUS Prime">
+            <span>NEXUS</span>
+            <span>Prime</span>
+          </h1>
           <p>给制造企业使用的经营工作台。现场收货、库存预警、采购审批、销售履约、应收回款和审计记录，在同一套权限体系里流转。</p>
 
           <div class="entry-actions">
