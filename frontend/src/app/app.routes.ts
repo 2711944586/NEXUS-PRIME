@@ -5,6 +5,7 @@ import { authGuard, guestGuard } from './core/auth.guard';
 export const routes: Routes = [
   { path: '', pathMatch: 'full', loadComponent: () => import('./pages/entry.page').then(m => m.EntryPage), canActivate: [guestGuard] },
   { path: 'auth/login', loadComponent: () => import('./pages/login.page').then(m => m.LoginPage), canActivate: [guestGuard] },
+  { path: 'auth/register-policy', loadComponent: () => import('./pages/register-policy.page').then(m => m.RegisterPolicyPage), canActivate: [guestGuard] },
   { path: 'login', redirectTo: 'auth/login', pathMatch: 'full' },
   {
     path: 'app',

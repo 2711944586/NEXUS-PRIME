@@ -1795,6 +1795,986 @@
     cursor: pointer;
   }
 
+  .nexus-login-redesign.login-screen {
+    --auth-bg-image: url("/images/receiving-dock-wide.jpg");
+    align-items: center;
+    min-height: 100dvh;
+    padding: clamp(.8rem, 2vw, 1.5rem);
+  }
+
+  .nexus-login-redesign.login-screen.register-screen {
+    --auth-bg-image: url("/images/factory-engineers-wide.jpg");
+  }
+
+  .nexus-login-redesign.login-screen::before {
+    transform: scale(1.018);
+    animation: auth-bg-drift 18s ease-in-out infinite alternate;
+  }
+
+  .nexus-login-redesign .login-stage {
+    align-content: center;
+    gap: clamp(.75rem, 1.6vw, 1.1rem);
+    width: min(1180px, 100%);
+    min-height: calc(100dvh - clamp(1.6rem, 4vw, 3rem));
+  }
+
+  .nexus-login-redesign .login-back-link {
+    min-height: 36px;
+    padding: .48rem .62rem;
+    color: var(--entry-muted);
+    box-shadow: none;
+  }
+
+  .nexus-login-redesign .login-composition,
+  .nexus-login-redesign .login-composition.register-composition {
+    grid-template-columns: minmax(280px, .78fr) minmax(390px, .62fr);
+    gap: clamp(.8rem, 1.8vw, 1.35rem);
+    align-items: center;
+  }
+
+  .nexus-login-redesign .login-identity-panel,
+  .nexus-login-redesign .login-panel {
+    animation: auth-panel-enter 720ms var(--ease-emphasis) both;
+  }
+
+  .nexus-login-redesign .login-identity-panel {
+    min-height: clamp(520px, 70dvh, 720px);
+    padding: .7rem;
+    background: transparent;
+    border-color: color-mix(in srgb, var(--entry-ink) 10%, transparent);
+    box-shadow: none;
+  }
+
+  .nexus-login-redesign .login-identity-panel::before,
+  .nexus-login-redesign .login-panel::before {
+    display: none;
+  }
+
+  .nexus-login-redesign .login-brand-hero {
+    position: absolute;
+    left: clamp(1rem, 2vw, 1.35rem);
+    top: clamp(1rem, 2vw, 1.35rem);
+    z-index: 2;
+    padding: .52rem .62rem;
+    border: 1px solid color-mix(in srgb, #fff 18%, transparent);
+    border-radius: var(--entry-radius);
+    color: #fff;
+    background: rgba(0, 0, 0, .24);
+    backdrop-filter: blur(16px);
+  }
+
+  .nexus-login-redesign .login-brand-hero span,
+  .nexus-login-redesign .login-brand-hero strong {
+    color: #fff;
+  }
+
+  .nexus-login-redesign .login-brand-hero strong {
+    color: rgba(255, 255, 255, .72);
+    font-size: .74rem;
+    font-weight: 760;
+  }
+
+  .nexus-login-redesign .login-photo-card {
+    height: 100%;
+    min-height: clamp(500px, 70dvh, 720px);
+    border-radius: var(--entry-radius-lg);
+    box-shadow: 0 32px 90px rgba(0, 0, 0, .32);
+    animation: auth-media-reveal 820ms var(--ease-emphasis) both;
+  }
+
+  .nexus-login-redesign .login-photo-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .54)),
+      linear-gradient(90deg, rgba(0, 0, 0, .24), transparent 44%, rgba(0, 0, 0, .18));
+  }
+
+  .nexus-login-redesign .login-photo-card img {
+    filter: saturate(.96) contrast(1.04);
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption {
+    z-index: 1;
+    inset: auto clamp(1rem, 2vw, 1.35rem) clamp(1rem, 2vw, 1.35rem);
+    width: min(520px, calc(100% - 2rem));
+    padding: 0;
+    background: transparent;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption span {
+    color: var(--entry-warm);
+    font-size: .76rem;
+    font-weight: 920;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong {
+    margin-top: .2rem;
+    font-size: clamp(2.4rem, 4.4vw, 5.2rem);
+    line-height: .9;
+    text-wrap: balance;
+  }
+
+  .nexus-login-redesign .login-live-strip {
+    position: absolute;
+    left: clamp(1rem, 2vw, 1.35rem);
+    right: clamp(1rem, 2vw, 1.35rem);
+    bottom: clamp(1rem, 2vw, 1.35rem);
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .45rem;
+    pointer-events: none;
+  }
+
+  .nexus-login-redesign .login-live-strip span {
+    min-width: 0;
+    padding: .5rem .6rem;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: var(--entry-radius);
+    color: rgba(255, 255, 255, .82);
+    background: rgba(0, 0, 0, .22);
+    backdrop-filter: blur(14px);
+    font-size: .72rem;
+    font-weight: 820;
+    text-align: center;
+  }
+
+  .nexus-login-redesign .login-panel {
+    gap: .85rem;
+    padding: clamp(1rem, 2vw, 1.35rem);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, #fff 8%, transparent), color-mix(in srgb, #fff 2%, transparent)),
+      color-mix(in srgb, var(--entry-panel-bg-strong) 82%, transparent);
+    box-shadow: 0 28px 80px color-mix(in srgb, #000 24%, transparent);
+    backdrop-filter: blur(26px);
+    animation-delay: 80ms;
+  }
+
+  .nexus-login-redesign .login-panel.register-mode {
+    max-height: calc(100dvh - clamp(4rem, 8vw, 6rem));
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+
+  .nexus-login-redesign .theme-fab {
+    top: .7rem;
+    right: .7rem;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .nexus-login-redesign .brand-lockup {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: .65rem;
+    padding-right: 2.8rem;
+  }
+
+  .nexus-login-redesign .brand-lockup h1 {
+    font-size: clamp(2rem, 3.2vw, 3rem);
+  }
+
+  .nexus-login-redesign .login-copy p {
+    width: min(42ch, 100%);
+    color: var(--entry-muted);
+    font-size: .94rem;
+    line-height: 1.55;
+  }
+
+  .nexus-login-redesign .login-role-switch {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nexus-login-redesign .login-role-switch button {
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 58px;
+    padding: .7rem;
+  }
+
+  .nexus-login-redesign .register-assurance-strip {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .4rem;
+  }
+
+  .nexus-login-redesign .register-assurance-strip span {
+    min-height: 34px;
+    padding: .38rem .42rem;
+    font-size: .7rem;
+  }
+
+  .nexus-login-redesign .auth-visual-core {
+    grid-template-columns: 112px minmax(0, 1fr);
+    padding: .72rem;
+  }
+
+  .nexus-login-redesign .auth-orbit {
+    width: 104px;
+  }
+
+  .nexus-login-redesign .auth-orbit strong {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nexus-login-redesign .orbit-node {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nexus-login-redesign .auth-signal-chart {
+    max-width: none;
+  }
+
+  .nexus-login-redesign .login-panel.register-mode .login-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .nexus-login-redesign .login-field {
+    gap: .34rem;
+  }
+
+  .nexus-login-redesign .login-field input,
+  .nexus-login-redesign .p-inputtext {
+    min-height: 42px;
+    transition: border-color 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard), background 180ms var(--ease-standard);
+  }
+
+  .nexus-login-redesign .register-policy-strip {
+    display: flex;
+    padding: .55rem .65rem;
+  }
+
+  .nexus-login-redesign .register-policy-strip a {
+    color: var(--entry-accent);
+    font-size: .78rem;
+    font-weight: 860;
+  }
+
+  .nexus-login-redesign .register-consent {
+    padding: .72rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    background: var(--entry-surface-soft);
+  }
+
+  .nexus-login-redesign .register-consent-head {
+    display: grid;
+    gap: .45rem;
+  }
+
+  .nexus-login-redesign .register-consent-head strong {
+    color: var(--entry-ink);
+  }
+
+  .nexus-login-redesign .register-consent-head nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .38rem;
+  }
+
+  .nexus-login-redesign .register-consent-head a {
+    min-height: 30px;
+    padding: .38rem .52rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    color: var(--entry-muted);
+    background: color-mix(in srgb, var(--entry-canvas) 22%, transparent);
+    font-size: .74rem;
+    font-weight: 760;
+  }
+
+  .nexus-login-redesign .login-capabilities {
+    gap: .45rem;
+  }
+
+  .nexus-login-redesign .login-capabilities div {
+    padding: .62rem;
+  }
+
+  .nexus-login-redesign .login-capabilities span {
+    display: none;
+  }
+
+  .policy-screen {
+    --auth-bg-image: url("/images/contracts-desk-wide.jpg");
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 2rem);
+    min-width: 0;
+    padding: clamp(.85rem, 2.2vw, 1.6rem);
+  }
+
+  .policy-topbar,
+  .policy-hero,
+  .policy-index,
+  .policy-document {
+    border: 1px solid var(--entry-line);
+    border-radius: var(--entry-radius-lg);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, #fff 8%, transparent), color-mix(in srgb, #fff 2%, transparent)),
+      var(--entry-panel-bg);
+    box-shadow: var(--entry-shadow);
+    backdrop-filter: blur(22px);
+  }
+
+  .policy-topbar {
+    position: sticky;
+    top: clamp(.65rem, 1.5vw, 1rem);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .85rem;
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    padding: .58rem;
+  }
+
+  .policy-topbar nav {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+  }
+
+  .policy-topbar nav a,
+  .policy-topbar nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: .45rem .65rem;
+    border: 1px solid var(--entry-line);
+    border-radius: var(--entry-radius);
+    color: var(--entry-ink);
+    background: var(--entry-surface-soft);
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 820;
+    cursor: pointer;
+  }
+
+  .policy-hero {
+    display: grid;
+    gap: .75rem;
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    overflow: hidden;
+    animation: auth-panel-enter 720ms var(--ease-emphasis) both;
+  }
+
+  .policy-hero > span {
+    color: var(--entry-warm);
+    font-size: .74rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .policy-hero h1 {
+    width: min(10ch, 100%);
+    margin: 0;
+    color: var(--entry-ink);
+    font-size: clamp(3rem, 7vw, 7rem);
+    line-height: .9;
+    text-wrap: balance;
+  }
+
+  .policy-hero p {
+    width: min(58ch, 100%);
+    margin: 0;
+    color: var(--entry-muted);
+    font-size: clamp(1rem, 1.4vw, 1.18rem);
+    line-height: 1.7;
+  }
+
+  .policy-hero div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .55rem;
+    margin-top: .35rem;
+  }
+
+  .policy-hero strong,
+  .policy-hero a {
+    min-height: 38px;
+    padding: .5rem .7rem;
+    border: 1px solid var(--entry-line);
+    border-radius: var(--entry-radius);
+    color: var(--entry-ink);
+    background: var(--entry-surface-soft);
+    font-size: .84rem;
+  }
+
+  .policy-hero a {
+    color: color-mix(in srgb, var(--entry-canvas) 92%, #06110e);
+    background: var(--entry-accent);
+    font-weight: 880;
+  }
+
+  .policy-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, .34fr) minmax(0, 1fr);
+    gap: .85rem;
+    width: min(1180px, 100%);
+    margin: 0 auto clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .policy-index {
+    position: sticky;
+    top: 6rem;
+    align-self: start;
+    display: grid;
+    gap: .45rem;
+    padding: .7rem;
+  }
+
+  .policy-index a {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: .55rem;
+    align-items: center;
+    min-height: 52px;
+    padding: .55rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    color: var(--entry-ink);
+    background: var(--entry-surface-soft);
+  }
+
+  .policy-index span,
+  .policy-document > span {
+    color: var(--entry-warm);
+    font-family: var(--font-mono);
+    font-size: .74rem;
+    font-weight: 900;
+  }
+
+  .policy-index strong {
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+  }
+
+  .policy-documents {
+    display: grid;
+    gap: .85rem;
+  }
+
+  .policy-document {
+    display: grid;
+    gap: .72rem;
+    scroll-margin-top: 6.5rem;
+    padding: clamp(1rem, 2.4vw, 1.65rem);
+  }
+
+  .policy-document h2 {
+    margin: 0;
+    color: var(--entry-ink);
+    font-size: clamp(1.6rem, 3vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .policy-document p {
+    width: min(62ch, 100%);
+    margin: 0;
+    color: var(--entry-muted);
+    line-height: 1.7;
+  }
+
+  .policy-document ul {
+    display: grid;
+    gap: .55rem;
+    margin: .2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .policy-document li {
+    position: relative;
+    padding-left: 1.2rem;
+    color: var(--entry-muted);
+    line-height: 1.66;
+  }
+
+  .policy-document li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .72em;
+    width: .42rem;
+    height: .42rem;
+    border-radius: 50%;
+    background: var(--entry-accent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--entry-accent) 30%, transparent);
+  }
+
+  .nexus-login-redesign.login-screen {
+    padding: clamp(.75rem, 1.8vw, 1.25rem);
+  }
+
+  .nexus-login-redesign .login-stage {
+    width: min(1240px, 100%);
+    min-height: calc(100dvh - clamp(1.5rem, 3.6vw, 2.5rem));
+    align-content: center;
+  }
+
+  .nexus-login-redesign .login-back-link {
+    z-index: 4;
+    color: var(--entry-ink);
+    background: color-mix(in srgb, var(--entry-panel-bg-strong) 88%, transparent);
+  }
+
+  .nexus-login-redesign .login-composition,
+  .nexus-login-redesign .login-composition.register-composition {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: clamp(680px, 78dvh, 850px);
+    border: 1px solid var(--entry-line);
+    border-radius: var(--entry-radius-lg);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--entry-canvas) 46%, transparent);
+    box-shadow: 0 28px 90px color-mix(in srgb, #000 18%, transparent);
+  }
+
+  .nexus-login-redesign .login-identity-panel {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    animation: auth-media-reveal 880ms var(--ease-emphasis) both !important;
+  }
+
+  .nexus-login-redesign .login-photo-card {
+    height: 100%;
+    min-height: 100%;
+    border: 0;
+    border-radius: inherit;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .nexus-login-redesign .login-photo-card img {
+    height: 100%;
+    filter: saturate(.96) contrast(1.04) brightness(.88);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-photo-card img {
+    filter: saturate(.9) contrast(1.02) brightness(1.02);
+  }
+
+  .nexus-login-redesign .login-photo-card::after {
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, .66), rgba(0, 0, 0, .18) 46%, rgba(0, 0, 0, .5) 100%),
+      linear-gradient(180deg, rgba(0, 0, 0, .16), rgba(0, 0, 0, .62));
+  }
+
+  html.light-luxury .nexus-login-redesign .login-photo-card::after {
+    background:
+      linear-gradient(90deg, rgba(16, 20, 16, .54), rgba(255, 252, 244, .08) 46%, rgba(255, 252, 244, .74) 100%),
+      linear-gradient(180deg, rgba(255, 252, 244, .04), rgba(17, 20, 16, .44));
+  }
+
+  .nexus-login-redesign .login-brand-hero {
+    left: clamp(1rem, 2vw, 1.5rem);
+    top: clamp(1rem, 2vw, 1.5rem);
+    background: rgba(0, 0, 0, .32);
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption {
+    left: clamp(1.1rem, 2.8vw, 2.2rem);
+    right: auto;
+    bottom: clamp(5.2rem, 10vw, 7.2rem);
+    width: min(520px, 52%);
+    color: #fff;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong {
+    display: block;
+    max-width: 9ch;
+    font-size: clamp(3rem, 6.2vw, 6.8rem);
+    line-height: .82;
+    text-shadow: 0 22px 60px rgba(0, 0, 0, .46);
+    animation: auth-title-rise 960ms cubic-bezier(.16, 1, .3, 1) both, auth-title-breathe 6200ms ease-in-out 1300ms infinite;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption span {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    animation: auth-kicker-slide 680ms cubic-bezier(.16, 1, .3, 1) 160ms both;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption span::before {
+    content: "";
+    width: 34px;
+    height: 1px;
+    background: currentColor;
+    box-shadow: 0 0 16px currentColor;
+  }
+
+  .nexus-login-redesign .login-live-strip {
+    left: clamp(1.1rem, 2.8vw, 2.2rem);
+    right: auto;
+    bottom: clamp(1.1rem, 2.2vw, 1.7rem);
+    width: min(500px, 48%);
+    z-index: 3;
+  }
+
+  .nexus-login-redesign .login-live-strip span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    color: rgba(255, 255, 255, .88);
+    background: rgba(0, 0, 0, .26);
+  }
+
+  .nexus-login-redesign .login-panel {
+    position: relative;
+    z-index: 2;
+    justify-self: end;
+    align-self: center;
+    width: min(500px, calc(100% - clamp(2rem, 5vw, 4rem)));
+    margin: clamp(1rem, 2.6vw, 2rem);
+    border-color: color-mix(in srgb, var(--entry-ink) 13%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, #fff 10%, transparent), color-mix(in srgb, #fff 3%, transparent)),
+      color-mix(in srgb, var(--entry-panel-bg-strong) 88%, transparent);
+    animation: auth-panel-enter 760ms var(--ease-emphasis) 90ms both !important;
+  }
+
+  html.dark-cockpit .nexus-login-redesign .login-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .015)),
+      rgba(13, 18, 16, .78);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, .42);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(255, 252, 244, .58)),
+      rgba(255, 252, 244, .72);
+    box-shadow: 0 28px 90px rgba(74, 64, 48, .18);
+  }
+
+  .nexus-login-redesign .login-panel.register-mode {
+    width: min(560px, calc(100% - clamp(2rem, 5vw, 4rem)));
+    max-height: calc(100dvh - clamp(4.5rem, 8vw, 6.4rem));
+  }
+
+  .nexus-login-redesign .brand-lockup h1 {
+    color: var(--entry-ink);
+    font-weight: 950;
+    letter-spacing: 0;
+    background-image:
+      var(--entry-title-fill),
+      linear-gradient(105deg, transparent 0 36%, color-mix(in srgb, #fff 78%, var(--entry-accent)) 48%, transparent 62% 100%);
+    background-size: 100% 180%, 230% 100%;
+    background-position: 50% 0%, -170% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: auth-heading-pop 780ms cubic-bezier(.16, 1, .3, 1) 120ms both, entry-title-sheen 5400ms ease-in-out 1200ms infinite;
+  }
+
+  .nexus-login-redesign .auth-orbit,
+  .nexus-login-redesign .auth-orbit strong,
+  .nexus-login-redesign .orbit-node,
+  .nexus-login-redesign .login-role-switch button i,
+  .nexus-login-redesign .login-capabilities i,
+  .policy-topbar nav button,
+  .policy-topbar nav button i {
+    display: inline-grid;
+    place-items: center;
+    line-height: 1;
+  }
+
+  .nexus-login-redesign .auth-orbit strong,
+  .nexus-login-redesign .orbit-node {
+    transform: translateZ(0);
+  }
+
+  .nexus-login-redesign .auth-orbit {
+    animation: auth-orbit-float 5200ms ease-in-out infinite;
+  }
+
+  .nexus-login-redesign .auth-orbit::after {
+    content: "";
+    position: absolute;
+    inset: -8%;
+    border-radius: inherit;
+    border: 1px solid color-mix(in srgb, var(--entry-accent) 28%, transparent);
+    border-left-color: transparent;
+    border-bottom-color: transparent;
+    animation: auth-orbit-spin 7600ms linear infinite;
+  }
+
+  .nexus-login-redesign .auth-signal-chart i::before {
+    animation: auth-meter-fill 1050ms cubic-bezier(.16, 1, .3, 1) 320ms both;
+  }
+
+  .nexus-login-redesign .login-capabilities div {
+    min-height: 58px;
+  }
+
+  .nexus-login-redesign .register-assurance-strip span,
+  .nexus-login-redesign .register-consent-head a,
+  .policy-index a {
+    transition: transform 180ms var(--ease-standard), border-color 180ms var(--ease-standard), background 180ms var(--ease-standard);
+  }
+
+  .nexus-login-redesign .register-assurance-strip span:hover,
+  .nexus-login-redesign .register-consent-head a:hover,
+  .policy-index a:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--entry-accent) 36%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 9%, var(--entry-surface-soft));
+  }
+
+  .policy-screen {
+    scroll-behavior: smooth;
+  }
+
+  .policy-hero {
+    position: relative;
+    grid-template-columns: minmax(0, .9fr) minmax(320px, .62fr);
+    align-items: stretch;
+    min-height: clamp(420px, 52vw, 560px);
+    padding: clamp(1rem, 2vw, 1.4rem);
+  }
+
+  .policy-hero-copy {
+    display: grid;
+    align-content: center;
+    gap: .8rem;
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 2.5rem);
+  }
+
+  .policy-hero-copy > span {
+    color: var(--entry-warm);
+    font-size: .74rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .policy-hero h1 {
+    width: min(6ch, 100%);
+    background-image:
+      var(--entry-title-fill),
+      linear-gradient(105deg, transparent 0 34%, color-mix(in srgb, #fff 78%, var(--entry-accent)) 48%, transparent 60% 100%);
+    background-size: 100% 180%, 230% 100%;
+    background-position: 50% 0%, -170% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: auth-heading-pop 820ms cubic-bezier(.16, 1, .3, 1) both, entry-title-sheen 5600ms ease-in-out 1200ms infinite;
+  }
+
+  .policy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .55rem;
+    margin-top: .35rem;
+  }
+
+  .policy-photo-card {
+    position: relative;
+    min-height: 100%;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--entry-radius-lg);
+    background: #101816;
+    animation: auth-media-reveal 860ms var(--ease-emphasis) 120ms both;
+  }
+
+  .policy-photo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(.96) contrast(1.04);
+    transition: transform 720ms var(--ease-emphasis);
+  }
+
+  .policy-photo-card:hover img {
+    transform: scale(1.035);
+  }
+
+  .policy-photo-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, .64));
+  }
+
+  .policy-photo-card figcaption {
+    position: absolute;
+    inset: auto 1rem 1rem;
+    z-index: 1;
+    display: grid;
+    gap: .22rem;
+    color: #fff;
+  }
+
+  .policy-photo-card figcaption span {
+    color: var(--entry-warm);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .policy-photo-card figcaption strong {
+    color: #fff;
+    font-size: clamp(1.6rem, 3.2vw, 3.4rem);
+    line-height: .92;
+  }
+
+  .policy-topbar {
+    animation: auth-panel-enter 620ms var(--ease-emphasis) both;
+  }
+
+  .policy-layout {
+    animation: auth-panel-enter 760ms var(--ease-emphasis) 140ms both;
+  }
+
+  @keyframes auth-title-rise {
+    from {
+      opacity: 0;
+      transform: translateY(.34em) scale(.98);
+      filter: blur(12px);
+    }
+
+    60% {
+      opacity: 1;
+      transform: translateY(-.03em) scale(1.01);
+      filter: blur(0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes auth-title-breathe {
+    0%,
+    100% {
+      transform: translateY(0);
+      text-shadow: 0 22px 60px rgba(0, 0, 0, .46);
+    }
+
+    52% {
+      transform: translateY(-.035em);
+      text-shadow: 0 26px 76px rgba(45, 212, 191, .22);
+    }
+  }
+
+  @keyframes auth-kicker-slide {
+    from {
+      opacity: 0;
+      transform: translateX(-18px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes auth-heading-pop {
+    from {
+      opacity: 0;
+      transform: translateY(.22em);
+      filter: blur(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes auth-orbit-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes auth-orbit-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes auth-meter-fill {
+    from {
+      transform: scaleX(.08);
+      transform-origin: left;
+    }
+
+    to {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+
+  @keyframes auth-panel-enter {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes auth-media-reveal {
+    from {
+      opacity: 0;
+      transform: scale(.982);
+      clip-path: inset(5% 5% 5% 5% round 12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+      clip-path: inset(0 0 0 0 round 12px);
+    }
+  }
+
+  @keyframes auth-bg-drift {
+    from {
+      transform: scale(1.018) translate3d(-.4%, -.2%, 0);
+    }
+
+    to {
+      transform: scale(1.045) translate3d(.45%, .35%, 0);
+    }
+  }
+
   @keyframes entry-title-rise {
     from {
       opacity: 0;
@@ -1893,9 +2873,51 @@
       width: min(820px, 100%);
     }
 
+    .nexus-login-redesign .login-composition,
+    .nexus-login-redesign .login-composition.register-composition {
+      min-height: auto;
+      overflow: visible;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .nexus-login-redesign .login-identity-panel {
+      position: relative;
+      inset: auto;
+      min-height: 320px;
+      border-radius: var(--entry-radius-lg);
+    }
+
+    .nexus-login-redesign .login-panel,
+    .nexus-login-redesign .login-panel.register-mode {
+      justify-self: center;
+      width: min(560px, 100%);
+      max-height: none;
+      margin: 0;
+    }
+
     .nexus-login-redesign .login-identity-list,
     .nexus-login-redesign .login-security-stack {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .policy-hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-photo-card {
+      min-height: 280px;
+    }
+
+    .policy-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-index {
+      position: relative;
+      top: auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
@@ -2006,8 +3028,13 @@
       min-height: auto;
     }
 
+    .nexus-login-redesign .login-composition,
+    .nexus-login-redesign .login-composition.register-composition {
+      gap: .8rem;
+    }
+
     .nexus-login-redesign .login-identity-panel {
-      order: 2;
+      display: none;
     }
 
     .nexus-login-redesign .login-panel {
@@ -2020,7 +3047,53 @@
     }
 
     .nexus-login-redesign .login-photo-card {
-      min-height: 220px;
+      min-height: 260px;
+    }
+
+    .nexus-login-redesign .login-photo-card figcaption {
+      left: 1rem;
+      bottom: 4.3rem;
+      width: calc(100% - 2rem);
+    }
+
+    .nexus-login-redesign .login-photo-card figcaption strong {
+      max-width: 10ch;
+      font-size: clamp(2.25rem, 14vw, 3.6rem);
+    }
+
+    .nexus-login-redesign .login-live-strip {
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      width: auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nexus-login-redesign .login-live-strip span {
+      min-height: 34px;
+      padding: .38rem .3rem;
+      font-size: .66rem;
+    }
+
+    .nexus-login-redesign .login-brand-hero {
+      left: 1rem;
+      top: 1rem;
+      max-width: calc(100% - 2rem);
+    }
+
+    .nexus-login-redesign .auth-signal-chart span {
+      grid-template-columns: 44px minmax(0, 1fr) 38px;
+    }
+
+    .nexus-login-redesign .register-consent-head nav {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nexus-login-redesign .register-consent-head a {
+      justify-content: center;
+      padding-inline: .35rem;
+      text-align: center;
     }
 
     .nexus-login-redesign .register-verification img,
@@ -2031,6 +3104,47 @@
     .nexus-login-redesign .login-footnote {
       justify-content: flex-start;
     }
+
+    .policy-screen {
+      padding: .75rem;
+    }
+
+    .policy-topbar {
+      position: relative;
+      top: auto;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .policy-topbar nav {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .policy-hero {
+      min-height: auto;
+      padding: .75rem;
+    }
+
+    .policy-hero-copy {
+      padding: .8rem;
+    }
+
+    .policy-hero h1 {
+      font-size: clamp(3rem, 18vw, 4.8rem);
+    }
+
+    .policy-photo-card {
+      min-height: 220px;
+    }
+
+    .policy-index {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-document h2 {
+      font-size: clamp(1.7rem, 10vw, 2.6rem);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2038,7 +3152,21 @@
     .entry-title::before,
     .entry-title::after,
     .entry-photo-runway img,
-    .nexus-login-redesign .login-photo-card img {
+    .nexus-login-redesign .login-panel,
+    .nexus-login-redesign .login-identity-panel,
+    .nexus-login-redesign .login-photo-card,
+    .nexus-login-redesign .login-photo-card img,
+    .nexus-login-redesign .login-photo-card figcaption strong,
+    .nexus-login-redesign .login-photo-card figcaption span,
+    .nexus-login-redesign .brand-lockup h1,
+    .nexus-login-redesign .auth-orbit,
+    .nexus-login-redesign .auth-orbit::after,
+    .policy-topbar,
+    .policy-hero,
+    .policy-layout,
+    .policy-photo-card,
+    .policy-photo-card img,
+    .policy-hero h1 {
       animation: none !important;
       transition: none !important;
     }

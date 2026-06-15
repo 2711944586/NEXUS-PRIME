@@ -5,7 +5,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { TagModule } from 'primeng/tag';
 import { catchError, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
@@ -18,14 +17,6 @@ interface RegisterPolicy {
   terms_version: string;
   permissions: string[];
   required_acceptances: string[];
-  documents?: RegisterPolicyDocument[];
-}
-
-interface RegisterPolicyDocument {
-  id: string;
-  title: string;
-  summary: string;
-  items: string[];
 }
 
 interface CaptchaChallenge {
@@ -39,68 +30,37 @@ interface CaptchaChallenge {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonModule, InputTextModule, TagModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonModule, InputTextModule],
   template: `
-    <main class="login-screen nexus-login-redesign">
+    <main class="login-screen nexus-login-redesign" [class.register-screen]="authMode() === 'register'">
       <section class="login-stage" aria-label="NEXUS Prime 登录">
         <a class="login-back-link" routerLink="/">
           <i class="pi pi-arrow-left"></i>
-          返回首页
+          首页
         </a>
 
         <div class="login-composition" [class.register-composition]="authMode() === 'register'">
-          <aside class="login-identity-panel" aria-label="经营入口概览">
+          <aside class="login-identity-panel" aria-label="入口现场">
             <div class="login-brand-hero">
               <span class="brand-mark">NX</span>
               <div>
                 <span>NEXUS Prime</span>
-                <strong>经营系统入口</strong>
+                <strong>{{ authMode() === 'login' ? 'Operations access' : 'Member onboarding' }}</strong>
               </div>
-            </div>
-
-            <div class="login-hero-copy">
-              <span class="login-kicker">Secure Console</span>
-              <h1>进入 NEXUS Prime</h1>
-              <p>选择授权身份进入工作台。系统会区分管理员与普通成员的操作范围，并记录关键业务动作。</p>
             </div>
 
             <figure class="login-photo-card">
-              <img [src]="authMode() === 'register' ? '/images/operations-team-wide.jpg' : '/images/control-dashboard-wide.jpg'" alt="经营系统真实工作场景" />
+              <img [src]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'" alt="制造与仓配现场" />
               <figcaption>
-                <strong>{{ authMode() === 'register' ? 'Member onboarding' : 'Operations console' }}</strong>
-                <span>{{ authMode() === 'register' ? '普通成员准入、许可确认与审计记录同步落库。' : '权限、业务动作和审计记录从登录开始绑定。' }}</span>
+                <span>{{ authMode() === 'register' ? 'Register' : 'Secure console' }}</span>
+                <strong>{{ authMode() === 'register' ? '创建普通成员账号' : '进入经营工作台' }}</strong>
               </figcaption>
             </figure>
 
-            <div class="login-identity-list" aria-label="登录说明">
-              @for (note of accessNotes; track note.title) {
-                <article>
-                  <i [class]="note.icon"></i>
-                  <span>
-                    <strong>{{ note.title }}</strong>
-                    <em>{{ note.body }}</em>
-                  </span>
-                </article>
-              }
-            </div>
-
-            @if (authMode() === 'register') {
-              <div class="register-access-card identity-register-policy" aria-label="注册准入说明">
-                <strong>注册后默认成员权限</strong>
-                @for (item of registerPolicyItems(); track $index) {
-                  <span><i class="pi pi-check"></i>{{ item }}</span>
-                }
-              </div>
-            }
-
-            <div class="login-security-stack" aria-label="访问流程">
-              @for (item of securityTimeline; track item.step) {
-                <article>
-                  <span>{{ item.step }}</span>
-                  <strong>{{ item.title }}</strong>
-                  <em>{{ item.body }}</em>
-                </article>
-              }
+            <div class="login-live-strip" aria-label="入口状态">
+              <span>Role scoped</span>
+              <span>CSRF ready</span>
+              <span>Audit trace</span>
             </div>
           </aside>
 
@@ -112,17 +72,17 @@ interface CaptchaChallenge {
             <div class="brand-lockup">
               <div class="brand-mark">NX</div>
               <div>
-                <p>AUTHORIZED ACCESS</p>
-                <h1>{{ authMode() === 'login' ? '欢迎回来' : '创建业务账号' }}</h1>
+                <p>{{ authMode() === 'login' ? 'AUTHORIZED ACCESS' : 'MEMBER ACCOUNT' }}</p>
+                <h1>{{ authMode() === 'login' ? '欢迎回来' : '创建账号' }}</h1>
               </div>
             </div>
 
             <div class="login-copy">
-              <p>{{ authMode() === 'login' ? '选择账号角色并进入对应工作台，关键写入动作会进入审计链路。' : '注册仅创建普通成员账号，完成验证码识别与许可确认后进入工作台，管理员可后续调整岗位权限。' }}</p>
+              <p>{{ authMode() === 'login' ? '选择身份，进入对应工作台。' : '普通成员账号，注册后按岗位授权。' }}</p>
               @if (authMode() === 'register') {
                 <div class="register-policy-strip">
                   <span>许可版本 {{ registerPolicy()?.terms_version || captcha()?.terms_version || '读取中' }}</span>
-                  <strong>普通成员准入</strong>
+                  <a routerLink="/auth/register-policy">查看许可</a>
                 </div>
               }
             </div>
@@ -140,11 +100,6 @@ interface CaptchaChallenge {
                 </div>
               }
             } @else {
-              <div class="register-mini-note" aria-label="注册准入说明">
-                <i class="pi pi-user-plus"></i>
-                <span>普通成员账号会经过资料校验、邮箱唯一性、验证码识别、许可确认与审计记录五步准入。</span>
-              </div>
-
               <div class="register-assurance-strip" aria-label="注册流程">
                 @for (step of registerSteps; track step.label) {
                   <span><i [class]="step.icon"></i>{{ step.label }}</span>
@@ -331,23 +286,13 @@ interface CaptchaChallenge {
                 </section>
 
                 <section class="register-consent" aria-label="注册许可确认">
-                  <div class="register-policy-documents" aria-label="注册详细条款">
-                    @for (document of registerPolicyDocuments(); track document.id) {
-                      <details class="register-license-panel">
-                        <summary>
-                          <span>
-                            <strong>{{ document.title }}</strong>
-                            <em>{{ document.summary }}</em>
-                          </span>
-                          <i class="pi pi-chevron-down"></i>
-                        </summary>
-                        <div>
-                          @for (item of document.items; track $index) {
-                            <p>{{ item }}</p>
-                          }
-                        </div>
-                      </details>
-                    }
+                  <div class="register-consent-head">
+                    <strong>许可确认</strong>
+                    <nav aria-label="注册许可">
+                      <a routerLink="/auth/register-policy" fragment="terms">服务许可</a>
+                      <a routerLink="/auth/register-policy" fragment="privacy">隐私说明</a>
+                      <a routerLink="/auth/register-policy" fragment="data_scope">数据范围</a>
+                    </nav>
                   </div>
                   <label>
                     <input type="checkbox" formControlName="accepted_terms" />
@@ -381,7 +326,7 @@ interface CaptchaChallenge {
             </div>
 
             <div class="login-footnote">
-              <span>{{ authMode() === 'login' ? '建议在可信网络访问。' : '已有账号可以直接登录。' }}</span>
+              <span>{{ authMode() === 'login' ? '可信网络访问。' : '已有账号可直接登录。' }}</span>
               @if (authMode() === 'login') {
                 @for (entry of demoRoleEntries(); track entry.kind) {
                   <button type="button" (click)="prefillRole(entry.kind)">填入{{ entry.title }}</button>
@@ -420,16 +365,6 @@ export class LoginPage implements OnInit {
     { kind: 'member' as const, title: '普通用户', body: '采购、销售、文件、报表等授权流程', icon: 'pi pi-user' }
   ];
   protected readonly demoRoleEntries = signal(this.roleEntries.filter(entry => Boolean(environment.demoAccounts[entry.kind])));
-  protected readonly accessNotes = [
-    { icon: 'pi pi-lock', title: '会话校验', body: 'CSRF 与账号状态确认' },
-    { icon: 'pi pi-key', title: '权限分配', body: '管理员与普通成员差异化入口' },
-    { icon: 'pi pi-history', title: '审计留痕', body: '关键动作同步记录' }
-  ];
-  protected readonly securityTimeline = [
-    { step: '01', title: '身份进入', body: '登录前校验会话与账号状态' },
-    { step: '02', title: '权限落位', body: '管理员拥有系统权限，成员按岗位授权' },
-    { step: '03', title: '审计闭环', body: '注册、登录和关键写入均留痕' }
-  ];
   protected readonly registerSteps = [
     { icon: 'pi pi-id-card', label: '资料完整' },
     { icon: 'pi pi-envelope', label: '邮箱唯一' },
@@ -624,45 +559,6 @@ export class LoginPage implements OnInit {
         this.form.controls.captcha_answer.markAsUntouched();
       }
     });
-  }
-
-  registerPolicyItems(): string[] {
-    return this.registerPolicy()?.permissions ?? [
-      '普通账号默认进入成员角色，无法访问系统安全配置。',
-      '注册资料用于身份识别、业务通知和审计追踪。',
-      '管理员可后续按岗位调整采购、销售、文件和报表权限。'
-    ];
-  }
-
-  registerPolicyDocuments(): RegisterPolicyDocument[] {
-    return this.registerPolicy()?.documents?.length ? this.registerPolicy()!.documents! : [
-      {
-        id: 'terms',
-        title: 'NEXUS Prime 服务许可',
-        summary: '普通成员准入、业务动作和文件上传规则。',
-        items: this.registerPolicyItems()
-      },
-      {
-        id: 'privacy',
-        title: '隐私与身份资料说明',
-        summary: '账号资料、头像、通知和审计归属说明。',
-        items: [
-          '注册资料用于登录、通知、头像展示和业务审计归属。',
-          '头像与附件分目录存储，生产环境使用持久化对象存储。',
-          '部署 Token、数据库连接串和外部 AI Key 不会保存在浏览器端。'
-        ]
-      },
-      {
-        id: 'data_scope',
-        title: '数据使用范围',
-        summary: '库存、采购、履约、应收、报表和 AI 分析闭环。',
-        items: [
-          '系统会把账号与上传、评论、报表、AI 会话和业务写入建立关联。',
-          'AI 分析由后端读取经营摘要并统一调用外部或本地分析引擎。',
-          '管理员可按岗位分配采购、销售、文件、报表等权限。'
-        ]
-      }
-    ];
   }
 
   capabilityTiles(): Array<{ icon: string; title: string; body: string }> {
