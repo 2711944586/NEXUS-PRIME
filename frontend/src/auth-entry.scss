@@ -307,6 +307,8 @@
     gap: .02em;
     max-width: 12ch;
     margin: 0;
+    overflow: clip;
+    isolation: isolate;
     color: var(--entry-ink);
     font-size: clamp(4.4rem, 12vw, 11.2rem);
     font-weight: 950;
@@ -317,12 +319,18 @@
   }
 
   .entry-title span {
+    position: relative;
     display: block;
-    background: var(--entry-title-fill);
-    background-size: 100% 180%;
+    background-image:
+      var(--entry-title-fill),
+      linear-gradient(105deg, transparent 0 34%, color-mix(in srgb, #fff 82%, var(--entry-accent)) 46%, transparent 58% 100%);
+    background-size: 100% 180%, 230% 100%;
+    background-position: 50% 0%, -170% 50%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    transform-origin: 50% 82%;
+    will-change: opacity, transform, background-position;
     animation: entry-title-rise 950ms cubic-bezier(.16, 1, .3, 1) both, entry-title-sheen 5200ms ease-in-out 1100ms infinite;
   }
 
@@ -333,11 +341,29 @@
   .entry-title::after {
     content: "";
     width: min(420px, 68%);
-    height: 1px;
+    height: 2px;
     margin-top: clamp(.8rem, 1.8vw, 1.25rem);
-    background: linear-gradient(90deg, transparent, var(--entry-accent), transparent);
+    background:
+      linear-gradient(90deg, transparent, var(--entry-accent), transparent),
+      linear-gradient(90deg, transparent, color-mix(in srgb, #fff 60%, var(--entry-accent)), transparent);
+    box-shadow: 0 0 26px color-mix(in srgb, var(--entry-accent) 34%, transparent);
     transform-origin: center;
     animation: entry-title-line 900ms cubic-bezier(.16, 1, .3, 1) 320ms both;
+  }
+
+  .entry-title::before {
+    content: "";
+    position: absolute;
+    inset: 46% -12% auto;
+    z-index: -1;
+    height: .12em;
+    border-radius: 999px;
+    opacity: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--entry-accent) 36%, transparent), transparent);
+    filter: blur(14px);
+    transform: scaleX(.18);
+    transform-origin: center;
+    animation: entry-title-horizon 1200ms cubic-bezier(.16, 1, .3, 1) 180ms both, entry-title-horizon-pulse 5600ms ease-in-out 1700ms infinite;
   }
 
   .entry-story p {
@@ -587,26 +613,64 @@
 
   .entry-process-lines {
     display: grid;
-    gap: .55rem;
+    grid-column: 2 / -1;
+    align-self: stretch;
+    gap: .62rem;
   }
 
   .entry-process-lines a {
+    position: relative;
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr);
-    gap: .7rem;
+    grid-template-columns: 48px minmax(0, 1fr) minmax(80px, .34fr);
+    gap: .72rem;
     align-items: center;
     min-width: 0;
-    padding: .68rem;
+    min-height: 64px;
+    overflow: hidden;
+    padding: .62rem .8rem .62rem .62rem;
+    transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), background 220ms var(--ease-standard);
+  }
+
+  .entry-process-lines a::after {
+    content: "";
+    justify-self: stretch;
+    align-self: center;
+    height: 1px;
+    min-width: 72px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--entry-accent) 54%, transparent), color-mix(in srgb, var(--entry-warm) 28%, transparent), transparent);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--entry-accent) 18%, transparent);
+  }
+
+  .entry-process-lines a:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--entry-accent) 30%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 7%, var(--entry-surface-soft));
   }
 
   .entry-process-lines i {
+    position: relative;
     display: inline-grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    justify-self: center;
+    align-self: center;
+    width: 44px;
+    height: 44px;
     border-radius: var(--entry-radius);
     color: color-mix(in srgb, var(--entry-canvas) 92%, #06110e);
     background: var(--entry-warm);
+    font-size: 1.05rem;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 34%, transparent);
+  }
+
+  .entry-process-lines i::before {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: block;
+    line-height: 1;
+    text-align: center;
+    transform: translate(-50%, -50%);
   }
 
   .entry-process-lines strong,
@@ -1734,8 +1798,14 @@
   @keyframes entry-title-rise {
     from {
       opacity: 0;
-      transform: translateY(.18em);
-      filter: blur(10px);
+      transform: translateY(.22em) scale(.985);
+      filter: blur(12px);
+    }
+
+    62% {
+      opacity: 1;
+      transform: translateY(-.018em) scale(1.006);
+      filter: blur(0);
     }
 
     to {
@@ -1749,12 +1819,12 @@
     0%,
     36%,
     100% {
-      background-position: 50% 0%;
+      background-position: 50% 0%, -170% 50%;
     }
 
     48%,
     58% {
-      background-position: 50% 100%;
+      background-position: 50% 100%, 170% 50%;
     }
   }
 
@@ -1770,6 +1840,32 @@
     }
   }
 
+  @keyframes entry-title-horizon {
+    from {
+      opacity: 0;
+      transform: scaleX(.18);
+    }
+
+    to {
+      opacity: .82;
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes entry-title-horizon-pulse {
+    0%,
+    100% {
+      opacity: .28;
+      transform: scaleX(.76);
+    }
+
+    46%,
+    58% {
+      opacity: .72;
+      transform: scaleX(1.02);
+    }
+  }
+
   @media (max-width: 1120px) {
     .entry-operations-card,
     .nexus-login-redesign .login-composition,
@@ -1779,6 +1875,10 @@
 
     .entry-operations-card {
       width: min(760px, 100%);
+    }
+
+    .entry-process-lines {
+      grid-column: auto;
     }
 
     .entry-photo-runway {
@@ -1878,6 +1978,14 @@
       min-height: 220px;
     }
 
+    .entry-process-lines a {
+      grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .entry-process-lines a::after {
+      display: none;
+    }
+
     .login-identity-panel {
       order: 2;
     }
@@ -1927,6 +2035,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .entry-title span,
+    .entry-title::before,
     .entry-title::after,
     .entry-photo-runway img,
     .nexus-login-redesign .login-photo-card img {
