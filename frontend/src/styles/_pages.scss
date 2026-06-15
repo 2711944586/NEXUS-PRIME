@@ -208,7 +208,7 @@
     overflow: hidden;
     margin: 0;
     border-radius: var(--radius-md);
-    background: #101816;
+    background: #111827;
   }
 
   .command-photo-feature {
@@ -471,16 +471,16 @@
     min-height: 28px;
     border-radius: var(--radius-sm);
     color: var(--accent-contrast);
-    background: color-mix(in srgb, var(--accent) 84%, #10231f);
+    background: color-mix(in srgb, var(--accent) 84%, #111827);
     font-weight: 900;
   }
 
   .erp-action-list a.p0 > span {
-    background: color-mix(in srgb, var(--danger) 86%, #10231f);
+    background: color-mix(in srgb, var(--danger) 86%, #111827);
   }
 
   .erp-action-list a.p1 > span {
-    background: color-mix(in srgb, var(--warning) 88%, #10231f);
+    background: color-mix(in srgb, var(--warning) 88%, #111827);
   }
 
   .erp-action-list strong {
@@ -840,7 +840,7 @@
     height: 100%;
     object-fit: contain;
     border-radius: var(--radius-md);
-    background: #101816;
+    background: #111827;
   }
 
   .entry-photo-mosaic .primary {
@@ -1000,7 +1000,7 @@
     overflow: hidden;
     margin: 0;
     border-radius: var(--radius-md);
-    background: #101816;
+    background: #111827;
     isolation: isolate;
   }
 
@@ -1110,7 +1110,7 @@
     place-items: center;
     border-radius: var(--radius-md);
     color: var(--accent-contrast);
-    background: color-mix(in srgb, var(--accent) 86%, #111827);
+    background: color-mix(in srgb, var(--accent) 86%, #172033);
   }
 
   .settings-option-grid button strong {
