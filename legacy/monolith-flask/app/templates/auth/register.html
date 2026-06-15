@@ -1,0 +1,436 @@
+{% extends "layouts/auth_layout.html" %}
+
+{% block title %}注册{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 验证码区域样式 */
+    .captcha-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .captcha-input-wrapper {
+        flex: 1;
+    }
+    
+    .captcha-image-wrapper {
+        position: relative;
+        width: 120px;
+        height: 44px;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+    
+    [data-theme="light"] .captcha-image-wrapper {
+        background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .captcha-image-wrapper:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+        transform: translateY(-2px);
+    }
+    
+    .captcha-image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+    
+    .captcha-refresh {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.85);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    [data-theme="light"] .captcha-refresh {
+        background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .captcha-image-wrapper:hover .captcha-refresh {
+        opacity: 1;
+    }
+    
+    .captcha-image-wrapper.loading .captcha-refresh {
+        opacity: 1;
+    }
+    
+    .captcha-image-wrapper.loading .captcha-refresh i {
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    /* 密码行并排 */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .form-row .form-group {
+        margin-bottom: 0;
+    }
+    
+    /* 协议复选框样式 */
+    .agreement-wrapper {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: rgba(99, 102, 241, 0.05);
+        border: 1px solid rgba(99, 102, 241, 0.15);
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .agreement-wrapper:hover {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.25);
+    }
+    
+    .agreement-wrapper input[type="checkbox"] {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(99, 102, 241, 0.4);
+        border-radius: 5px;
+        background: transparent;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .agreement-wrapper input[type="checkbox"]:checked {
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        border-color: transparent;
+    }
+    
+    .agreement-wrapper input[type="checkbox"]:checked::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+    }
+    
+    .agreement-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+    
+    .agreement-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .agreement-link:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+    
+    /* 验证码提示 */
+    .captcha-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+        opacity: 0.7;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 头部 -->
+<div class="auth-header">
+    <div class="logo-container">
+        <div class="logo-ring logo-ring-1"></div>
+        <div class="logo-ring logo-ring-2"></div>
+        <div class="logo-pulse"></div>
+        <div class="logo-icon">
+            <i class="fas fa-user-plus"></i>
+        </div>
+    </div>
+    <h1 class="auth-title">创建账户</h1>
+    <p class="auth-subtitle">NEXUS PRIME Registration</p>
+    <p class="auth-desc">注册您的 NEXUS 账户</p>
+</div>
+
+<!-- 注册表单 -->
+<form method="POST" action="{{ url_for('auth.register') }}" class="auth-form" id="registerForm">
+    {{ form.hidden_tag() }}
+    
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-user"></i>
+            用户名
+        </label>
+        <div class="input-wrapper">
+            {{ form.username(class="form-control", placeholder="请输入用户名") }}
+            <span class="input-icon"><i class="fas fa-id-card"></i></span>
+        </div>
+        {% for error in form.username.errors %}
+        <div class="form-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ error }}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-at"></i>
+            电子邮箱
+        </label>
+        <div class="input-wrapper">
+            {{ form.email(class="form-control", placeholder="请输入邮箱地址") }}
+            <span class="input-icon"><i class="fas fa-envelope"></i></span>
+        </div>
+        {% for error in form.email.errors %}
+        <div class="form-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ error }}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="form-row" style="margin-bottom: 1.25rem;">
+        <div class="form-group">
+            <label class="form-label">
+                <i class="fas fa-key"></i>
+                密码
+            </label>
+            <div class="input-wrapper">
+                {{ form.password(class="form-control", placeholder="请输入密码", id="passwordInput", style="padding-right: 1rem;") }}
+            </div>
+            {% for error in form.password.errors %}
+            <div class="form-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">
+                <i class="fas fa-check-double"></i>
+                确认密码
+            </label>
+            <div class="input-wrapper">
+                {{ form.confirm_password(class="form-control", placeholder="再次输入密码", style="padding-right: 1rem;") }}
+            </div>
+            {% for error in form.confirm_password.errors %}
+            <div class="form-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- 验证码输入 -->
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-shield-alt"></i>
+            验证码
+        </label>
+        <div class="captcha-container">
+            <div class="input-wrapper captcha-input-wrapper">
+                {{ form.captcha(class="form-control", placeholder="请输入验证码", maxlength="4", autocomplete="off", style="text-transform: uppercase; padding-right: 1rem;") }}
+            </div>
+            <div class="captcha-image-wrapper" id="captchaWrapper" title="点击刷新验证码">
+                <img src="{{ captcha_image }}" alt="验证码" id="captchaImage">
+                <div class="captcha-refresh">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>刷新</span>
+                </div>
+            </div>
+        </div>
+        {% for error in form.captcha.errors %}
+        <div class="form-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ error }}
+        </div>
+        {% endfor %}
+        <p class="captcha-hint">
+            <i class="fas fa-info-circle"></i> 点击图片可刷新验证码
+        </p>
+    </div>
+    
+    <!-- 协议同意 -->
+    <div class="form-group">
+        <div class="agreement-wrapper">
+            <input type="checkbox" required id="agreeTerms">
+            <span class="agreement-text">
+                我已阅读并同意 <a href="{{ url_for('auth.terms') }}" target="_blank" class="agreement-link">用户协议</a> 和 <a href="{{ url_for('auth.privacy') }}" target="_blank" class="agreement-link">隐私政策</a>
+            </span>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn-submit">
+        <i class="fas fa-user-plus"></i>
+        &nbsp;&nbsp;创建账户
+    </button>
+</form>
+
+<div class="divider">
+    <div class="divider-line"></div>
+    <span class="divider-text">已有账户?</span>
+    <div class="divider-line"></div>
+</div>
+
+<div class="auth-footer">
+    已有账户？
+    <a href="{{ url_for('auth.login') }}">
+        <i class="fas fa-sign-in-alt"></i> 立即登录
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 验证码刷新
+    const captchaWrapper = document.getElementById('captchaWrapper');
+    const captchaImage = document.getElementById('captchaImage');
+    
+    if (captchaWrapper && captchaImage) {
+        captchaWrapper.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 防止重复点击
+            if (captchaWrapper.classList.contains('loading')) return;
+            
+            captchaWrapper.classList.add('loading');
+            
+            // 使用 XMLHttpRequest 以获得更好的兼容性
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '{{ url_for("auth.refresh_captcha") }}', true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.image) {
+                            captchaImage.src = data.image;
+                            
+                            // 清空验证码输入
+                            const captchaInput = document.querySelector('input[name="captcha"]');
+                            if (captchaInput) {
+                                captchaInput.value = '';
+                                captchaInput.focus();
+                            }
+                        }
+                    } catch (err) {
+                        console.error('解析验证码响应失败:', err);
+                    }
+                } else {
+                    console.error('刷新验证码失败:', xhr.status);
+                }
+                
+                setTimeout(function() {
+                    captchaWrapper.classList.remove('loading');
+                }, 300);
+            };
+            
+            xhr.onerror = function() {
+                console.error('网络错误');
+                setTimeout(function() {
+                    captchaWrapper.classList.remove('loading');
+                }, 300);
+            };
+            
+            xhr.send();
+        });
+    }
+    
+    // 验证码输入自动转大写
+    const captchaInput = document.querySelector('input[name="captcha"]');
+    if (captchaInput) {
+        captchaInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+    
+    // 密码强度指示器
+    const passwordInput = document.getElementById('passwordInput');
+    const strengthBar = document.getElementById('strengthBar');
+    
+    if (passwordInput && strengthBar) {
+        passwordInput.addEventListener('input', function() {
+            const value = this.value;
+            let strength = 0;
+            
+            if (value.length >= 6) strength++;
+            if (value.length >= 10) strength++;
+            if (/[A-Z]/.test(value)) strength++;
+            if (/[0-9]/.test(value)) strength++;
+            if (/[^A-Za-z0-9]/.test(value)) strength++;
+            
+            strengthBar.className = 'password-strength-bar';
+            if (strength === 0) {
+                strengthBar.style.width = '0%';
+            } else if (strength <= 2) {
+                strengthBar.classList.add('weak');
+            } else if (strength === 3) {
+                strengthBar.classList.add('fair');
+            } else if (strength === 4) {
+                strengthBar.classList.add('good');
+            } else {
+                strengthBar.classList.add('strong');
+            }
+        });
+    }
+    
+    // 表单提交验证
+    const form = document.getElementById('registerForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const agreeTerms = document.getElementById('agreeTerms');
+            if (!agreeTerms.checked) {
+                e.preventDefault();
+                alert('请先同意用户协议和隐私政策');
+                return false;
+            }
+            
+            // 添加提交动画
+            const submitBtn = form.querySelector('.btn-submit');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp;&nbsp;处理中...';
+            submitBtn.disabled = true;
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,570 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}录入盘点 - NEXUS{% endblock %}
+{% block breadcrumb %}库存盘点 / {{ stocktake.take_no }} / 录入{% endblock %}
+
+{% block styles %}
+<style>
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.take-no-badge {
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* 进度提示 */
+.progress-hint {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.progress-hint-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #10b981;
+    font-size: 1.2rem;
+}
+
+.progress-hint-text h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.progress-hint-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 输入表格卡片 */
+.input-table-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header h5 i {
+    color: #10b981;
+}
+
+.item-count {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* 输入表格 */
+.input-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.input-table th,
+.input-table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.input-table th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.input-table tr:last-child td {
+    border-bottom: none;
+}
+
+.input-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.input-table tbody tr:hover {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+/* 商品信息 */
+.product-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.product-name {
+    font-weight: 500;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.product-sku {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 系统数量 */
+.system-qty {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.system-qty i {
+    font-size: 0.75rem;
+}
+
+/* 输入框样式 */
+.qty-input {
+    width: 120px;
+    padding: 0.65rem 1rem;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.qty-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    outline: none;
+}
+
+.qty-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.remark-input {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.remark-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    outline: none;
+}
+
+.remark-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--text-muted);
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.empty-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* 操作按钮 */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+}
+
+.btn-back {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.btn-submit {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+/* 快捷键提示 */
+.keyboard-hint {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.keyboard-hint kbd {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .input-table th:nth-child(4),
+    .input-table td:nth-child(4) {
+        display: none;
+    }
+    
+    .qty-input {
+        width: 80px;
+    }
+}
+
+/* 亮色主题适配 */
+[data-theme="light"] .input-table-card {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .back-link {
+    background: #ffffff;
+}
+
+[data-theme="light"] .progress-hint {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05));
+}
+
+[data-theme="light"] .input-table th {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .qty-input,
+[data-theme="light"] .remark-input {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .keyboard-hint {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .btn-back {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .btn-back:hover {
+    background: #f1f5f9;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="warehouse-panel">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('stocktake.detail', take_id=stocktake.id) }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回盘点详情</span>
+        </a>
+    </div>
+    
+    <div class="page-header">
+        <div class="title-area">
+            <div class="title-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div>
+                <h1 class="page-title">录入盘点数量</h1>
+                <p class="page-subtitle">
+                    盘点单号: <span class="take-no-badge">{{ stocktake.take_no }}</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 进度提示 -->
+    <div class="progress-hint">
+        <div class="progress-hint-icon">
+            <i class="fas fa-lightbulb"></i>
+        </div>
+        <div class="progress-hint-text">
+            <h4>录入提示</h4>
+            <p>请逐一填写每个商品的实际盘点数量，留空表示跳过该商品</p>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('stocktake.input_count', take_id=stocktake.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="input-table-card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> 待盘点商品</h5>
+                <span class="item-count">{{ items|length }} 项</span>
+            </div>
+            
+            {% if items %}
+            <table class="input-table">
+                <thead>
+                    <tr>
+                        <th>商品信息</th>
+                        <th>系统数量</th>
+                        <th style="width: 140px;">实盘数量</th>
+                        <th style="width: 200px;">备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <div class="product-info">
+                                <div class="product-avatar">
+                                    {{ item.product.name[0] }}
+                                </div>
+                                <div>
+                                    <p class="product-name">{{ item.product.name }}</p>
+                                    <p class="product-sku">{{ item.product.sku }}</p>
+                                </div>
+                            </div>
+                            <input type="hidden" name="item_id[]" value="{{ item.id }}">
+                        </td>
+                        <td>
+                            <span class="system-qty">
+                                <i class="fas fa-database"></i>
+                                {{ item.system_qty }} {{ item.product.unit }}
+                            </span>
+                        </td>
+                        <td>
+                            <input type="number" class="qty-input" 
+                                   name="actual_qty[]" min="0" 
+                                   placeholder="输入数量"
+                                   tabindex="{{ loop.index }}">
+                        </td>
+                        <td>
+                            <input type="text" class="remark-input" 
+                                   name="remark[]" placeholder="可选备注">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="keyboard-hint">
+                <span><kbd>Tab</kbd> 切换到下一个输入框</span>
+                <span><kbd>Enter</kbd> 快速保存</span>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="empty-title">所有商品已完成盘点</h3>
+                <p class="empty-desc">该盘点单已没有待录入的商品</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('stocktake.detail', take_id=stocktake.id) }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> 返回详情
+            </a>
+            {% if items %}
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i> 保存录入
+            </button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 回车键快速保存
+    document.querySelectorAll('.qty-input').forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.querySelector('.btn-submit')?.click();
+            }
+        });
+    });
+    
+    // 自动聚焦第一个输入框
+    document.querySelector('.qty-input')?.focus();
+});
+</script>
+{% endblock %}

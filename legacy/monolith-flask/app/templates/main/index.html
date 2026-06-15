@@ -1,0 +1,742 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}指挥中心 - NEXUS{% endblock %}
+{% block breadcrumb %}指挥中心{% endblock %}
+
+{% block content %}
+<div class="command-center">
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+        <div class="welcome-content">
+            <div class="welcome-icon">
+                <div class="icon-core">
+                    <i class="fas fa-satellite"></i>
+                </div>
+                <div class="icon-orbit orbit-1"></div>
+                <div class="icon-orbit orbit-2"></div>
+                <div class="icon-orbit orbit-3"></div>
+            </div>
+            <div class="welcome-text">
+                <h1 class="welcome-title">欢迎回到 <span class="highlight">NEXUS</span> 指挥中心</h1>
+                <p class="welcome-subtitle">
+                    <span class="status-indicator online"></span>
+                    系统运行正常 · 数据连接稳定 · 所有服务在线
+                </p>
+            </div>
+        </div>
+        
+        <div class="datetime-widget">
+            <div class="time" id="currentTime">--:--:--</div>
+            <div class="date" id="currentDate">----年--月--日</div>
+        </div>
+    </div>
+    
+    <!-- 核心指标 -->
+    <div class="metrics-section">
+        <div class="metric-card users">
+            <div class="metric-visual">
+                <div class="visual-ring"></div>
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="metric-data">
+                <span class="metric-value" data-target="51">0</span>
+                <span class="metric-label">活跃用户</span>
+            </div>
+            <div class="metric-trend up">
+                <i class="fas fa-arrow-up"></i> 12%
+            </div>
+        </div>
+        
+        <div class="metric-card products">
+            <div class="metric-visual">
+                <div class="visual-ring"></div>
+                <i class="fas fa-cube"></i>
+            </div>
+            <div class="metric-data">
+                <span class="metric-value" data-target="100">0</span>
+                <span class="metric-label">产品 SKU</span>
+            </div>
+            <div class="metric-trend up">
+                <i class="fas fa-arrow-up"></i> 8%
+            </div>
+        </div>
+        
+        <div class="metric-card orders">
+            <div class="metric-visual">
+                <div class="visual-ring"></div>
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="metric-data">
+                <span class="metric-value" data-target="200">0</span>
+                <span class="metric-label">累计订单</span>
+            </div>
+            <div class="metric-trend up">
+                <i class="fas fa-arrow-up"></i> 24%
+            </div>
+        </div>
+        
+        <div class="metric-card revenue">
+            <div class="metric-visual">
+                <div class="visual-ring"></div>
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="metric-data">
+                <span class="metric-value currency" data-target="158000">¥0</span>
+                <span class="metric-label">本月营收</span>
+            </div>
+            <div class="metric-trend up">
+                <i class="fas fa-arrow-up"></i> 18%
+            </div>
+        </div>
+    </div>
+    
+    <!-- 功能模块快速入口 -->
+    <div class="modules-section">
+        <h2 class="section-title">
+            <i class="fas fa-th-large"></i>
+            快速导航
+        </h2>
+        
+        <div class="modules-grid">
+            <a href="{{ url_for('inventory.index') }}" class="module-tile inventory">
+                <div class="tile-bg"></div>
+                <div class="tile-icon">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div class="tile-info">
+                    <span class="tile-title">量子仓储</span>
+                    <span class="tile-desc">库存管理与调拨</span>
+                </div>
+                <div class="tile-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('sales.kanban') }}" class="module-tile sales">
+                <div class="tile-bg"></div>
+                <div class="tile-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="tile-info">
+                    <span class="tile-title">商业订单</span>
+                    <span class="tile-desc">订单流转看板</span>
+                </div>
+                <div class="tile-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('reports.index') }}" class="module-tile reports">
+                <div class="tile-bg"></div>
+                <div class="tile-icon">
+                    <i class="fas fa-analytics"></i>
+                </div>
+                <div class="tile-info">
+                    <span class="tile-title">数据分析</span>
+                    <span class="tile-desc">智能报表中心</span>
+                </div>
+                <div class="tile-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('ai.chat_page') }}" class="module-tile ai">
+                <div class="tile-bg"></div>
+                <div class="tile-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="tile-info">
+                    <span class="tile-title">AI 智脑</span>
+                    <span class="tile-desc">智能助手对话</span>
+                </div>
+                <div class="tile-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="ai-badge">DeepSeek</div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 系统状态与公告 -->
+    <div class="info-section">
+        <div class="system-status">
+            <h3 class="panel-title">
+                <i class="fas fa-server"></i>
+                系统状态
+            </h3>
+            <div class="status-list">
+                <div class="status-item">
+                    <span class="status-name">数据库连接</span>
+                    <span class="status-badge online">正常</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-name">API 服务</span>
+                    <span class="status-badge online">运行中</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-name">AI 引擎</span>
+                    <span class="status-badge online">就绪</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-name">文件存储</span>
+                    <span class="status-badge online">正常</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="announcements">
+            <h3 class="panel-title">
+                <i class="fas fa-bullhorn"></i>
+                系统公告
+            </h3>
+            <div class="announcement-card">
+                <div class="announcement-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <div class="announcement-content">
+                    <span class="announcement-title">NEXUS PRIME 部署完成</span>
+                    <span class="announcement-text">系统已完成部署，包含 AI 助手、数据分析、仓储管理等核心模块。</span>
+                    <span class="announcement-date">{{ now().strftime('%Y年%m月%d日') if now else '今日' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.command-center {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 欢迎区域 */
+.welcome-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.welcome-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.welcome-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.welcome-icon {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.icon-core {
+    position: absolute;
+    inset: 15px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    z-index: 2;
+}
+
+.icon-orbit {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--color-primary);
+    border-radius: 50%;
+    opacity: 0.3;
+}
+
+.icon-orbit.orbit-1 { animation: orbitSpin 8s linear infinite; }
+.icon-orbit.orbit-2 { inset: 5px; animation: orbitSpin 6s linear infinite reverse; }
+.icon-orbit.orbit-3 { inset: 10px; animation: orbitSpin 10s linear infinite; }
+
+@keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.welcome-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+}
+
+.welcome-title .highlight {
+    background: linear-gradient(135deg, var(--color-primary), #a855f7);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.datetime-widget {
+    text-align: right;
+}
+
+.datetime-widget .time {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), var(--color-primary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: 'Courier New', monospace;
+}
+
+.datetime-widget .date {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* 核心指标 */
+.metrics-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+}
+
+.metric-visual {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    z-index: 1;
+}
+
+.visual-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+}
+
+.metric-card.users .visual-ring { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.metric-card.products .visual-ring { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.metric-card.orders .visual-ring { background: linear-gradient(135deg, #10b981, #059669); }
+.metric-card.revenue .visual-ring { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.metric-data {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.metric-trend {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+}
+
+.metric-trend.up {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+/* 功能模块 */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+}
+
+.section-title i {
+    color: var(--color-primary);
+}
+
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.module-tile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    text-decoration: none;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.module-tile:hover {
+    transform: translateY(-4px);
+}
+
+.module-tile.inventory:hover { border-color: #3b82f6; }
+.module-tile.sales:hover { border-color: #10b981; }
+.module-tile.reports:hover { border-color: #8b5cf6; }
+.module-tile.ai:hover { border-color: #f59e0b; }
+
+.tile-bg {
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    opacity: 0.1;
+    transition: opacity 0.3s ease;
+}
+
+.module-tile:hover .tile-bg { opacity: 0.2; }
+
+.module-tile.inventory .tile-bg { background: #3b82f6; }
+.module-tile.sales .tile-bg { background: #10b981; }
+.module-tile.reports .tile-bg { background: #8b5cf6; }
+.module-tile.ai .tile-bg { background: #f59e0b; }
+
+.tile-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.module-tile.inventory .tile-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.module-tile.sales .tile-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.module-tile.reports .tile-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.module-tile.ai .tile-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.tile-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.tile-title {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.tile-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.tile-arrow {
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+
+.module-tile:hover .tile-arrow {
+    color: var(--color-primary);
+    transform: translateX(4px);
+}
+
+.ai-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(245, 158, 11, 0.2);
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #f59e0b;
+    letter-spacing: 0.5px;
+}
+
+/* 信息区域 */
+.info-section {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1.25rem;
+}
+
+.system-status,
+.announcements {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1.5rem;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 1.25rem 0;
+}
+
+.panel-title i {
+    color: var(--color-primary);
+}
+
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.02);
+    border-radius: 10px;
+}
+
+.status-name {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.online {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.announcement-card {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+    border-radius: 14px;
+    border: 1px solid rgba(99,102,241,0.2);
+}
+
+.announcement-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.announcement-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.announcement-title {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.announcement-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.announcement-date {
+    font-size: 0.8rem;
+    color: var(--color-primary);
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .metrics-section,
+    .modules-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .welcome-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+    
+    .welcome-content {
+        flex-direction: column;
+    }
+    
+    .datetime-widget {
+        text-align: center;
+    }
+    
+    .metrics-section,
+    .modules-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-section {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// 时间更新
+function updateDateTime() {
+    const now = new Date();
+    const timeEl = document.getElementById('currentTime');
+    const dateEl = document.getElementById('currentDate');
+    
+    if (timeEl) {
+        timeEl.textContent = now.toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    }
+    
+    if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        });
+    }
+}
+
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// 数字动画
+function animateValue(element, start, end, duration, isCurrency = false) {
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            current = end;
+            clearInterval(timer);
+        }
+        
+        if (isCurrency) {
+            element.textContent = '¥' + Math.round(current).toLocaleString();
+        } else {
+            element.textContent = Math.round(current);
+        }
+    }, 16);
+}
+
+// 启动数字动画
+document.querySelectorAll('.metric-value[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const isCurrency = el.classList.contains('currency');
+    
+    setTimeout(() => {
+        animateValue(el, 0, target, 1500, isCurrency);
+    }, 300);
+});
+</script>
+{% endblock %}

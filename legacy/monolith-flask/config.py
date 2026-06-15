@@ -1,0 +1,118 @@
+import os
+from dotenv import load_dotenv
+
+# 加载 .env 环境变量
+load_dotenv()
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+class Config:
+    """基础配置类"""
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard-to-guess-string'
+    
+    # 数据库配置
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_RECORD_QUERIES = True
+    
+    # DeepSeek / AI 配置
+    DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', 'sk-placeholder')
+    DEEPSEEK_BASE_URL = os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+    # 如果未配置外部 AI Key，可启用本地回退模式（返回简单回应或使用内置分析）
+    AI_FALLBACK = os.environ.get('AI_FALLBACK', 'true').lower() in ('1', 'true', 'yes')
+    
+    # 文件上传配置
+    UPLOAD_FOLDER = os.path.join(basedir, 'app', 'static', 'uploads')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 限制最大上传 16MB
+    
+    # 云存储配置 (Cloudinary)
+    # 设置 CLOUDINARY_URL 或分别设置 CLOUD_NAME/API_KEY/API_SECRET
+    CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+    
+    # 是否启用云存储（生产环境自动启用，如果配置了 Cloudinary）
+    USE_CLOUD_STORAGE = os.environ.get('USE_CLOUD_STORAGE', 'auto').lower()
+    
+    # 缓存配置 (默认使用 SimpleCache，生产环境可改 Redis)
+    CACHE_TYPE = "SimpleCache"
+    CACHE_DEFAULT_TIMEOUT = 300
+
+    @staticmethod
+    def init_app(app):
+        # 确保上传目录存在
+        if not os.path.exists(Config.UPLOAD_FOLDER):
+            os.makedirs(Config.UPLOAD_FOLDER)
+        # 确保 instance 目录存在
+        instance_path = os.path.join(basedir, 'instance')
+        if not os.path.exists(instance_path):
+            os.makedirs(instance_path)
+        
+        # 初始化云存储
+        from app.utils.cloud_storage import init_cloud_storage
+        init_cloud_storage(app)
+
+class DevelopmentConfig(Config):
+    """开发环境配置"""
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'instance', 'nexus_prime.db')
+
+class ProductionConfig(Config):
+    """生产环境配置"""
+    DEBUG = False
+    
+    # Railway 数据库 URL 兼容
+    DATABASE_URL = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'instance', 'nexus_prime.db')
+    # PostgreSQL URL 修正（Railway 使用 postgres://）
+    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    
+    # 安全设置
+    SESSION_COOKIE_SECURE = False  # Railway 会处理 HTTPS
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    @classmethod
+    def init_app(cls, app):
+        Config.init_app(app)
+        # 生产环境日志配置
+        import logging
+        from logging.handlers import RotatingFileHandler
+        import sys
+
+        # 将日志输出到 stdout
+        log_formatter = logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        )
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(log_formatter)
+        stream_handler.setLevel(logging.INFO)
+        app.logger.addHandler(stream_handler)
+
+        # 如果需要，也可以保留文件日志
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        file_handler = RotatingFileHandler(
+            'logs/nexus_prime.log', maxBytes=10240, backupCount=10
+        )
+        file_handler.setFormatter(log_formatter)
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Nexus Prime startup')
+
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
+    WTF_CSRF_ENABLED = False
+
+config = {
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'testing': TestingConfig,
+    'default': DevelopmentConfig
+}

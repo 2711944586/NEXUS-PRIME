@@ -1,0 +1,474 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}记录收款 - NEXUS{% endblock %}
+{% block breadcrumb %}财务管理 / 应收账款 / 记录收款{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('finance.receivable_detail', receivable_id=receivable.id) }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回应收款详情</span>
+        </a>
+    </div>
+    
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="title-area">
+            <div class="title-icon">
+                <i class="fas fa-hand-holding-usd"></i>
+                <div class="icon-pulse"></div>
+            </div>
+            <div>
+                <h1 class="page-title">记录收款</h1>
+                <p class="page-subtitle">RECORD PAYMENT</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page-content">
+        <!-- 应收款信息 -->
+        <div class="receivable-info-card">
+            <div class="info-header">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>应收款信息</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">客户</span>
+                    <span class="info-value">{{ receivable.customer.name if receivable.customer else '未知客户' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">应收金额</span>
+                    <span class="info-value primary">¥{{ "{:,.2f}".format(receivable.total_amount) }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">已收金额</span>
+                    <span class="info-value green">¥{{ "{:,.2f}".format(receivable.paid_amount) }}</span>
+                </div>
+                <div class="info-item highlight">
+                    <span class="info-label">待收金额</span>
+                    <span class="info-value orange">¥{{ "{:,.2f}".format(receivable.total_amount - receivable.paid_amount) }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 收款表单 -->
+        <div class="form-container">
+            <form method="POST" class="payment-form">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-coins"></i>
+                        <span>收款信息</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">收款金额 <span class="required">*</span></label>
+                            {{ form.amount(class="form-input", placeholder="请输入收款金额", max=receivable.total_amount - receivable.paid_amount, step="0.01") }}
+                            {% if form.amount.errors %}
+                            <div class="form-error">{{ form.amount.errors[0] }}</div>
+                            {% endif %}
+                            <div class="form-hint">最多可收款 ¥{{ "{:,.2f}".format(receivable.total_amount - receivable.paid_amount) }}</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">收款方式 <span class="required">*</span></label>
+                            {{ form.payment_method(class="form-select") }}
+                            {% if form.payment_method.errors %}
+                            <div class="form-error">{{ form.payment_method.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">参考单号</label>
+                        {{ form.reference_no(class="form-input", placeholder="如：银行流水号、支付凭证号等") }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">备注</label>
+                        {{ form.remark(class="form-textarea", rows="3", placeholder="收款备注信息（选填）") }}
+                    </div>
+                </div>
+                
+                <!-- 快捷金额 -->
+                <div class="quick-amounts">
+                    <span class="quick-label">快捷金额：</span>
+                    <button type="button" class="quick-amount-btn" onclick="setAmount({{ receivable.total_amount - receivable.paid_amount }})">
+                        全部结清
+                    </button>
+                    {% set remaining = receivable.total_amount - receivable.paid_amount %}
+                    {% if remaining >= 1000 %}
+                    <button type="button" class="quick-amount-btn" onclick="setAmount(1000)">1,000</button>
+                    {% endif %}
+                    {% if remaining >= 5000 %}
+                    <button type="button" class="quick-amount-btn" onclick="setAmount(5000)">5,000</button>
+                    {% endif %}
+                    {% if remaining >= 10000 %}
+                    <button type="button" class="quick-amount-btn" onclick="setAmount(10000)">10,000</button>
+                    {% endif %}
+                </div>
+                
+                <!-- 提交按钮 -->
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-check"></i>
+                        <span>确认收款</span>
+                    </button>
+                    <a href="{{ url_for('finance.receivable_detail', receivable_id=receivable.id) }}" class="cancel-btn">
+                        <span>取消</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.payment-page {
+    padding: 0 0.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* 页面头部 */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.title-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    border: 2px solid #10b981;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 2px;
+}
+
+/* 应收款信息卡片 */
+.receivable-info-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-header i {
+    color: #f59e0b;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+}
+
+@media (max-width: 600px) {
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.info-item.highlight {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent);
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin: -0.75rem;
+}
+
+.info-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.info-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.info-value.primary {
+    color: var(--text-main);
+}
+
+.info-value.green {
+    color: #10b981;
+}
+
+.info-value.orange {
+    color: #f59e0b;
+}
+
+/* 表单容器 */
+.form-container {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-title i {
+    color: #10b981;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-error {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #ef4444;
+}
+
+.form-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* 快捷金额 */
+.quick-amounts {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.quick-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.quick-amount-btn {
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-amount-btn:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* 提交按钮 */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.85rem 1.5rem;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text-main);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setAmount(amount) {
+    document.querySelector('input[name="amount"]').value = amount.toFixed(2);
+}
+</script>
+{% endblock %}

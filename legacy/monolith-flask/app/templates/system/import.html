@@ -1,0 +1,1160 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}数据导入中心 - NEXUS{% endblock %}
+{% block breadcrumb %}系统管理 / 数据导入{% endblock %}
+
+{% block content %}
+<div class="import-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-area">
+                <div class="title-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span class="icon-pulse"></span>
+                </div>
+                <div>
+                    <h1 class="page-title">数据导入中心</h1>
+                    <p class="page-subtitle">DATA IMPORT CENTER</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <button class="action-btn outline" onclick="showGuide()">
+                <i class="fas fa-question-circle"></i>
+                <span>使用指南</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 导入统计概览 -->
+    <div class="import-stats">
+        <div class="stat-item">
+            <div class="stat-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="totalImported">0</span>
+                <span class="stat-label">已导入记录</span>
+            </div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+            <div class="stat-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="totalSkipped">0</span>
+                <span class="stat-label">跳过记录</span>
+            </div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+            <div class="stat-icon info">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ templates|length }}</span>
+                <span class="stat-label">可用模板</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导入模板卡片 -->
+    <div class="import-templates">
+        {% for key, template in templates.items() %}
+        <div class="import-card">
+            <div class="card-header">
+                <div class="card-icon {{ key }}">
+                    <i class="fas fa-{{ 'box' if key == 'product' else 'users' if key == 'partner' else 'warehouse' }}"></i>
+                </div>
+                <div class="card-title-area">
+                    <h3 class="card-title">{{ template.name.replace('导入', '') }}</h3>
+                    <span class="card-subtitle">{{ key|upper }} DATA</span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <p class="card-desc">
+                    批量导入{{ template.name.replace('导入', '') }}数据，支持 CSV 和 Excel 格式
+                </p>
+                
+                <div class="field-section">
+                    <div class="field-group">
+                        <span class="field-label"><i class="fas fa-asterisk"></i> 必填字段</span>
+                        <div class="field-tags">
+                            {% for field in template.required_fields %}
+                            <span class="field-tag required">{{ field }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% if template.optional_fields %}
+                    <div class="field-group">
+                        <span class="field-label"><i class="fas fa-plus-circle"></i> 可选字段</span>
+                        <div class="field-tags">
+                            {% for field in template.optional_fields %}
+                            <span class="field-tag optional">{{ field }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <a href="{{ url_for('system.download_template', template_type=key) }}" class="download-link">
+                    <i class="fas fa-download"></i>
+                    <span>下载模板文件</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="card-upload">
+                <form class="import-form" data-type="{{ key }}">
+                    <div class="upload-area" id="upload-area-{{ key }}">
+                        <input type="file" class="file-input" name="file" id="file-{{ key }}" accept=".csv,.xlsx,.xls" required>
+                        <label for="file-{{ key }}" class="upload-label">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <span class="upload-text">点击或拖拽文件到这里</span>
+                            <span class="upload-hint">支持 CSV / Excel 格式</span>
+                        </label>
+                        <div class="file-preview" style="display: none;">
+                            <i class="fas fa-file-alt"></i>
+                            <span class="file-name"></span>
+                            <button type="button" class="remove-file"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="upload-options">
+                        <label class="option-checkbox">
+                            <input type="checkbox" name="update_existing" value="1">
+                            <span class="checkbox-mark"></span>
+                            <span class="checkbox-label">更新已存在的数据</span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">
+                            <i class="fas fa-upload"></i> 开始导入
+                        </span>
+                        <span class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> 导入中...
+                        </span>
+                    </button>
+                </form>
+                
+                <div class="import-result" style="display: none;"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- 导入说明 -->
+    <div class="import-guide">
+        <div class="guide-header">
+            <i class="fas fa-lightbulb"></i>
+            <span>导入说明</span>
+        </div>
+        <div class="guide-content">
+            <div class="guide-item">
+                <div class="guide-icon"><i class="fas fa-file-alt"></i></div>
+                <div class="guide-text">
+                    <strong>支持格式</strong>
+                    <p>CSV（UTF-8 或 GBK 编码）和 Excel（.xlsx/.xls）格式</p>
+                </div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-icon"><i class="fas fa-columns"></i></div>
+                <div class="guide-text">
+                    <strong>表头要求</strong>
+                    <p>第一行必须是表头，字段名需与模板一致</p>
+                </div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-icon"><i class="fas fa-asterisk"></i></div>
+                <div class="guide-text">
+                    <strong>必填校验</strong>
+                    <p>必填字段不能为空，否则该行将被跳过</p>
+                </div>
+            </div>
+            <div class="guide-item">
+                <div class="guide-icon"><i class="fas fa-sync-alt"></i></div>
+                <div class="guide-text">
+                    <strong>更新模式</strong>
+                    <p>勾选"更新已存在的数据"时，将根据唯一标识更新现有记录</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 使用指南模态框 -->
+<div id="guideModal" class="modal-overlay" onclick="closeGuideModal(event)">
+    <div class="modal-content guide-modal" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeGuideModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="modal-header">
+            <div class="modal-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <h2>数据导入使用指南</h2>
+            <p>按照以下步骤完成数据导入</p>
+        </div>
+        
+        <div class="guide-steps">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>下载模板</h4>
+                    <p>点击对应数据类型的"下载模板文件"按钮，获取标准导入模板。</p>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>填写数据</h4>
+                    <p>使用 Excel 或其他软件打开模板，按照表头要求填写数据。<strong>必填字段</strong>不能为空。</p>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>上传文件</h4>
+                    <p>将填好的文件拖拽到上传区域，或点击选择文件。支持 CSV、XLS、XLSX 格式。</p>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>开始导入</h4>
+                    <p>点击"开始导入"按钮，等待导入完成。系统会显示导入结果和错误信息。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="guide-tips">
+            <h5><i class="fas fa-lightbulb"></i> 注意事项</h5>
+            <ul>
+                <li>文件编码推荐使用 UTF-8，避免乱码问题</li>
+                <li>日期格式请使用 YYYY-MM-DD 或 YYYY/MM/DD</li>
+                <li>勾选"更新已存在的数据"可覆盖现有记录</li>
+                <li>导入大量数据时请耐心等待，不要刷新页面</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.import-panel {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+}
+
+.title-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    border: 2px solid #ec4899;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), #ec4899);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 1px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.action-btn.outline {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-btn.outline:hover {
+    border-color: #ec4899;
+    color: #ec4899;
+}
+
+/* 导入统计 */
+.import-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1.25rem 2rem;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-item .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.stat-icon.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.stat-icon.warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.stat-icon.info { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-info .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stat-info .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.stat-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+}
+
+/* 导入模板卡片 */
+.import-templates {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.import-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 520px;
+}
+
+.import-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-color: rgba(236, 72, 153, 0.3);
+}
+
+.import-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.card-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.card-icon.product { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.card-icon.partner { background: linear-gradient(135deg, #10b981, #059669); }
+.card-icon.warehouse { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.card-icon.stock { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.card-title-area {
+    flex: 1;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.card-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.import-card .card-body {
+    padding: 1.25rem 1.5rem;
+    flex: 1;
+}
+
+.card-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.field-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.field-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.field-label i {
+    font-size: 0.6rem;
+}
+
+.field-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.field-tag {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.field-tag.required {
+    background: rgba(236, 72, 153, 0.2);
+    color: #f472b6;
+}
+
+.field-tag.optional {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+
+.download-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.download-link:hover {
+    background: rgba(236, 72, 153, 0.1);
+    color: #f472b6;
+}
+
+.download-link i:last-child {
+    margin-left: auto;
+    opacity: 0;
+    transform: translateX(-5px);
+    transition: all 0.2s ease;
+}
+
+.download-link:hover i:last-child {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* 上传区域 */
+.card-upload {
+    padding: 1.25rem 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.upload-area {
+    position: relative;
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: rgba(236, 72, 153, 0.5);
+    background: rgba(236, 72, 153, 0.05);
+}
+
+.file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.upload-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(236, 72, 153, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f472b6;
+    font-size: 1.2rem;
+}
+
+.upload-text {
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.upload-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.file-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(236, 72, 153, 0.1);
+    border-radius: 8px;
+}
+
+.file-preview i {
+    color: #f472b6;
+}
+
+.file-preview .file-name {
+    flex: 1;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-preview .remove-file {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.file-preview .remove-file:hover {
+    color: #ef4444;
+}
+
+.upload-options {
+    margin-bottom: 1rem;
+}
+
+.option-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.option-checkbox input {
+    display: none;
+}
+
+.checkbox-mark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.option-checkbox input:checked + .checkbox-mark {
+    background: #ec4899;
+    border-color: #ec4899;
+}
+
+.option-checkbox input:checked + .checkbox-mark::after {
+    content: '✓';
+    color: white;
+    font-size: 0.7rem;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* 导入结果 */
+.import-result {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+
+.import-result.success {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+.import-result.error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.import-result ul {
+    margin: 0.5rem 0 0 1rem;
+    padding: 0;
+}
+
+.import-result li {
+    margin: 0.25rem 0;
+}
+
+/* 导入说明 */
+.import-guide {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.guide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.guide-header i {
+    color: #fbbf24;
+}
+
+.guide-content {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.guide-item {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.guide-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f472b6;
+    flex-shrink: 0;
+}
+
+.guide-text strong {
+    display: block;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+}
+
+.guide-text p {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ========== 使用指南模态框 ========== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--bg-surface, rgba(15, 23, 42, 0.95));
+    border-radius: 20px;
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    padding: 2rem;
+    box-shadow: 0 0 100px rgba(236, 72, 153, 0.2), 0 30px 80px rgba(0, 0, 0, 0.6);
+    animation: modalSlide 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlide {
+    from { opacity: 0; transform: scale(0.9) translateY(30px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    margin: 0 0 0.35rem 0;
+}
+
+.modal-header p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.guide-step {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.step-content h4 {
+    margin: 0 0 0.35rem 0;
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.step-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.step-content strong {
+    color: #f472b6;
+}
+
+.guide-tips {
+    padding: 1rem;
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.guide-tips h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9rem;
+    color: #fbbf24;
+}
+
+.guide-tips ul {
+    margin: 0;
+    padding: 0 0 0 1.25rem;
+}
+
+.guide-tips li {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    line-height: 1.5;
+}
+
+.guide-tips li:last-child {
+    margin-bottom: 0;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .import-templates {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .guide-content {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .import-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .stat-divider {
+        width: 80%;
+        height: 1px;
+    }
+    
+    .import-templates {
+        grid-template-columns: 1fr;
+    }
+    
+    .guide-content {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 文件拖拽上传
+document.querySelectorAll('.upload-area').forEach(area => {
+    const fileInput = area.querySelector('.file-input');
+    const uploadLabel = area.querySelector('.upload-label');
+    const filePreview = area.querySelector('.file-preview');
+    const fileName = area.querySelector('.file-name');
+    const removeBtn = area.querySelector('.remove-file');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        area.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        area.addEventListener(eventName, () => area.classList.add('dragover'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        area.addEventListener(eventName, () => area.classList.remove('dragover'), false);
+    });
+    
+    area.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            showFile(files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            showFile(this.files[0]);
+        }
+    });
+    
+    function showFile(file) {
+        uploadLabel.style.display = 'none';
+        filePreview.style.display = 'flex';
+        fileName.textContent = file.name;
+    }
+    
+    removeBtn.addEventListener('click', function() {
+        fileInput.value = '';
+        uploadLabel.style.display = 'flex';
+        filePreview.style.display = 'none';
+    });
+});
+
+// 表单提交
+document.querySelectorAll('.import-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const type = this.dataset.type;
+        const fileInput = this.querySelector('input[type="file"]');
+        const updateExisting = this.querySelector('input[name="update_existing"]').checked;
+        const resultDiv = this.parentElement.querySelector('.import-result');
+        const submitBtn = this.querySelector('.submit-btn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoading = submitBtn.querySelector('.btn-loading');
+        
+        if (!fileInput.files[0]) {
+            alert('请选择文件');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('update_existing', updateExisting ? '1' : '0');
+        
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+        resultDiv.style.display = 'none';
+        
+        try {
+            const response = await fetch(`/system/import/upload/${type}`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            });
+            
+            const data = await response.json();
+            
+            resultDiv.style.display = 'block';
+            
+            if (data.success) {
+                resultDiv.className = 'import-result success';
+                resultDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                
+                // 更新统计
+                const totalImported = document.getElementById('totalImported');
+                if (data.imported_count) {
+                    totalImported.textContent = parseInt(totalImported.textContent) + data.imported_count;
+                }
+            } else {
+                resultDiv.className = 'import-result error';
+                let errorHtml = `<i class="fas fa-times-circle"></i> ${data.message}`;
+                if (data.errors && data.errors.length > 0) {
+                    errorHtml += '<ul>';
+                    data.errors.slice(0, 5).forEach(err => {
+                        errorHtml += `<li>第${err.row}行: ${err.error}</li>`;
+                    });
+                    if (data.errors.length > 5) {
+                        errorHtml += `<li>...还有 ${data.errors.length - 5} 条错误</li>`;
+                    }
+                    errorHtml += '</ul>';
+                    
+                    // 更新跳过统计
+                    const totalSkipped = document.getElementById('totalSkipped');
+                    totalSkipped.textContent = parseInt(totalSkipped.textContent) + data.errors.length;
+                }
+                resultDiv.innerHTML = errorHtml;
+            }
+        } catch (err) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'import-result error';
+            resultDiv.innerHTML = `<i class="fas fa-times-circle"></i> 导入失败: ${err.message}`;
+        } finally {
+            submitBtn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+    });
+});
+
+function showGuide() {
+    document.getElementById('guideModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGuideModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('guideModal').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// ESC 键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeGuideModal();
+});
+</script>
+{% endblock %}

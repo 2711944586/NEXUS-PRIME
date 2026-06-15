@@ -1,0 +1,447 @@
+{% extends "layouts/base.html" %}
+
+{% block breadcrumb %}系统管理 / 通知中心{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <!-- 页面标题 -->
+    <div class="page-header glass-panel mb-lg">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-bell gradient-icon"></i>
+                <span class="gradient-text">通知中心</span>
+            </h1>
+            <p class="page-subtitle">查看系统消息和重要提醒</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="markAllRead()">
+                <i class="fas fa-check-double"></i> 全部已读
+            </button>
+            <button class="btn btn-primary">
+                <i class="fas fa-cog"></i> 通知设置
+            </button>
+        </div>
+    </div>
+
+    <!-- 通知统计 -->
+    <div class="notification-stats mb-lg">
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #ef4444;">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ notifications|selectattr('read', 'false')|list|length }}</span>
+                <span class="stat-label">未读消息</span>
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #6366f1;">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ notifications|length }}</span>
+                <span class="stat-label">全部通知</span>
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #10b981;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ notifications|selectattr('read')|list|length }}</span>
+                <span class="stat-label">已读消息</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知列表 -->
+    <div class="glass-panel notification-container">
+        <div class="notification-header">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">全部</button>
+                <button class="filter-tab" data-filter="order">订单</button>
+                <button class="filter-tab" data-filter="stock">库存</button>
+                <button class="filter-tab" data-filter="system">系统</button>
+            </div>
+        </div>
+        
+        <div class="notification-list">
+            {% for notif in notifications %}
+            <div class="notification-item {% if not notif.read %}unread{% endif %}" 
+                 data-type="{{ notif.type }}"
+                 style="animation-delay: {{ loop.index0 * 0.05 }}s;">
+                <div class="notif-icon" style="background: {{ notif.color }}20; color: {{ notif.color }};">
+                    <i class="fas {{ notif.icon }}"></i>
+                </div>
+                <div class="notif-content">
+                    <div class="notif-title">
+                        {{ notif.title }}
+                        {% if not notif.read %}
+                        <span class="unread-badge"></span>
+                        {% endif %}
+                    </div>
+                    <div class="notif-message">{{ notif.message }}</div>
+                    <div class="notif-time">
+                        <i class="far fa-clock"></i>
+                        {{ notif.time.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+                <div class="notif-actions">
+                    <button class="btn-icon" title="标记已读">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn-icon" title="删除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <span>暂无通知</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.notifications-page {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.gradient-icon {
+    color: #6366f1;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, #fff, #9ca3af);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: #9ca3af;
+    margin: 0.5rem 0 0 2.25rem;
+    font-size: 0.875rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+}
+
+.btn-outline:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #fff;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+/* 统计卡片 */
+.notification-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: var(--stat-color, #6366f1)20;
+    color: var(--stat-color, #6366f1);
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* 通知容器 */
+.notification-container {
+    padding: 0;
+    overflow: hidden;
+}
+
+.notification-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-tab {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+}
+
+.filter-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.filter-tab.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+/* 通知列表 */
+.notification-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.3s;
+    animation: slideIn 0.3s ease-out backwards;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.notification-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.notification-item.unread {
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 3px solid #6366f1;
+}
+
+.notif-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.notif-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.unread-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.notif-message {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+}
+
+.notif-time {
+    font-size: 0.75rem;
+    color: #6366f1;
+    margin-top: 0.5rem;
+}
+
+.notif-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.notification-item:hover .notif-actions {
+    opacity: 1;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: rgba(99, 102, 241, 0.2);
+    color: #fff;
+}
+
+/* Glass Panel */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+/* Utilities */
+.mb-lg { margin-bottom: 1.5rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .notification-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .notification-item {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script>
+// 过滤功能
+document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.notification-item').forEach(item => {
+            if (filter === 'all' || item.dataset.type === filter) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+});
+
+function markAllRead() {
+    document.querySelectorAll('.notification-item.unread').forEach(item => {
+        item.classList.remove('unread');
+        item.querySelector('.unread-badge')?.remove();
+    });
+}
+</script>
+{% endblock %}

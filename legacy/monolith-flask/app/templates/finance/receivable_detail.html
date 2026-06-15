@@ -1,0 +1,1328 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}应收账款详情 - NEXUS{% endblock %}
+{% block breadcrumb %}财务管理 / 应收账款 / 详情{% endblock %}
+
+{% block content %}
+<div class="receivable-detail-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('finance.receivables') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回应收账款列表</span>
+        </a>
+    </div>
+    
+    <!-- 详情网格 -->
+    <div class="detail-grid">
+        <!-- 左侧 - 主要信息 -->
+        <div class="detail-main">
+            <!-- 应收款卡片 -->
+            <div class="receivable-card">
+                <div class="card-header">
+                    <div class="header-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <div class="icon-pulse"></div>
+                    </div>
+                    <div class="header-info">
+                        <div class="header-badges">
+                            <span class="receivable-no">{{ receivable.receivable_no or 'RCV-' ~ receivable.id }}</span>
+                            <span class="status-badge {{ receivable.status }}">
+                                {% if receivable.status == 'pending' %}
+                                <i class="fas fa-clock"></i> 待收款
+                                {% elif receivable.status == 'partial' %}
+                                <i class="fas fa-adjust"></i> 部分收款
+                                {% elif receivable.status == 'paid' %}
+                                <i class="fas fa-check-circle"></i> 已收款
+                                {% elif receivable.status == 'overdue' %}
+                                <i class="fas fa-exclamation-triangle"></i> 已逾期
+                                {% endif %}
+                            </span>
+                        </div>
+                        <h1 class="receivable-title">应收账款详情</h1>
+                        <div class="receivable-meta">
+                            <span class="meta-item">
+                                <i class="fas fa-building"></i>
+                                {{ receivable.customer.name if receivable.customer else '未知客户' }}
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                到期日: {{ receivable.due_date.strftime('%Y-%m-%d') if receivable.due_date else '-' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        {% if receivable.status in ['pending', 'partial', 'overdue'] %}
+                        <a href="{{ url_for('finance.record_payment', receivable_id=receivable.id) }}" class="action-btn primary">
+                            <i class="fas fa-plus"></i>
+                            <span>记录收款</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 金额信息 -->
+            <div class="info-card">
+                <div class="card-title">
+                    <i class="fas fa-coins"></i>
+                    金额信息
+                </div>
+                <div class="amount-grid">
+                    <div class="amount-item">
+                        <span class="amount-label">应收金额</span>
+                        <span class="amount-value total">¥{{ "{:,.2f}".format(receivable.total_amount) }}</span>
+                    </div>
+                    <div class="amount-item">
+                        <span class="amount-label">已收金额</span>
+                        <span class="amount-value paid">¥{{ "{:,.2f}".format(receivable.paid_amount) }}</span>
+                    </div>
+                    <div class="amount-item">
+                        <span class="amount-label">未收金额</span>
+                        <span class="amount-value unpaid">¥{{ "{:,.2f}".format(receivable.total_amount - receivable.paid_amount) }}</span>
+                    </div>
+                    <div class="amount-item">
+                        <span class="amount-label">收款进度</span>
+                        <div class="progress-bar-container">
+                            {% set progress = (receivable.paid_amount / receivable.total_amount * 100) if receivable.total_amount > 0 else 0 %}
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ progress|round(1) }}%;"></div>
+                            </div>
+                            <span class="progress-text">{{ progress|round(1) }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 关联订单 -->
+            {% if receivable.order %}
+            <div class="info-card">
+                <div class="card-title">
+                    <i class="fas fa-shopping-bag"></i>
+                    关联订单
+                </div>
+                <div class="order-info">
+                    <div class="order-item">
+                        <span class="order-label">订单号</span>
+                        <span class="order-value">{{ receivable.order.order_no }}</span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">订单金额</span>
+                        <span class="order-value">¥{{ "{:,.2f}".format(receivable.order.total_amount) }}</span>
+                    </div>
+                    <div class="order-item">
+                        <span class="order-label">下单时间</span>
+                        <span class="order-value">{{ receivable.order.created_at.strftime('%Y-%m-%d %H:%M') if receivable.order.created_at else '-' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 收款记录 -->
+            <div class="info-card">
+                <div class="card-title">
+                    <i class="fas fa-history"></i>
+                    收款记录
+                </div>
+                <div class="payments-list">
+                    {% if payments %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>收款单号</th>
+                                <th>收款日期</th>
+                                <th>收款方式</th>
+                                <th class="text-right">金额</th>
+                                <th>操作人</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>
+                                    <span class="payment-no">{{ payment.payment_no }}</span>
+                                </td>
+                                <td>{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '-' }}</td>
+                                <td>
+                                    <span class="method-tag">
+                                        {% if payment.payment_method == 'cash' %}
+                                        <i class="fas fa-money-bill"></i> 现金
+                                        {% elif payment.payment_method == 'bank' %}
+                                        <i class="fas fa-university"></i> 银行转账
+                                        {% elif payment.payment_method == 'wechat' %}
+                                        <i class="fab fa-weixin"></i> 微信
+                                        {% elif payment.payment_method == 'alipay' %}
+                                        <i class="fab fa-alipay"></i> 支付宝
+                                        {% else %}
+                                        {{ payment.payment_method }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <span class="amount green">¥{{ "{:,.2f}".format(payment.amount) }}</span>
+                                </td>
+                                <td>{{ payment.operator.username if payment.operator else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-data">
+                        <i class="fas fa-inbox"></i>
+                        <p>暂无收款记录</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧 - 侧边栏 -->
+        <div class="detail-sidebar">
+            <!-- 状态卡片 -->
+            <div class="status-card {{ receivable.status }}">
+                <div class="status-icon">
+                    {% if receivable.status == 'pending' %}
+                    <i class="fas fa-clock"></i>
+                    {% elif receivable.status == 'partial' %}
+                    <i class="fas fa-adjust"></i>
+                    {% elif receivable.status == 'paid' %}
+                    <i class="fas fa-check-circle"></i>
+                    {% elif receivable.status == 'overdue' %}
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% endif %}
+                </div>
+                <div class="status-text">
+                    {% if receivable.status == 'pending' %}待收款
+                    {% elif receivable.status == 'partial' %}部分收款
+                    {% elif receivable.status == 'paid' %}已收款
+                    {% elif receivable.status == 'overdue' %}已逾期{% endif %}
+                </div>
+                {% if receivable.status == 'overdue' %}
+                <div class="status-detail">
+                    逾期 {{ receivable.overdue_days }} 天
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- 客户信息 -->
+            <div class="sidebar-card">
+                <div class="card-title">
+                    <i class="fas fa-user-tie"></i>
+                    客户信息
+                </div>
+                <div class="customer-info">
+                    <div class="customer-avatar">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="customer-detail">
+                        <span class="customer-name">{{ receivable.customer.name if receivable.customer else '未知客户' }}</span>
+                        <span class="customer-contact">{{ receivable.customer.contact_person if receivable.customer else '-' }}</span>
+                    </div>
+                </div>
+                {% if receivable.customer %}
+                <div class="customer-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">联系电话</span>
+                        <span class="stat-value">{{ receivable.customer.phone or '-' }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">客户类型</span>
+                        <span class="stat-value">{{ receivable.customer.type or '-' }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- 快捷操作 -->
+            <div class="sidebar-card">
+                <div class="card-title">
+                    <i class="fas fa-bolt"></i>
+                    快捷操作
+                </div>
+                <div class="actions-list">
+                    {% if receivable.status in ['pending', 'partial', 'overdue'] %}
+                    <a href="{{ url_for('finance.record_payment', receivable_id=receivable.id) }}" class="quick-action-btn primary">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>记录收款</span>
+                    </a>
+                    {% endif %}
+                    <button class="quick-action-btn" onclick="sendReminder()">
+                        <i class="fas fa-bell"></i>
+                        <span>发送催款</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="printDetail()">
+                        <i class="fas fa-print"></i>
+                        <span>打印详情</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 时间信息 -->
+            <div class="sidebar-card">
+                <div class="card-title">
+                    <i class="fas fa-clock"></i>
+                    时间信息
+                </div>
+                <div class="time-info">
+                    <div class="time-item">
+                        <span class="time-label">创建时间</span>
+                        <span class="time-value">{{ receivable.created_at.strftime('%Y-%m-%d %H:%M') if receivable.created_at else '-' }}</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="time-label">到期时间</span>
+                        <span class="time-value {{ 'overdue' if receivable.status == 'overdue' else '' }}">
+                            {{ receivable.due_date.strftime('%Y-%m-%d') if receivable.due_date else '-' }}
+                        </span>
+                    </div>
+                    {% if receivable.status == 'paid' %}
+                    <div class="time-item">
+                        <span class="time-label">结清时间</span>
+                        <span class="time-value">{{ receivable.paid_at.strftime('%Y-%m-%d %H:%M') if receivable.paid_at else '-' }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- 催款弹窗 -->
+<div class="modal-overlay" id="reminderModal">
+    <div class="reminder-modal">
+        <!-- 表单内容 -->
+        <div id="reminderForm">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h3>发送催款提醒</h3>
+                <button type="button" class="modal-close" onclick="closeReminderModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-target">
+                <span class="target-label">目标客户</span>
+                <span class="target-name">{{ receivable.customer.name if receivable.customer else '未知客户' }}</span>
+            </div>
+            
+            <div class="reminder-modal-body">
+                <div class="reminder-info-card">
+                    <div class="reminder-info-row">
+                        <span class="reminder-info-label"><i class="fas fa-phone"></i> 联系电话</span>
+                        <span class="reminder-info-value">{{ receivable.customer.phone if receivable.customer and receivable.customer.phone else '-' }}</span>
+                    </div>
+                    <div class="reminder-info-row">
+                        <span class="reminder-info-label"><i class="fas fa-file-invoice"></i> 应收单号</span>
+                        <span class="reminder-info-value">{{ receivable.receivable_no or 'RCV-' ~ receivable.id }}</span>
+                    </div>
+                    <div class="reminder-info-row">
+                        <span class="reminder-info-label"><i class="fas fa-yen-sign"></i> 未收金额</span>
+                        <span class="reminder-info-value amount">¥{{ "{:,.2f}".format(receivable.unpaid_amount) }}</span>
+                    </div>
+                    <div class="reminder-info-row">
+                        <span class="reminder-info-label"><i class="fas fa-calendar-alt"></i> 到期日期</span>
+                        <span class="reminder-info-value {{ 'overdue' if receivable.status == 'overdue' else '' }}">
+                            {{ receivable.due_date.strftime('%Y-%m-%d') if receivable.due_date else '-' }}
+                            {% if receivable.overdue_days > 0 %}
+                            <span class="overdue-tag">(已逾期{{ receivable.overdue_days }}天)</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-comment-alt"></i> 催款备注
+                    </label>
+                    <textarea id="reminderNote" class="form-input" rows="3" placeholder="请输入催款备注，例如：请尽快安排付款..."></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="submit-btn" id="sendReminderBtn" onclick="submitReminder()">
+                    <i class="fas fa-paper-plane"></i> 发送催款
+                </button>
+                <button type="button" class="cancel-btn" onclick="closeReminderModal()">
+                    取消
+                </button>
+            </div>
+        </div>
+        
+        <!-- 成功提示 -->
+        <div id="reminderSuccess" style="display: none;">
+            <div class="reminder-success">
+                <div class="reminder-success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h4>催款提醒已发送</h4>
+                <p>已成功向 <strong id="successCustomerName"></strong> 发送催款通知</p>
+            </div>
+            <div class="modal-actions" style="justify-content: center;">
+                <button type="button" class="submit-btn success" onclick="closeReminderModal()">
+                    <i class="fas fa-check"></i> 完成
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.receivable-detail-page {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+/* 网格布局 */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+}
+
+@media (max-width: 1000px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 应收款卡片 */
+.receivable-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.receivable-card .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), transparent);
+}
+
+.header-icon {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.header-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 20px;
+    border: 2px solid #f59e0b;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.header-info {
+    flex: 1;
+}
+
+.header-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.receivable-no {
+    padding: 0.25rem 0.75rem;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.status-badge.partial {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.status-badge.paid {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.status-badge.overdue {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.receivable-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+}
+
+.receivable-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.meta-item i {
+    color: #f59e0b;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* 信息卡片 */
+.info-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+}
+
+.card-title i {
+    color: #f59e0b;
+}
+
+/* 金额网格 */
+.amount-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .amount-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.amount-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.amount-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.amount-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.amount-value.total {
+    color: var(--text-main);
+}
+
+.amount-value.paid {
+    color: #10b981;
+}
+
+.amount-value.unpaid {
+    color: #f59e0b;
+}
+
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 4px;
+    transition: width 0.8s ease;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #10b981;
+}
+
+/* 订单信息 */
+.order-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .order-info {
+        grid-template-columns: 1fr;
+    }
+}
+
+.order-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.order-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.order-value {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+/* 数据表格 */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    background: var(--bg-card);
+}
+
+.data-table td {
+    font-size: 0.875rem;
+    color: var(--text-main);
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-card);
+}
+
+.text-right {
+    text-align: right;
+}
+
+.payment-no {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #f59e0b;
+}
+
+.method-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.amount.green, .green {
+    color: #10b981;
+}
+
+.empty-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.empty-data i {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.5;
+}
+
+/* 侧边栏 */
+.sidebar-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+/* 状态卡片 */
+.status-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.status-card .status-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 0.75rem;
+}
+
+.status-card.pending .status-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.status-card.partial .status-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.status-card.paid .status-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.status-card.overdue .status-icon {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.status-card .status-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+
+.status-card .status-detail {
+    font-size: 0.8rem;
+    color: #ef4444;
+}
+
+/* 客户信息 */
+.customer-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.customer-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f59e0b;
+    font-size: 1.25rem;
+}
+
+.customer-detail {
+    flex: 1;
+}
+
+.customer-name {
+    display: block;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.customer-contact {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.customer-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-size: 0.8rem;
+    color: var(--text-main);
+}
+
+/* 快捷操作 */
+.actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.quick-action-btn:hover {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.quick-action-btn.primary {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    color: white;
+}
+
+.quick-action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+/* 时间信息 */
+.time-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.time-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.time-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.time-value {
+    font-size: 0.8rem;
+    color: var(--text-main);
+}
+
+.time-value.overdue {
+    color: #ef4444;
+}
+
+/* ============ 催款弹窗样式 (量子仓储风格) ============ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.reminder-modal {
+    position: relative;
+    width: calc(100% - 2rem);
+    max-width: 480px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 100px rgba(245, 158, 11, 0.2), 0 30px 80px rgba(0, 0, 0, 0.6);
+    transform: scale(0.9) translateY(30px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.modal-overlay.show .reminder-modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.reminder-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.reminder-modal .modal-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+}
+
+.reminder-modal .modal-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-main);
+}
+
+.modal-close {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border: none;
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(239,68,68,0.2);
+    color: #ef4444;
+}
+
+.modal-target {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: rgba(245, 158, 11, 0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.target-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.target-name {
+    font-weight: 600;
+    color: #f59e0b;
+}
+
+.reminder-modal-body {
+    padding: 1.5rem;
+}
+
+.reminder-info-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 0.5rem 0;
+    margin-bottom: 1.25rem;
+}
+
+.reminder-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.reminder-info-row:last-child {
+    border-bottom: none;
+}
+
+.reminder-info-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reminder-info-label i {
+    color: #f59e0b;
+    width: 16px;
+}
+
+.reminder-info-value {
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.reminder-info-value.amount {
+    color: #ef4444;
+    font-size: 1.1rem;
+}
+
+.reminder-info-value.overdue {
+    color: #ef4444;
+}
+
+.overdue-tag {
+    color: #ef4444;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.reminder-modal .form-group {
+    margin-bottom: 0;
+}
+
+.reminder-modal .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.reminder-modal .form-label i {
+    color: #f59e0b;
+}
+
+.reminder-modal .form-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    resize: none;
+    transition: all 0.3s ease;
+}
+
+.reminder-modal .form-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.submit-btn {
+    flex: 1;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(245, 158, 11, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.submit-btn.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.submit-btn.success:hover {
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+}
+
+.cancel-btn {
+    padding: 0.85rem 1.5rem;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+}
+
+/* 成功弹窗 */
+.reminder-success {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.reminder-success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+    animation: successPop 0.5s ease;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+}
+
+@keyframes successPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.reminder-success h4 {
+    color: var(--text-main);
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+}
+
+.reminder-success p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.reminder-success p strong {
+    color: #10b981;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 催款弹窗控制
+const reminderModal = document.getElementById('reminderModal');
+const reminderForm = document.getElementById('reminderForm');
+const reminderSuccess = document.getElementById('reminderSuccess');
+const sendReminderBtn = document.getElementById('sendReminderBtn');
+
+function showReminderModal() {
+    reminderModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    reminderForm.style.display = 'block';
+    reminderSuccess.style.display = 'none';
+    // 重置按钮状态
+    sendReminderBtn.disabled = false;
+    sendReminderBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 发送催款';
+}
+
+function closeReminderModal() {
+    reminderModal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function sendReminder() {
+    showReminderModal();
+}
+
+async function submitReminder() {
+    const btn = sendReminderBtn;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+    
+    try {
+        const response = await fetch('{{ url_for("finance.send_reminder", receivable_id=receivable.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // 显示成功
+            reminderForm.style.display = 'none';
+            reminderSuccess.style.display = 'block';
+            document.getElementById('successCustomerName').textContent = data.customer_name;
+            
+            // 3秒后自动关闭
+            setTimeout(() => {
+                closeReminderModal();
+            }, 3000);
+        } else {
+            alert(data.message || '发送失败，请重试');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('发送失败，请检查网络连接');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+// 点击遮罩层关闭
+reminderModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeReminderModal();
+    }
+});
+
+// ESC 键关闭
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && reminderModal.classList.contains('show')) {
+        closeReminderModal();
+    }
+});
+
+function printDetail() {
+    window.print();
+}
+</script>
+{% endblock %}

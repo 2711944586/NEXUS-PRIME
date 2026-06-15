@@ -1,0 +1,634 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}补货建议 - NEXUS{% endblock %}
+{% block breadcrumb %}补货建议{% endblock %}
+
+{% block styles %}
+<style>
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+    position: relative;
+}
+
+.title-icon::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 19px;
+    padding: 3px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.header-btn {
+    padding: 0.65rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.header-btn.primary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.header-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+.header-btn.outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.header-btn.outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+/* 状态筛选 */
+.status-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem;
+    background: var(--bg-surface);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    width: fit-content;
+}
+
+.status-tab {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.status-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.status-tab.active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+    color: #10b981;
+}
+
+/* 建议卡片 */
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.25rem;
+}
+
+.suggestion-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent);
+}
+
+.product-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.product-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.product-name {
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.product-sku {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.status-badge.accepted {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.status-badge.rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.status-badge.ordered {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.info-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+
+.info-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.info-value.danger { color: #ef4444; }
+.info-value.warning { color: #f59e0b; }
+.info-value.success { color: #10b981; }
+.info-value.primary { color: #6366f1; }
+
+.suggestion-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(16, 185, 129, 0.05);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.meta-row span:first-child {
+    color: var(--text-muted);
+}
+
+.meta-row span:last-child {
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.action-btn.accept {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.action-btn.accept:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.action-btn.reject {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.action-btn.reject:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.action-btn.view {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+.action-btn.view:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #10b981;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.empty-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+/* 分页 */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.page-link {
+    padding: 0.5rem 0.875rem;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.page-link:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.page-link.active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-color: transparent;
+}
+
+/* 亮色主题 */
+[data-theme="light"] .page-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .suggestion-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .card-header {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent);
+}
+
+[data-theme="light"] .product-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .info-item {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+[data-theme="light"] .suggestion-meta {
+    background: rgba(16, 185, 129, 0.06);
+}
+
+[data-theme="light"] .meta-row span:last-child {
+    color: #1e293b;
+}
+
+[data-theme="light"] .status-tabs {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .empty-state {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="replenishment-page">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="title-area">
+            <div class="title-icon">
+                <i class="fas fa-truck-loading"></i>
+            </div>
+            <div>
+                <h1 class="page-title">补货建议</h1>
+                <p class="page-subtitle">REPLENISHMENT SUGGESTIONS</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <form action="{{ url_for('notification.generate_replenishment') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="header-btn primary">
+                    <i class="fas fa-sync-alt"></i>
+                    生成建议
+                </button>
+            </form>
+            <a href="{{ url_for('notification.alerts') }}" class="header-btn outline">
+                <i class="fas fa-exclamation-triangle"></i>
+                库存预警
+            </a>
+        </div>
+    </div>
+
+    <!-- 状态筛选 -->
+    <div class="status-tabs">
+        <a href="{{ url_for('notification.replenishment', status='pending') }}" 
+           class="status-tab {{ 'active' if current_status == 'pending' }}">
+            <i class="fas fa-clock"></i> 待处理
+        </a>
+        <a href="{{ url_for('notification.replenishment', status='accepted') }}" 
+           class="status-tab {{ 'active' if current_status == 'accepted' }}">
+            <i class="fas fa-check"></i> 已接受
+        </a>
+        <a href="{{ url_for('notification.replenishment', status='rejected') }}" 
+           class="status-tab {{ 'active' if current_status == 'rejected' }}">
+            <i class="fas fa-times"></i> 已拒绝
+        </a>
+        <a href="{{ url_for('notification.replenishment', status='ordered') }}" 
+           class="status-tab {{ 'active' if current_status == 'ordered' }}">
+            <i class="fas fa-shopping-cart"></i> 已下单
+        </a>
+    </div>
+
+    <!-- 建议列表 -->
+    {% if suggestions %}
+    <div class="suggestions-grid">
+        {% for suggestion in suggestions %}
+        <div class="suggestion-card" style="animation-delay: {{ loop.index0 * 0.05 }}s;">
+            <div class="card-header">
+                <div class="product-info">
+                    <div class="product-avatar">
+                        {{ suggestion.product.name[:1] if suggestion.product else 'P' }}
+                    </div>
+                    <div>
+                        <p class="product-name">{{ suggestion.product.name if suggestion.product else '未知商品' }}</p>
+                        <p class="product-sku">{{ suggestion.product.sku if suggestion.product else '-' }}</p>
+                    </div>
+                </div>
+                <span class="status-badge {{ suggestion.status }}">
+                    {% if suggestion.status == 'pending' %}待处理
+                    {% elif suggestion.status == 'accepted' %}已接受
+                    {% elif suggestion.status == 'rejected' %}已拒绝
+                    {% elif suggestion.status == 'ordered' %}已下单
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">当前库存</div>
+                        <div class="info-value danger">{{ suggestion.current_qty or 0 }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">建议补货</div>
+                        <div class="info-value success">+{{ suggestion.suggested_qty or 0 }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">安全库存</div>
+                        <div class="info-value primary">{{ suggestion.safety_stock or 0 }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">日均销量</div>
+                        <div class="info-value warning">{{ "%.1f"|format(suggestion.avg_daily_sales or 0) }}</div>
+                    </div>
+                </div>
+                
+                <div class="suggestion-meta">
+                    <div class="meta-row">
+                        <span><i class="fas fa-warehouse"></i> 仓库</span>
+                        <span>{{ suggestion.warehouse.name if suggestion.warehouse else '默认仓库' }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span><i class="fas fa-truck"></i> 供应商</span>
+                        <span>{{ suggestion.supplier.name if suggestion.supplier else '待选择' }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span><i class="fas fa-clock"></i> 采购周期</span>
+                        <span>{{ suggestion.lead_time_days or 7 }} 天</span>
+                    </div>
+                </div>
+                
+                {% if suggestion.status == 'pending' %}
+                <div class="card-actions">
+                    <form action="{{ url_for('notification.accept_suggestion', suggestion_id=suggestion.id) }}" method="POST" style="flex: 1;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="action-btn accept" style="width: 100%;">
+                            <i class="fas fa-check"></i> 接受
+                        </button>
+                    </form>
+                    <form action="{{ url_for('notification.reject_suggestion', suggestion_id=suggestion.id) }}" method="POST" style="flex: 1;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="action-btn reject" style="width: 100%;">
+                            <i class="fas fa-times"></i> 拒绝
+                        </button>
+                    </form>
+                </div>
+                {% elif suggestion.status == 'accepted' %}
+                <div class="card-actions">
+                    <a href="{{ url_for('purchase.create') }}" class="action-btn view" style="width: 100%;">
+                        <i class="fas fa-shopping-cart"></i> 创建采购订单
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- 分页 -->
+    {% if pagination.pages > 1 %}
+    <div class="pagination-wrapper">
+        <div class="pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('notification.replenishment', page=pagination.prev_num, status=current_status) }}" class="page-link">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages() %}
+                {% if p %}
+                <a href="{{ url_for('notification.replenishment', page=p, status=current_status) }}" 
+                   class="page-link {{ 'active' if p == pagination.page }}">{{ p }}</a>
+                {% else %}
+                <span class="page-link">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('notification.replenishment', page=pagination.next_num, status=current_status) }}" class="page-link">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-clipboard-check"></i>
+        </div>
+        <h3 class="empty-title">暂无{{ '待处理的' if current_status == 'pending' else '' }}补货建议</h3>
+        <p class="empty-desc">
+            {% if current_status == 'pending' %}
+            点击"生成建议"按钮，系统将根据库存预警自动生成补货建议
+            {% else %}
+            当前状态下没有补货建议记录
+            {% endif %}
+        </p>
+        {% if current_status == 'pending' %}
+        <form action="{{ url_for('notification.generate_replenishment') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="header-btn primary">
+                <i class="fas fa-sync-alt"></i>
+                生成建议
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,1512 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}智能盘点 - NEXUS{% endblock %}
+{% block breadcrumb %}智能盘点{% endblock %}
+
+{% block content %}
+<div class="stocktake-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-icon">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="title-text">
+                <h1 class="page-title">智能库存盘点</h1>
+                <p class="page-subtitle">INTELLIGENT STOCK TAKE</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="export-dropdown-wrapper">
+                <button class="export-btn" id="exportBtn">
+                    <i class="fas fa-download"></i>
+                    <span>导出报告</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="export-dropdown" id="exportDropdown">
+                    <a href="{{ url_for('stocktake.export_excel', status=current_status, warehouse_id=current_warehouse) }}" class="dropdown-item">
+                        <i class="fas fa-file-csv excel-icon"></i>
+                        <div class="item-text">
+                            <span class="item-title">CSV 格式</span>
+                            <span class="item-desc">适合数据分析</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('stocktake.export_pdf', status=current_status, warehouse_id=current_warehouse) }}" class="dropdown-item" target="_blank">
+                        <i class="fas fa-file-pdf pdf-icon"></i>
+                        <div class="item-text">
+                            <span class="item-title">PDF 报告</span>
+                            <span class="item-desc">适合打印归档</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计概览 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-visual">
+                <div class="stat-ring">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="circle" stroke-dasharray="{{ ((stocktakes|selectattr('status', 'equalto', 'completed')|list|length) / (stocktakes|length) * 100) if stocktakes|length > 0 else 0 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stocktakes|length if stocktakes else 0 }}</span>
+                <span class="stat-label">盘点任务</span>
+            </div>
+        </div>
+        
+        <div class="stat-card highlight">
+            <div class="stat-icon orange">
+                <i class="fas fa-spinner fa-pulse"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stocktakes|selectattr('status', 'equalto', 'in_progress')|list|length if stocktakes else 0 }}</span>
+                <span class="stat-label">进行中</span>
+            </div>
+            <div class="stat-badge">活跃</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-check-double"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ stocktakes|selectattr('status', 'equalto', 'completed')|list|length if stocktakes else 0 }}</span>
+                <span class="stat-label">已完成</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ warehouses|length if warehouses else 0 }}</span>
+                <span class="stat-label">覆盖仓库</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 盘点类型快捷入口 -->
+    <div class="type-cards">
+        <a href="{{ url_for('stocktake.create') }}?type=full" class="type-card full">
+            <div class="type-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="type-info">
+                <span class="type-name">全盘</span>
+                <span class="type-desc">全量库存盘点</span>
+            </div>
+            <i class="fas fa-arrow-right type-arrow"></i>
+        </a>
+        
+        <a href="{{ url_for('stocktake.create') }}?type=partial" class="type-card partial">
+            <div class="type-icon">
+                <i class="fas fa-random"></i>
+            </div>
+            <div class="type-info">
+                <span class="type-name">抽盘</span>
+                <span class="type-desc">随机抽样盘点</span>
+            </div>
+            <i class="fas fa-arrow-right type-arrow"></i>
+        </a>
+        
+        <a href="{{ url_for('stocktake.create') }}?type=cycle" class="type-card cycle">
+            <div class="type-icon">
+                <i class="fas fa-sync-alt"></i>
+            </div>
+            <div class="type-info">
+                <span class="type-name">循环盘点</span>
+                <span class="type-desc">周期性滚动盘点</span>
+            </div>
+            <i class="fas fa-arrow-right type-arrow"></i>
+        </a>
+    </div>
+    
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="filter-left">
+            <div class="filter-tabs">
+                <a href="{{ url_for('stocktake.index') }}" class="filter-tab {{ 'active' if not current_status else '' }}">
+                    <i class="fas fa-layer-group"></i> 全部
+                </a>
+                <a href="{{ url_for('stocktake.index', status='draft') }}" class="filter-tab {{ 'active' if current_status == 'draft' else '' }}">
+                    <i class="fas fa-edit"></i> 草稿
+                </a>
+                <a href="{{ url_for('stocktake.index', status='in_progress') }}" class="filter-tab {{ 'active' if current_status == 'in_progress' else '' }}">
+                    <i class="fas fa-spinner"></i> 进行中
+                </a>
+                <a href="{{ url_for('stocktake.index', status='completed') }}" class="filter-tab {{ 'active' if current_status == 'completed' else '' }}">
+                    <i class="fas fa-check-circle"></i> 已完成
+                </a>
+            </div>
+        </div>
+        
+        <div class="filter-right">
+            <div class="searchable-select" id="warehouseSelect">
+                <input type="text" class="select-input" 
+                       value="{% for w in warehouses if w.id == current_warehouse %}{{ w.name }}{% endfor %}"
+                       placeholder="全部仓库" autocomplete="off" readonly>
+                <input type="hidden" id="warehouse_id" value="{{ current_warehouse or '' }}">
+                <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                <div class="select-dropdown">
+                    <div class="dropdown-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input" placeholder="搜索仓库...">
+                    </div>
+                    <ul class="dropdown-list">
+                        <li class="dropdown-item" data-id="" data-value="全部仓库">
+                            <i class="fas fa-warehouse" style="margin-right: 0.5rem; opacity: 0.5;"></i>全部仓库
+                        </li>
+                        {% for warehouse in warehouses %}
+                        <li class="dropdown-item" data-id="{{ warehouse.id }}" data-value="{{ warehouse.name }}">
+                            <i class="fas fa-cube" style="margin-right: 0.5rem; opacity: 0.5;"></i>{{ warehouse.name }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="dropdown-empty">无匹配仓库</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 盘点列表 -->
+    <div class="stocktake-table-card">
+        <div class="table-header">
+            <span class="table-title">
+                <i class="fas fa-list-alt"></i> 盘点记录
+            </span>
+            <span class="table-count">共 {{ pagination.total if pagination else (stocktakes|length if stocktakes else 0) }} 项</span>
+        </div>
+        
+        <div class="table-wrapper">
+            <table class="stocktake-table">
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">盘点单号</th>
+                        <th>目标仓库</th>
+                        <th style="width: 100px;">盘点类型</th>
+                        <th style="width: 80px;">商品数</th>
+                        <th style="width: 160px;">盘点进度</th>
+                        <th style="width: 110px;">状态</th>
+                        <th style="width: 130px;">创建时间</th>
+                        <th style="width: 140px; text-align: right;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for st in stocktakes %}
+                    <tr class="stocktake-row">
+                        <td>
+                            <a href="{{ url_for('stocktake.detail', take_id=st.id) }}" class="take-no-link">
+                                <i class="fas fa-clipboard-list"></i>
+                                {{ st.take_no }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="warehouse-info">
+                                <div class="warehouse-avatar">
+                                    <i class="fas fa-warehouse"></i>
+                                </div>
+                                <span class="warehouse-name">{{ st.warehouse.name if st.warehouse else '-' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if st.take_type == 'full' %}
+                            <span class="type-badge full">
+                                <i class="fas fa-boxes"></i> 全盘
+                            </span>
+                            {% elif st.take_type == 'partial' %}
+                            <span class="type-badge partial">
+                                <i class="fas fa-random"></i> 抽盘
+                            </span>
+                            {% else %}
+                            <span class="type-badge cycle">
+                                <i class="fas fa-sync-alt"></i> 循环
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="item-count-badge">{{ st.total_items }}</span>
+                        </td>
+                        <td>
+                            <div class="progress-container">
+                                <div class="progress-bar-wrapper">
+                                    <div class="progress-bar-fill {{ 'complete' if st.progress >= 100 else 'active' if st.progress > 0 else '' }}" 
+                                         style="width: {{ st.progress }}%;"></div>
+                                </div>
+                                <span class="progress-text">{{ "%.0f"|format(st.progress) }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if st.status == 'draft' %}
+                            <span class="status-badge draft">
+                                <i class="fas fa-edit"></i> 草稿
+                            </span>
+                            {% elif st.status == 'in_progress' %}
+                            <span class="status-badge in-progress">
+                                <i class="fas fa-spinner fa-pulse"></i> 进行中
+                            </span>
+                            {% elif st.status == 'completed' %}
+                            <span class="status-badge completed">
+                                <i class="fas fa-check"></i> 已完成
+                            </span>
+                            {% elif st.status == 'approved' %}
+                            <span class="status-badge approved">
+                                <i class="fas fa-stamp"></i> 已审批
+                            </span>
+                            {% elif st.status == 'cancelled' %}
+                            <span class="status-badge cancelled">
+                                <i class="fas fa-times"></i> 已取消
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="date-value">
+                                <i class="far fa-calendar"></i>
+                                {{ st.created_at.strftime('%m-%d %H:%M') }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{{ url_for('stocktake.detail', take_id=st.id) }}" class="table-btn" title="查看详情">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if st.status == 'in_progress' %}
+                                <a href="{{ url_for('stocktake.input_count', take_id=st.id) }}" class="table-btn success" title="录入盘点">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if st.status == 'draft' %}
+                                <button class="table-btn primary" onclick="startTake({{ st.id }})" title="开始盘点">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-table">
+                                <div class="empty-icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <p class="empty-text">暂无盘点记录</p>
+                                <span class="empty-hint">NO STOCK TAKE RECORDS FOUND</span>
+                                <a href="{{ url_for('stocktake.create') }}" class="empty-action">
+                                    <i class="fas fa-plus"></i> 创建盘点任务
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="table-pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('stocktake.index', page=pagination.prev_num, status=current_status, warehouse_id=current_warehouse) }}" class="page-btn">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            <div class="page-info">
+                <span class="current">{{ pagination.page }}</span>
+                <span class="separator">/</span>
+                <span class="total">{{ pagination.pages }}</span>
+            </div>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('stocktake.index', page=pagination.next_num, status=current_status, warehouse_id=current_warehouse) }}" class="page-btn">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.stocktake-panel {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面头部 - 参考量子仓储 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.title-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.35);
+    position: relative;
+}
+
+.title-icon::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 19px;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.05); }
+}
+
+.title-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin: 0.2rem 0 0 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* 导出按钮下拉 */
+.export-dropdown-wrapper {
+    position: relative;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+.export-btn .dropdown-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.3s;
+}
+
+.export-dropdown-wrapper.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.export-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+    z-index: 100;
+}
+
+.export-dropdown-wrapper.open .export-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.export-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    color: var(--text-main);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.export-dropdown .dropdown-item:hover {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.export-dropdown .dropdown-item i {
+    font-size: 1.25rem;
+}
+
+.export-dropdown .excel-icon { color: #10b981; }
+.export-dropdown .pdf-icon { color: #ef4444; }
+
+.export-dropdown .item-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.export-dropdown .item-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.export-dropdown .item-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* 操作按钮 */
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+/* 统计卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.highlight {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent);
+}
+
+.stat-visual {
+    width: 48px;
+    height: 48px;
+}
+
+.circular-chart {
+    display: block;
+    max-width: 100%;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.1);
+    stroke-width: 3;
+}
+
+.circle {
+    fill: none;
+    stroke: #8b5cf6;
+    stroke-width: 3;
+    stroke-linecap: round;
+    animation: progress 1s ease-out forwards;
+}
+
+@keyframes progress {
+    0% { stroke-dasharray: 0, 100; }
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.stat-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+/* 盘点类型卡片 */
+.type-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.type-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.type-card:hover {
+    transform: translateX(5px);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+.type-card .type-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.type-card.full .type-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.type-card.partial .type-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.type-card.cycle .type-icon { background: linear-gradient(135deg, #10b981, #059669); }
+
+.type-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.type-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.type-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.type-arrow {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.type-card:hover .type-arrow {
+    transform: translateX(5px);
+    color: #8b5cf6;
+}
+
+/* 筛选区 */
+.filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-left {
+    display: flex;
+    align-items: center;
+}
+
+.filter-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+    color: var(--text-main);
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.filter-tab.active {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.1));
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* 可搜索下拉框 */
+.searchable-select {
+    position: relative;
+    min-width: 180px;
+}
+
+.searchable-select .select-input {
+    width: 100%;
+    padding: 0.55rem 2.25rem 0.55rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.searchable-select .select-input:focus,
+.searchable-select.open .select-input {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    outline: none;
+}
+
+.searchable-select .select-arrow {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: transform 0.3s ease;
+    font-size: 0.75rem;
+}
+
+.searchable-select.open .select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.searchable-select .select-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+    overflow: hidden;
+}
+
+.searchable-select.open .select-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.searchable-select .dropdown-search {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.searchable-select .dropdown-search i {
+    color: #8b5cf6;
+    font-size: 0.85rem;
+}
+
+.searchable-select .dropdown-search .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.searchable-select .dropdown-search .search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.searchable-select .dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem 0;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.searchable-select .dropdown-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.searchable-select .dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.searchable-select .dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.3);
+    border-radius: 3px;
+}
+
+.searchable-select .dropdown-item {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+}
+
+.searchable-select .dropdown-item:hover,
+.searchable-select .dropdown-item.highlighted {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+}
+
+.searchable-select .dropdown-item.selected {
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+    font-weight: 500;
+}
+
+.searchable-select .dropdown-item.hidden {
+    display: none;
+}
+
+.searchable-select .dropdown-empty {
+    display: none;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.searchable-select .dropdown-empty.show {
+    display: block;
+}
+
+/* 表格卡片 */
+.stocktake-table-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.table-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.table-title i { color: #8b5cf6; }
+
+.table-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.stocktake-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stocktake-table th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.stocktake-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+}
+
+.stocktake-row {
+    transition: background 0.2s ease;
+}
+
+.stocktake-row:hover {
+    background: rgba(139, 92, 246, 0.05);
+}
+
+/* 盘点单号 */
+.take-no-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #a78bfa;
+    font-weight: 600;
+    font-family: monospace;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.take-no-link:hover { color: #c4b5fd; }
+
+/* 仓库信息 */
+.warehouse-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.warehouse-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    font-size: 0.8rem;
+}
+
+.warehouse-name {
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+/* 类型徽章 */
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.type-badge.full {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.type-badge.partial {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.type-badge.cycle {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+/* 商品数 */
+.item-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 0.5rem;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #c4b5fd;
+}
+
+/* 进度条 */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-bar-wrapper {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.progress-bar-fill.complete {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.progress-bar-fill.active {
+    animation: progressPulse 2s infinite;
+}
+
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 36px;
+}
+
+/* 状态徽章 */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.draft {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+
+.status-badge.in-progress {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-badge.completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.status-badge.approved {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.status-badge.cancelled {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* 日期 */
+.date-value {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.table-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.table-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #8b5cf6;
+}
+
+.table-btn.success:hover {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+
+.table-btn.primary:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+}
+
+/* 空状态 */
+.empty-table {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.empty-icon i {
+    font-size: 2rem;
+    color: #8b5cf6;
+    opacity: 0.7;
+}
+
+.empty-text {
+    color: var(--text-main);
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.empty-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+}
+
+.empty-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.empty-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    color: white;
+}
+
+/* 分页 */
+.table-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.page-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+    background: rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+}
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.page-info .current {
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
+.page-info .separator,
+.page-info .total {
+    color: var(--text-muted);
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .type-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filter-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filter-right {
+        width: 100%;
+    }
+    
+    .searchable-select {
+        width: 100%;
+    }
+}
+
+/* 亮色主题适配 */
+[data-theme="light"] .page-header {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .filter-bar {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .export-dropdown {
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .searchable-select .select-dropdown {
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+</style>
+
+<script>
+// 导出下拉菜单
+document.addEventListener('DOMContentLoaded', function() {
+    const exportBtn = document.getElementById('exportBtn');
+    const exportWrapper = document.querySelector('.export-dropdown-wrapper');
+    
+    if (exportBtn && exportWrapper) {
+        exportBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            exportWrapper.classList.toggle('open');
+        });
+        
+        document.addEventListener('click', function() {
+            exportWrapper.classList.remove('open');
+        });
+    }
+    
+    // 可搜索下拉框
+    const warehouseSelect = document.getElementById('warehouseSelect');
+    if (warehouseSelect) {
+        new SearchableSelect(warehouseSelect, {
+            onChange: function(id) {
+                const url = new URL(window.location.href);
+                if (id) {
+                    url.searchParams.set('warehouse_id', id);
+                } else {
+                    url.searchParams.delete('warehouse_id');
+                }
+                window.location.href = url.toString();
+            }
+        });
+    }
+});
+
+// 可搜索下拉框类
+class SearchableSelect {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.input = container.querySelector('.select-input');
+        this.hiddenInput = container.querySelector('input[type="hidden"]');
+        this.dropdown = container.querySelector('.select-dropdown');
+        this.searchInput = container.querySelector('.search-input');
+        this.items = container.querySelectorAll('.dropdown-item');
+        this.emptyMsg = container.querySelector('.dropdown-empty');
+        
+        this.isOpen = false;
+        this.highlightedIndex = -1;
+        this.onChange = options.onChange || null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggle();
+        });
+        
+        this.searchInput.addEventListener('input', (e) => {
+            this.filter(e.target.value);
+        });
+        
+        this.searchInput.addEventListener('click', (e) => e.stopPropagation());
+        this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
+        
+        this.items.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.select(item);
+            });
+        });
+        
+        document.addEventListener('click', () => this.close());
+    }
+    
+    toggle() {
+        this.isOpen ? this.close() : this.open();
+    }
+    
+    open() {
+        this.isOpen = true;
+        this.container.classList.add('open');
+        this.searchInput.value = '';
+        this.filter('');
+        setTimeout(() => this.searchInput.focus(), 50);
+    }
+    
+    close() {
+        this.isOpen = false;
+        this.container.classList.remove('open');
+    }
+    
+    filter(query) {
+        const q = query.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        this.items.forEach(item => {
+            const text = item.dataset.value.toLowerCase();
+            const match = !q || text.includes(q);
+            item.classList.toggle('hidden', !match);
+            if (match) visibleCount++;
+        });
+        
+        this.emptyMsg.classList.toggle('show', visibleCount === 0);
+    }
+    
+    select(item) {
+        this.items.forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+        
+        const value = item.dataset.value;
+        const id = item.dataset.id;
+        
+        this.input.value = id ? value : '';
+        this.input.placeholder = '全部仓库';
+        if (this.hiddenInput) this.hiddenInput.value = id;
+        
+        this.close();
+        
+        if (this.onChange) {
+            this.onChange(id);
+        }
+    }
+    
+    handleKeydown(e) {
+        const visibleItems = [...this.items].filter(i => !i.classList.contains('hidden'));
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.highlightedIndex = Math.min(this.highlightedIndex + 1, visibleItems.length - 1);
+                this.updateHighlight(visibleItems);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+                this.updateHighlight(visibleItems);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (this.highlightedIndex >= 0 && visibleItems[this.highlightedIndex]) {
+                    this.select(visibleItems[this.highlightedIndex]);
+                }
+                break;
+            case 'Escape':
+                this.close();
+                break;
+        }
+    }
+    
+    updateHighlight(visibleItems) {
+        this.items.forEach(i => i.classList.remove('highlighted'));
+        if (visibleItems[this.highlightedIndex]) {
+            visibleItems[this.highlightedIndex].classList.add('highlighted');
+            visibleItems[this.highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+}
+
+function startTake(takeId) {
+    if (confirm('确定开始这个盘点任务吗？')) {
+        // 创建表单并提交 POST 请求
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/stocktake/' + takeId + '/start';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

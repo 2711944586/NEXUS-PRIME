@@ -1,0 +1,834 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{% if preset_type == 'full' %}全盘盘点{% elif preset_type == 'partial' %}抽样盘点{% elif preset_type == 'cycle' %}循环盘点{% else %}新建盘点{% endif %} - NEXUS{% endblock %}
+{% block breadcrumb %}库存盘点 / {% if preset_type == 'full' %}全盘盘点{% elif preset_type == 'partial' %}抽样盘点{% elif preset_type == 'cycle' %}循环盘点{% else %}新建盘点{% endif %}{% endblock %}
+
+{% block styles %}
+<style>
+.create-stocktake-page {
+    padding: 0 0.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.title-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+    position: relative;
+}
+
+.title-icon::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 19px;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.05); }
+}
+
+.title-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin: 0.2rem 0 0 0;
+}
+
+/* 表单卡片 */
+.form-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.form-card-header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.1), transparent);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-card-header i {
+    color: #8b5cf6;
+    font-size: 1.1rem;
+}
+
+.form-card-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.form-card-body {
+    padding: 1.5rem;
+}
+
+/* 表单元素 */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.form-label .required {
+    color: #ef4444;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+.form-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+/* 盘点类型选择器 */
+.type-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.type-option {
+    position: relative;
+}
+
+.type-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.type-option label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.type-option label:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.type-option input:checked + label {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.1));
+}
+
+.type-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+}
+
+.type-option input:checked + label .type-icon {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.type-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.type-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* 商品选择表格 */
+.product-table-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    display: none;
+}
+
+.product-table-card.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.search-box {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid #8b5cf6;
+}
+
+.search-input {
+    position: relative;
+}
+
+.search-input i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-input input {
+    padding-left: 2.5rem;
+}
+
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.product-table th,
+.product-table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.product-table th {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.product-table tr:last-child td {
+    border-bottom: none;
+}
+
+.product-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.product-table tbody tr:hover {
+    background: rgba(139, 92, 246, 0.05);
+}
+
+.product-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    accent-color: #8b5cf6;
+}
+
+.product-name {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.product-sku {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.stock-qty {
+    font-weight: 600;
+    color: #10b981;
+}
+
+.stock-qty.low-stock {
+    color: #ef4444;
+}
+
+.table-footer {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid var(--border-color);
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.quick-filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+.filter-btn.low-stock-filter {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.filter-btn.low-stock-filter:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+.total-products {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.selected-count {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.selected-count strong {
+    color: #8b5cf6;
+}
+
+.table-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 操作按钮 */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1.5rem;
+}
+
+.btn-cancel {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.btn-submit {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .type-selector {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        padding: 1.25rem;
+    }
+}
+
+/* 亮色主题适配 */
+[data-theme="light"] .page-header {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .form-card {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .form-card-header {
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.08), transparent);
+}
+
+[data-theme="light"] .type-option label {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .type-option input:checked + label {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05));
+}
+
+[data-theme="light"] .product-table-card {
+    background: #ffffff;
+}
+
+[data-theme="light"] .btn-cancel:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-stocktake-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('stocktake.index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回盘点列表</span>
+        </a>
+    </div>
+    
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-icon">
+                {% if preset_type == 'full' %}
+                <i class="fas fa-warehouse"></i>
+                {% elif preset_type == 'partial' %}
+                <i class="fas fa-tasks"></i>
+                {% elif preset_type == 'cycle' %}
+                <i class="fas fa-sync-alt"></i>
+                {% else %}
+                <i class="fas fa-plus-circle"></i>
+                {% endif %}
+            </div>
+            <div class="title-text">
+                <h1 class="page-title">
+                    {% if preset_type == 'full' %}全盘盘点
+                    {% elif preset_type == 'partial' %}抽样盘点
+                    {% elif preset_type == 'cycle' %}循环盘点
+                    {% else %}新建盘点单{% endif %}
+                </h1>
+                <p class="page-subtitle">
+                    {% if preset_type == 'full' %}FULL STOCK TAKE
+                    {% elif preset_type == 'partial' %}PARTIAL STOCK TAKE
+                    {% elif preset_type == 'cycle' %}CYCLE STOCK TAKE
+                    {% else %}CREATE STOCK TAKE{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('stocktake.create') }}" id="stocktake-form">
+        {{ form.hidden_tag() }}
+        
+        <!-- 基本信息 -->
+        <div class="form-card">
+            <div class="form-card-header">
+                <i class="fas fa-info-circle"></i>
+                <h5>基本信息</h5>
+            </div>
+            <div class="form-card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">仓库 <span class="required">*</span></label>
+                        {{ form.warehouse_id(class="form-select") }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">计划盘点日期</label>
+                        <input type="date" name="planned_date" class="form-control" value="{{ today }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">盘点类型 <span class="required">*</span></label>
+                    <div class="type-selector">
+                        <div class="type-option">
+                            <input type="radio" name="take_type" id="type-full" value="full" {{ 'checked' if preset_type == 'full' else '' }}>
+                            <label for="type-full">
+                                <div class="type-icon">
+                                    <i class="fas fa-warehouse"></i>
+                                </div>
+                                <span class="type-name">全盘</span>
+                                <span class="type-desc">盘点仓库所有商品</span>
+                            </label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" name="take_type" id="type-partial" value="partial" {{ 'checked' if preset_type == 'partial' else '' }}>
+                            <label for="type-partial">
+                                <div class="type-icon">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <span class="type-name">抽盘</span>
+                                <span class="type-desc">选择部分商品盘点</span>
+                            </label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" name="take_type" id="type-cycle" value="cycle" {{ 'checked' if preset_type == 'cycle' else '' }}>
+                            <label for="type-cycle">
+                                <div class="type-icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <span class="type-name">循环盘点</span>
+                                <span class="type-desc">周期性滚动盘点</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">备注说明</label>
+                    {{ form.remark(class="form-control", rows=3, placeholder="输入盘点说明或备注...") }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 抽盘商品选择 -->
+        <div class="product-table-card" id="product-select-card">
+            <div class="form-card-header">
+                <i class="fas fa-boxes"></i>
+                <h5>选择盘点商品</h5>
+            </div>
+            <div class="search-box">
+                <div class="search-hint" id="product-select-hint">请选择需要盘点的商品</div>
+                {% if products|length >= 200 %}
+                <div class="search-hint" style="background: rgba(245, 158, 11, 0.1); border-left-color: #f59e0b; color: #f59e0b;">
+                    <i class="fas fa-info-circle"></i> 为提高性能，仅显示前200个商品。请使用搜索框筛选
+                </div>
+                {% endif %}
+                <div class="search-input">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="product-search" placeholder="搜索商品名称或SKU...">
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">
+                                <input type="checkbox" class="product-checkbox" id="select-all">
+                            </th>
+                            <th>商品信息</th>
+                            <th>SKU</th>
+                            <th>分类</th>
+                            <th>当前库存</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list">
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="product_ids[]" value="{{ product.id }}" class="product-checkbox product-item">
+                            </td>
+                            <td>
+                                <div class="product-name">{{ product.name }}</div>
+                            </td>
+                            <td>
+                                <span class="product-sku">{{ product.sku }}</span>
+                            </td>
+                            <td>
+                                <span class="category-badge">{{ product.category.name if product.category else '未分类' }}</span>
+                            </td>
+                            <td>
+                                <span class="stock-qty {% if product.total_stock <= product.min_stock %}low-stock{% endif %}">
+                                    {{ product.total_stock }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-footer">
+                <div class="footer-left">
+                    <span class="selected-count">已选择 <strong id="selected-count">0</strong> 个商品</span>
+                    <div class="quick-filters">
+                        <button type="button" class="filter-btn" data-filter="all">全选</button>
+                        <button type="button" class="filter-btn" data-filter="none">取消全选</button>
+                        <button type="button" class="filter-btn low-stock-filter" data-filter="low-stock">
+                            <i class="fas fa-exclamation-triangle"></i> 低库存
+                        </button>
+                    </div>
+                </div>
+                <span class="total-products">共 {{ products|length }} 个商品</span>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('stocktake.index') }}" class="btn-cancel">
+                <i class="fas fa-times"></i> 取消
+            </a>
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-check"></i> 创建盘点单
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeInputs = document.querySelectorAll('input[name="take_type"]');
+    const productCard = document.getElementById('product-select-card');
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.product-item');
+    const selectedCount = document.getElementById('selected-count');
+    
+    // 商品选择卡片始终显示（所有盘点类型都可选择商品）
+    productCard.classList.add('show');
+    
+    // 更新商品选择卡片提示
+    const updateProductHint = function(type) {
+        const header = productCard.querySelector('.form-card-header h5');
+        const hint = document.getElementById('product-select-hint');
+        if (type === 'full') {
+            if (header) header.innerHTML = '选择盘点商品 <span style="font-weight: 400; color: var(--text-muted); font-size: 0.85rem;">(不选择则盘点所有商品)</span>';
+            if (hint) hint.textContent = '全盘模式：不选择任何商品时将自动包含仓库内所有商品';
+        } else if (type === 'partial') {
+            if (header) header.innerHTML = '选择盘点商品 <span style="font-weight: 400; color: #ef4444; font-size: 0.85rem;">*</span>';
+            if (hint) hint.textContent = '抽盘模式：请至少选择一个需要盘点的商品';
+        } else if (type === 'cycle') {
+            if (header) header.innerHTML = '选择盘点商品 <span style="font-weight: 400; color: var(--text-muted); font-size: 0.85rem;">(不选择则自动按分类轮询)</span>';
+            if (hint) hint.textContent = '循环盘点模式：不选择商品时将按分类自动轮询盘点';
+        }
+    };
+    
+    // 页面加载时初始化
+    const checkedType = document.querySelector('input[name="take_type"]:checked');
+    if (checkedType) {
+        updateProductHint(checkedType.value);
+    }
+    
+    // 盘点类型切换时更新提示
+    typeInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            updateProductHint(this.value);
+        });
+    });
+    
+    // 全选
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            const visible = document.querySelectorAll('#product-list tr:not([style*="display: none"]) .product-item');
+            visible.forEach(cb => cb.checked = this.checked);
+            updateCount();
+        });
+    }
+    
+    // 单选
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateCount);
+    });
+    
+    function updateCount() {
+        const count = document.querySelectorAll('.product-item:checked').length;
+        if (selectedCount) {
+            selectedCount.textContent = count;
+        }
+    }
+    
+    // 搜索
+    const searchInput = document.getElementById('product-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            document.querySelectorAll('#product-list tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            });
+        });
+    }
+    
+    // 快捷筛选按钮
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            const allItems = document.querySelectorAll('.product-item');
+            
+            if (filter === 'all') {
+                // 全选可见商品
+                document.querySelectorAll('#product-list tr:not([style*="display: none"]) .product-item').forEach(cb => {
+                    cb.checked = true;
+                });
+            } else if (filter === 'none') {
+                // 取消全选
+                allItems.forEach(cb => cb.checked = false);
+            } else if (filter === 'low-stock') {
+                // 选择低库存商品
+                allItems.forEach(cb => cb.checked = false);
+                document.querySelectorAll('.stock-qty.low-stock').forEach(el => {
+                    const row = el.closest('tr');
+                    if (row) {
+                        const checkbox = row.querySelector('.product-item');
+                        if (checkbox) checkbox.checked = true;
+                    }
+                });
+            }
+            
+            updateCount();
+        });
+    });
+});
+</script>
+{% endblock %}

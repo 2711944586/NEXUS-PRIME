@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -8,21 +9,29 @@ venv/
 env/
 ENV/
 
-# Flask
+# Flask / database runtime
 instance/*
-!instance/nexus_prime.db
-## *.db 已允许上传，nexus_prime.db 需纳入版本控制
+backend/instance/*
+*.db
+!backend/instance/
+*.db-shm
+*.db-wal
 .webassets-cache
 
 # 环境变量
 .env
 .env.*
 !.env.example
+!backend/.env.example
+!frontend/.env.example
 
 # 日志
 logs/*
+backend/logs/*
 !logs/.gitkeep
+!backend/logs/.gitkeep
 *.log
+*.pid
 
 # IDE
 .vscode/
@@ -37,14 +46,52 @@ Thumbs.db
 # 部署
 gunicorn.pid
 supervisor.sock
+.vercel/
+frontend/.vercel/
+backend/.vercel/
+supabase/.branches/
+supabase/.temp/
+supabase/.env
 
 # 备份
 backups/
 *.bak
+*.tmp
+*.temp
+*.orig
 
-# 上传文件（根据需要调整）
-app/static/uploads/*
-!app/static/uploads/.gitkeep
+# 上传文件
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+!backend/storage/uploads/
+!backend/storage/uploads/files/
+backend/storage/uploads/files/*
+!backend/storage/uploads/files/.gitkeep
+!backend/storage/uploads/avatars/
+backend/storage/uploads/avatars/*
+!backend/storage/uploads/avatars/.gitkeep
+!backend/storage/uploads/library/
+backend/storage/uploads/library/*
+!backend/storage/uploads/library/.gitkeep
 
-# 数据导出（可选，如需保留则注释此行）
-# data_export/
+# Node / Angular
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.angular/
+frontend/.angular/
+frontend/public/runtime-config.js
+
+# Local audit / screenshot artifacts
+output/
+frontend/output/
+.playwright-cli/
+playwright-report/
+test-results/
+coverage/
+frontend/coverage/
+
+# 数据导出与历史归档
+data_export/
+backend/data_export/

@@ -1,0 +1,923 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}资讯中心{% endblock %}
+{% block breadcrumb %}CMS / News Feed{% endblock %}
+
+{% block styles %}
+<style>
+    /* ============================================
+       NEXUS 资讯中心 - 优化版
+    ============================================ */
+    
+    /* 页面标题区 */
+    .cms-header {
+        position: relative;
+        padding: 2.5rem 2rem;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1), rgba(0, 212, 255, 0.08));
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .cms-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.8;
+    }
+    
+    .cms-header-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .cms-title-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .cms-title-section .title-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+    }
+    
+    .cms-title-section h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--text-main), #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+    }
+    
+    .cms-title-section p {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        margin: 0.25rem 0 0 0;
+    }
+    
+    .btn-publish {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.875rem 1.75rem;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+    }
+    
+    .btn-publish:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+        color: white;
+    }
+    
+    /* 统计概览 */
+    .cms-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.25rem;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6366f1, #8b5cf6, #00d4ff);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        border-color: rgba(99, 102, 241, 0.3);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #6366f1, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.2;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.35rem;
+        font-weight: 500;
+    }
+    
+    /* 分类过滤器 - 使用链接方式 */
+    .category-filter {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: var(--bg-surface);
+        border-radius: 14px;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .filter-btn:hover {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+    }
+    
+    .filter-btn.active {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .filter-btn i {
+        font-size: 0.8rem;
+    }
+    
+    /* 文章网格 */
+    .articles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    /* 文章卡片 */
+    .article-card {
+        position: relative;
+        background: var(--bg-surface);
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: cardFadeIn 0.6s ease forwards;
+        opacity: 0;
+    }
+    
+    .article-card:nth-child(1) { animation-delay: 0.05s; }
+    .article-card:nth-child(2) { animation-delay: 0.1s; }
+    .article-card:nth-child(3) { animation-delay: 0.15s; }
+    .article-card:nth-child(4) { animation-delay: 0.2s; }
+    .article-card:nth-child(5) { animation-delay: 0.25s; }
+    .article-card:nth-child(6) { animation-delay: 0.3s; }
+    
+    @keyframes cardFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .article-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.2),
+            0 0 0 1px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* 卡片封面图 */
+    .article-cover {
+        position: relative;
+        height: 160px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+        overflow: hidden;
+    }
+    
+    .cover-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2.5rem;
+        color: rgba(99, 102, 241, 0.25);
+        transition: all 0.4s ease;
+    }
+    
+    .article-card:hover .cover-icon {
+        transform: translate(-50%, -50%) scale(1.15) rotate(5deg);
+        color: rgba(99, 102, 241, 0.4);
+    }
+    
+    .article-category {
+        position: absolute;
+        top: 0.875rem;
+        left: 0.875rem;
+        padding: 0.4rem 0.9rem;
+        background: rgba(99, 102, 241, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .article-date {
+        position: absolute;
+        top: 0.875rem;
+        right: 0.875rem;
+        padding: 0.35rem 0.75rem;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        font-size: 0.7rem;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    
+    /* 卡片内容 */
+    .article-content {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .article-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.6rem;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: color 0.3s ease;
+    }
+    
+    .article-card:hover .article-title {
+        color: #6366f1;
+    }
+    
+    .article-excerpt {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    /* 卡片底部 */
+    .article-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .author-info {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    
+    .author-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2px solid rgba(99, 102, 241, 0.3);
+        object-fit: cover;
+    }
+    
+    .author-name {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+    
+    .read-more {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.9rem;
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        border-radius: 8px;
+        color: #6366f1;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .read-more:hover {
+        background: rgba(99, 102, 241, 0.2);
+        border-color: #6366f1;
+        color: #6366f1;
+        transform: translateX(2px);
+    }
+    
+    .read-more i {
+        font-size: 0.7rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .read-more:hover i {
+        transform: translateX(3px);
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: var(--bg-surface);
+        border-radius: 20px;
+        border: 2px dashed var(--border-color);
+    }
+    
+    .empty-icon {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: var(--text-muted);
+    }
+    
+    .empty-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-desc {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* 分页容器 */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 3rem;
+        flex-wrap: wrap;
+    }
+    
+    .page-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        height: 42px;
+        padding: 0 0.75rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.25s ease;
+    }
+    
+    .page-btn:hover:not(.disabled) {
+        background: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.4);
+        color: #6366f1;
+    }
+    
+    .page-btn.active {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .page-btn.disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
+    /* 页码跳转输入框 */
+    .page-jump-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+        padding-left: 1rem;
+        border-left: 1px solid var(--border-color);
+    }
+    
+    .page-jump-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    
+    .page-jump-input {
+        width: 60px;
+        height: 42px;
+        padding: 0 0.75rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-main);
+        font-size: 0.9rem;
+        text-align: center;
+        transition: all 0.25s ease;
+    }
+    
+    .page-jump-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    
+    .page-jump-btn {
+        height: 42px;
+        padding: 0 1rem;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+    
+    .page-jump-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    /* ============================================
+       亮色主题适配
+    ============================================ */
+    [data-theme="light"] .cms-header {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08), rgba(0, 212, 255, 0.05));
+        border-color: rgba(99, 102, 241, 0.15);
+    }
+    
+    [data-theme="light"] .cms-title-section h2 {
+        background: linear-gradient(135deg, #1e293b, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    [data-theme="light"] .cms-title-section p {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .stat-card {
+        background: #ffffff;
+        border-color: #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    [data-theme="light"] .stat-card:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+    
+    [data-theme="light"] .stat-label {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .category-filter {
+        background: #ffffff;
+        border-color: #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    [data-theme="light"] .filter-btn {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .filter-btn:hover {
+        background: rgba(99, 102, 241, 0.08);
+        color: #6366f1;
+    }
+    
+    [data-theme="light"] .article-card {
+        background: #ffffff;
+        border-color: #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    [data-theme="light"] .article-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    [data-theme="light"] .article-cover {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06));
+    }
+    
+    [data-theme="light"] .article-title {
+        color: #1e293b;
+    }
+    
+    [data-theme="light"] .article-card:hover .article-title {
+        color: #6366f1;
+    }
+    
+    [data-theme="light"] .article-excerpt {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .article-footer {
+        background: #f8fafc;
+        border-top-color: #e2e8f0;
+    }
+    
+    [data-theme="light"] .author-name {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .read-more {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.2);
+        color: #6366f1;
+    }
+    
+    [data-theme="light"] .read-more:hover {
+        background: rgba(99, 102, 241, 0.15);
+    }
+    
+    [data-theme="light"] .empty-state {
+        background: #ffffff;
+        border-color: #e2e8f0;
+    }
+    
+    [data-theme="light"] .empty-title {
+        color: #1e293b;
+    }
+    
+    [data-theme="light"] .empty-desc {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .page-btn {
+        background: #ffffff;
+        border-color: #e2e8f0;
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .page-btn:hover:not(.disabled) {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.3);
+        color: #6366f1;
+    }
+    
+    [data-theme="light"] .page-jump-wrapper {
+        border-left-color: #e2e8f0;
+    }
+    
+    [data-theme="light"] .page-jump-label {
+        color: #64748b;
+    }
+    
+    [data-theme="light"] .page-jump-input {
+        background: #ffffff;
+        border-color: #e2e8f0;
+        color: #1e293b;
+    }
+    
+    [data-theme="light"] .page-jump-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 1024px) {
+        .cms-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .cms-header-content {
+            flex-direction: column;
+            gap: 1.5rem;
+            text-align: center;
+        }
+        
+        .cms-title-section {
+            flex-direction: column;
+        }
+        
+        .articles-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .category-filter {
+            justify-content: center;
+        }
+        
+        .cms-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .pagination-wrapper {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .page-jump-wrapper {
+            margin-left: 0;
+            padding-left: 0;
+            border-left: none;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面标题区 -->
+<div class="cms-header">
+    <div class="cms-header-content">
+        <div class="cms-title-section">
+            <div class="title-icon">
+                <i class="fas fa-rss"></i>
+            </div>
+            <div>
+                <h2>企业资讯中心</h2>
+                <p>及时获取公司动态、行业资讯与重要公告</p>
+            </div>
+        </div>
+        <a href="{{ url_for('cms.editor') }}" class="btn-publish">
+            <i class="fas fa-pen-fancy"></i>
+            发布公告
+        </a>
+    </div>
+</div>
+
+<!-- 统计概览 -->
+<div class="cms-stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ pagination.total if pagination else 0 }}</div>
+        <div class="stat-label">文章总数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ pagination.pages if pagination else 0 }}</div>
+        <div class="stat-label">总页数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ pagination.page if pagination else 1 }}</div>
+        <div class="stat-label">当前页</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ articles | length }}</div>
+        <div class="stat-label">本页文章</div>
+    </div>
+</div>
+
+<!-- 分类过滤器 - 使用链接方式实现服务器端筛选 -->
+<div class="category-filter">
+    <a href="{{ url_for('cms.index') }}" class="filter-btn {{ 'active' if not current_category else '' }}">
+        <i class="fas fa-th-large"></i> 全部
+    </a>
+    <a href="{{ url_for('cms.index', category='notice') }}" class="filter-btn {{ 'active' if current_category == 'notice' else '' }}">
+        <i class="fas fa-bullhorn"></i> 公告
+    </a>
+    <a href="{{ url_for('cms.index', category='news') }}" class="filter-btn {{ 'active' if current_category == 'news' else '' }}">
+        <i class="fas fa-newspaper"></i> 新闻
+    </a>
+    <a href="{{ url_for('cms.index', category='docs') }}" class="filter-btn {{ 'active' if current_category == 'docs' else '' }}">
+        <i class="fas fa-book"></i> 文档
+    </a>
+    <a href="{{ url_for('cms.index', category='guide') }}" class="filter-btn {{ 'active' if current_category == 'guide' else '' }}">
+        <i class="fas fa-compass"></i> 指南
+    </a>
+</div>
+
+<!-- 文章列表 -->
+{% if articles %}
+<div class="articles-grid">
+    {% for article in articles %}
+    {% set category = article.category or 'notice' %}
+    {% set category_icons = {'notice': 'bullhorn', 'news': 'newspaper', 'docs': 'book', 'guide': 'compass'} %}
+    {% set category_names = {'notice': '公告', 'news': '新闻', 'docs': '文档', 'guide': '指南'} %}
+    <div class="article-card" data-category="{{ category }}">
+        <div class="article-cover">
+            <i class="fas fa-{{ category_icons.get(category, 'newspaper') }} cover-icon"></i>
+            <span class="article-category">
+                <i class="fas fa-{{ category_icons.get(category, 'bullhorn') }}"></i> {{ category_names.get(category, '公告') }}
+            </span>
+            <span class="article-date">
+                <i class="far fa-clock"></i> {{ article.created_at.strftime('%Y-%m-%d') }}
+            </span>
+        </div>
+        
+        <div class="article-content">
+            <h3 class="article-title">{{ article.title }}</h3>
+            <p class="article-excerpt">{{ article.content | striptags | truncate(120) }}</p>
+        </div>
+        
+        <div class="article-footer">
+            <div class="author-info">
+                {% if article.author and article.author.avatar %}
+                    {% if article.author.avatar.startswith('http') %}
+                    <img src="{{ article.author.avatar }}" alt="头像" class="author-avatar">
+                    {% else %}
+                    <img src="{{ url_for('static', filename=article.author.avatar) }}" alt="头像" class="author-avatar">
+                    {% endif %}
+                {% else %}
+                <img src="{{ url_for('static', filename='img/default-avatar.png') }}" alt="头像" class="author-avatar">
+                {% endif %}
+                <span class="author-name">{{ article.author.username if article.author else '未知作者' }}</span>
+            </div>
+            <a href="{{ url_for('cms.article_detail', id=article.id) }}" class="read-more">
+                阅读全文 <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<!-- 空状态 -->
+<div class="empty-state">
+    <div class="empty-icon">
+        <i class="fas fa-newspaper"></i>
+    </div>
+    <h3 class="empty-title">暂无发布的资讯</h3>
+    <p class="empty-desc">
+        {% if current_category %}
+        当前分类暂无文章，
+        <a href="{{ url_for('cms.index') }}" style="color: #6366f1;">查看全部文章</a>
+        或点击上方"发布公告"按钮创建新文章
+        {% else %}
+        点击上方"发布公告"按钮，创建第一篇文章吧！
+        {% endif %}
+    </p>
+    <a href="{{ url_for('cms.editor') }}" class="btn-publish">
+        <i class="fas fa-plus"></i>
+        立即创建
+    </a>
+</div>
+{% endif %}
+
+<!-- 分页 -->
+{% if pagination and pagination.pages > 1 %}
+<div class="pagination-wrapper">
+    <a href="{{ url_for('cms.index', page=1, category=current_category) }}" 
+       class="page-btn {{ 'disabled' if not pagination.has_prev else '' }}">
+        <i class="fas fa-angle-double-left"></i>
+    </a>
+    <a href="{{ url_for('cms.index', page=pagination.prev_num, category=current_category) if pagination.has_prev else '#' }}" 
+       class="page-btn {{ 'disabled' if not pagination.has_prev else '' }}">
+        <i class="fas fa-angle-left"></i>
+    </a>
+    
+    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if page_num %}
+            <a href="{{ url_for('cms.index', page=page_num, category=current_category) }}" 
+               class="page-btn {{ 'active' if page_num == pagination.page else '' }}">
+                {{ page_num }}
+            </a>
+        {% else %}
+            <span class="page-btn disabled">...</span>
+        {% endif %}
+    {% endfor %}
+    
+    <a href="{{ url_for('cms.index', page=pagination.next_num, category=current_category) if pagination.has_next else '#' }}" 
+       class="page-btn {{ 'disabled' if not pagination.has_next else '' }}">
+        <i class="fas fa-angle-right"></i>
+    </a>
+    <a href="{{ url_for('cms.index', page=pagination.pages, category=current_category) }}" 
+       class="page-btn {{ 'disabled' if not pagination.has_next else '' }}">
+        <i class="fas fa-angle-double-right"></i>
+    </a>
+    
+    <!-- 页码跳转 -->
+    <div class="page-jump-wrapper">
+        <span class="page-jump-label">跳转到</span>
+        <input type="number" class="page-jump-input" id="pageJumpInput" 
+               min="1" max="{{ pagination.pages }}" value="{{ pagination.page }}"
+               placeholder="{{ pagination.page }}">
+        <button class="page-jump-btn" onclick="jumpToPage()">Go</button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 文章卡片悬停效果增强
+    const articleCards = document.querySelectorAll('.article-card');
+    articleCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.zIndex = '10';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.zIndex = '1';
+        });
+    });
+    
+    // 页码跳转输入框回车事件
+    const pageJumpInput = document.getElementById('pageJumpInput');
+    if (pageJumpInput) {
+        pageJumpInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                jumpToPage();
+            }
+        });
+    }
+});
+
+// 跳转到指定页码
+function jumpToPage() {
+    const input = document.getElementById('pageJumpInput');
+    const page = parseInt(input.value);
+    const maxPages = parseInt(input.max);
+    
+    if (page >= 1 && page <= maxPages) {
+        const currentCategory = '{{ current_category or "" }}';
+        let url = '{{ url_for("cms.index") }}?page=' + page;
+        if (currentCategory) {
+            url += '&category=' + currentCategory;
+        }
+        window.location.href = url;
+    } else {
+        alert('请输入有效的页码 (1-' + maxPages + ')');
+        input.focus();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1119 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}盘点详情 - NEXUS{% endblock %}
+{% block breadcrumb %}库存盘点 / {{ stocktake.take_no }}{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== 基础布局 ===== */
+    .stocktake-detail-page {
+        padding: 0 0.5rem;
+        animation: fadeIn 0.4s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* 返回导航 */
+    .back-nav {
+        margin-bottom: 1.5rem;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .back-link:hover {
+        border-color: #8b5cf6;
+        color: #8b5cf6;
+    }
+    
+    /* 网格布局 */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 260px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    
+    @media (max-width: 992px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        .detail-sidebar {
+            display: none;
+        }
+    }
+    
+    /* ===== 侧边栏快捷导航 ===== */
+    .detail-sidebar {
+        position: sticky;
+        top: 1rem;
+    }
+    
+    .quick-nav {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 1.25rem;
+        overflow: hidden;
+    }
+    
+    .quick-nav-title {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        padding-left: 0.5rem;
+    }
+    
+    .quick-nav-section {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .quick-nav-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .quick-nav-section-title {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        padding-left: 0.5rem;
+        opacity: 0.7;
+    }
+    
+    .quick-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 10px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        margin-bottom: 0.35rem;
+    }
+    
+    .quick-nav-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .quick-nav-item:hover {
+        background: rgba(139, 92, 246, 0.08);
+        color: #8b5cf6;
+        transform: translateX(4px);
+    }
+    
+    .quick-nav-item.active {
+        background: rgba(139, 92, 246, 0.12);
+        color: #8b5cf6;
+        font-weight: 500;
+    }
+    
+    .quick-nav-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+    
+    /* ===== 订单卡片 ===== */
+    .order-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .order-card .card-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .order-icon-lg {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .icon-pulse {
+        position: absolute;
+        inset: -4px;
+        border-radius: 20px;
+        border: 2px solid #8b5cf6;
+        opacity: 0.4;
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.4; }
+        50% { transform: scale(1.1); opacity: 0.2; }
+    }
+    
+    .order-header-info {
+        flex: 1;
+    }
+    
+    .order-badges {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .take-badge {
+        padding: 0.25rem 0.75rem;
+        background: rgba(139, 92, 246, 0.12);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-family: monospace;
+        color: #8b5cf6;
+    }
+    
+    .type-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+    }
+    
+    .type-badge.full { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+    .type-badge.partial { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+    .type-badge.cycle { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    
+    .order-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 0.5rem;
+    }
+    
+    .order-meta {
+        display: flex;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    
+    .meta-item i {
+        color: #8b5cf6;
+        width: 16px;
+    }
+    
+    /* 订单操作按钮 */
+    .order-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+    
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.15rem;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn:hover { transform: translateY(-2px); }
+    .action-btn.primary { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+    .action-btn.primary:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3); }
+    .action-btn.success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+    .action-btn.success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); }
+    .action-btn.danger { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+    .action-btn.danger:hover { background: rgba(239, 68, 68, 0.2); }
+    
+    /* ===== 状态流程卡片 ===== */
+    .status-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-card .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .card-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .card-title i { color: #8b5cf6; }
+    .status-card .card-body { padding: 1.5rem; }
+    
+    /* 当前状态显示 */
+    .current-status {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: rgba(139, 92, 246, 0.08);
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-indicator {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .status-indicator.draft { background: linear-gradient(135deg, #6b7280, #4b5563); }
+    .status-indicator.in_progress { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .status-indicator.completed { background: linear-gradient(135deg, #10b981, #059669); }
+    .status-indicator.cancelled { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    
+    .status-info { flex: 1; }
+    .status-name { font-size: 1.1rem; font-weight: 700; margin: 0; }
+    .status-name.draft { color: #6b7280; }
+    .status-name.in_progress { color: #f59e0b; }
+    .status-name.completed { color: #10b981; }
+    .status-name.cancelled { color: #ef4444; }
+    .status-desc { font-size: 0.8rem; color: var(--text-muted); margin: 0.25rem 0 0 0; }
+    
+    /* 状态流程图 */
+    .status-flow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+    }
+    
+    .flow-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        position: relative;
+    }
+    
+    .flow-step::after {
+        content: '';
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--border-color);
+        z-index: 0;
+    }
+    
+    .flow-step:last-child::after { display: none; }
+    .flow-step.completed::after { background: linear-gradient(90deg, #10b981, #8b5cf6); }
+    .flow-step.active::after { background: linear-gradient(90deg, #8b5cf6, var(--border-color)); }
+    
+    .step-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-hover);
+        border: 2px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .flow-step.active .step-dot {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        border-color: #8b5cf6;
+        color: white;
+        box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+    }
+    
+    .flow-step.completed .step-dot { background: #10b981; border-color: #10b981; color: white; }
+    .step-name { font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+    .flow-step.active .step-name, .flow-step.completed .step-name { color: var(--text-main); font-weight: 500; }
+    
+    /* ===== 统计卡片 ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+    .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .stat-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    
+    .stat-info h3 { font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin: 0 0 0.15rem 0; }
+    .stat-info p { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+    
+    /* ===== 信息卡片 ===== */
+    .info-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-card .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        background: rgba(139, 92, 246, 0.04);
+    }
+    
+    .info-card .card-body { padding: 1.5rem; }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+    
+    .info-item { display: flex; flex-direction: column; gap: 0.35rem; }
+    .info-item.full { grid-column: span 2; }
+    .info-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-value { font-size: 0.95rem; font-weight: 500; color: var(--text-main); }
+    
+    /* 进度条 */
+    .progress-wrapper { margin-top: 0.75rem; }
+    .progress-bar-bg { height: 8px; background: rgba(139, 92, 246, 0.15); border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa); border-radius: 4px; transition: width 0.5s ease; }
+    
+    /* ===== 盘点明细表格 ===== */
+    .items-card {
+        background: var(--bg-surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .items-card .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(139, 92, 246, 0.04);
+    }
+    
+    .items-table { width: 100%; border-collapse: collapse; }
+    
+    .items-table th {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        background: rgba(139, 92, 246, 0.04);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .items-table td {
+        padding: 1rem;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .items-table tbody tr:last-child td { border-bottom: none; }
+    .items-table tbody tr:hover { background: rgba(139, 92, 246, 0.03); }
+    
+    .product-cell { display: flex; align-items: center; gap: 0.75rem; }
+    
+    .product-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    
+    .product-info h6 { margin: 0; font-weight: 600; color: var(--text-main); font-size: 0.9rem; }
+    .product-info small { color: var(--text-muted); font-size: 0.75rem; }
+    
+    .qty-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .qty-badge.system { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+    .qty-badge.actual { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .variance-positive { color: #10b981; font-weight: 600; }
+    .variance-negative { color: #ef4444; font-weight: 600; }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-badge.pending { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+    .status-badge.counted { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-badge.confirmed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    
+    .action-btn-sm {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        background: rgba(139, 92, 246, 0.12);
+        color: #8b5cf6;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn-sm:hover { background: rgba(139, 92, 246, 0.2); }
+    
+    /* 空状态 */
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+    .empty-state i { font-size: 2.5rem; opacity: 0.3; margin-bottom: 0.75rem; display: block; }
+    
+    /* ===== 操作历史 ===== */
+    .timeline { padding: 0.5rem 0; }
+    
+    .timeline-item {
+        display: flex;
+        gap: 1rem;
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .timeline-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(139, 92, 246, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #8b5cf6;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .timeline-content { flex: 1; }
+    .timeline-title { font-weight: 500; color: var(--text-main); font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .timeline-detail { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem; }
+    .timeline-time { font-size: 0.75rem; color: var(--text-muted); opacity: 0.7; }
+    
+    /* ===== 模态框 ===== */
+    .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; }
+    .modal-header { border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.5rem; }
+    .modal-title { color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .modal-body { padding: 1.5rem; color: var(--text-main); }
+    .modal-footer { border-top: 1px solid var(--border-color); padding: 1rem 1.5rem; }
+    .form-label { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem; }
+    
+    /* 隐藏模态框关闭按钮的默认样式 */
+    .modal-header .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+        opacity: 0.6;
+    }
+    .modal-header .btn-close:hover {
+        opacity: 1;
+    }
+    [data-theme="light"] .modal-header .btn-close {
+        filter: none;
+        opacity: 0.5;
+    }
+    [data-theme="light"] .modal-header .btn-close:hover {
+        opacity: 0.8;
+    }
+    
+    .form-control {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+    }
+    
+    .form-control:focus {
+        background: var(--bg-surface);
+        border-color: #8b5cf6;
+        color: var(--text-main);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    }
+    
+    /* ===== 亮色主题适配 ===== */
+    [data-theme="light"] .back-link { background: #ffffff; border-color: #e2e8f0; color: #64748b; }
+    [data-theme="light"] .back-link:hover { border-color: #8b5cf6; color: #8b5cf6; background: #faf5ff; }
+    [data-theme="light"] .quick-nav { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    [data-theme="light"] .quick-nav-item { color: #64748b; }
+    [data-theme="light"] .quick-nav-item:hover { background: rgba(139, 92, 246, 0.06); color: #8b5cf6; }
+    [data-theme="light"] .quick-nav-item.active { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    [data-theme="light"] .quick-nav-section { border-color: #f1f5f9; }
+    [data-theme="light"] .order-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    [data-theme="light"] .order-name { color: #1e293b; }
+    [data-theme="light"] .meta-item { color: #64748b; }
+    [data-theme="light"] .status-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    [data-theme="light"] .current-status { background: rgba(139, 92, 246, 0.06); }
+    [data-theme="light"] .step-dot { background: #f8fafc; border-color: #e2e8f0; }
+    [data-theme="light"] .stat-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    [data-theme="light"] .stat-info h3 { color: #1e293b; }
+    [data-theme="light"] .stat-info p { color: #64748b; }
+    [data-theme="light"] .info-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    [data-theme="light"] .info-card .card-header { background: #f8fafc; }
+    [data-theme="light"] .info-label { color: #64748b; }
+    [data-theme="light"] .info-value { color: #1e293b; }
+    [data-theme="light"] .progress-bar-bg { background: rgba(139, 92, 246, 0.1); }
+    [data-theme="light"] .items-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); }
+    [data-theme="light"] .items-card .card-header { background: #f8fafc; }
+    [data-theme="light"] .items-table th { background: #f8fafc; color: #64748b; }
+    [data-theme="light"] .items-table td { border-color: #f1f5f9; }
+    [data-theme="light"] .items-table tbody tr:hover { background: #faf5ff; }
+    [data-theme="light"] .product-info h6 { color: #1e293b; }
+    [data-theme="light"] .product-info small { color: #64748b; }
+    [data-theme="light"] .timeline-item { border-color: #f1f5f9; }
+    [data-theme="light"] .timeline-icon { background: rgba(139, 92, 246, 0.1); }
+    [data-theme="light"] .timeline-title { color: #1e293b; }
+    [data-theme="light"] .timeline-detail, [data-theme="light"] .timeline-time { color: #64748b; }
+    [data-theme="light"] .modal-content { background: #ffffff; border-color: #e2e8f0; }
+    [data-theme="light"] .modal-header, [data-theme="light"] .modal-footer { border-color: #e2e8f0; }
+    [data-theme="light"] .modal-title { color: #1e293b; }
+    [data-theme="light"] .form-control { background: #f8fafc; border-color: #e2e8f0; color: #1e293b; }
+    [data-theme="light"] .form-control:focus { background: #ffffff; border-color: #8b5cf6; }
+    [data-theme="light"] .card-title { color: #1e293b; }
+    [data-theme="light"] .action-btn.danger { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); }
+    [data-theme="light"] .empty-state { color: #64748b; }
+</style>
+
+<div class="stocktake-detail-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('stocktake.index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回盘点列表</span>
+        </a>
+    </div>
+    
+    <!-- 主布局 -->
+    <div class="detail-grid">
+        <!-- 主内容区 -->
+        <div class="detail-main">
+            <!-- 订单卡片 -->
+            <div class="order-card" id="section-overview">
+                <div class="card-header">
+                    <div class="order-icon-lg">
+                        <span class="icon-pulse"></span>
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="order-header-info">
+                        <div class="order-badges">
+                            <span class="take-badge">{{ stocktake.take_no }}</span>
+                            {% if stocktake.take_type == 'full' %}
+                            <span class="type-badge full"><i class="fas fa-warehouse"></i> 全盘</span>
+                            {% elif stocktake.take_type == 'partial' %}
+                            <span class="type-badge partial"><i class="fas fa-tasks"></i> 抽盘</span>
+                            {% else %}
+                            <span class="type-badge cycle"><i class="fas fa-sync"></i> 循环盘点</span>
+                            {% endif %}
+                        </div>
+                        <h2 class="order-name">库存盘点单</h2>
+                        <div class="order-meta">
+                            <span class="meta-item">
+                                <i class="fas fa-warehouse"></i>
+                                {{ stocktake.warehouse.name if stocktake.warehouse else '未指定仓库' }}
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                {{ stocktake.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                            <span class="meta-item">
+                                <i class="fas fa-user"></i>
+                                {{ stocktake.creator.display_name if stocktake.creator else '-' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        {% if stocktake.status == 'draft' %}
+                        <form action="{{ url_for('stocktake.start', take_id=stocktake.id) }}" method="POST" style="display:inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="action-btn primary">
+                                <i class="fas fa-play"></i> 开始盘点
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if stocktake.status == 'in_progress' %}
+                        <a href="{{ url_for('stocktake.input_count', take_id=stocktake.id) }}" class="action-btn success">
+                            <i class="fas fa-edit"></i> 录入数量
+                        </a>
+                        <form action="{{ url_for('stocktake.complete', take_id=stocktake.id) }}" method="POST" style="display:inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="action-btn primary" onclick="return confirm('确定完成盘点？完成后将自动调整库存。')">
+                                <i class="fas fa-check"></i> 完成盘点
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if stocktake.status in ['draft', 'in_progress'] %}
+                        <button type="button" class="action-btn danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 状态流程卡片 -->
+            <div class="status-card" id="section-status">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-tasks"></i> 盘点状态</h5>
+                </div>
+                <div class="card-body">
+                    <div class="current-status">
+                        <div class="status-indicator {{ stocktake.status }}">
+                            {% if stocktake.status == 'draft' %}<i class="fas fa-file-alt"></i>
+                            {% elif stocktake.status == 'in_progress' %}<i class="fas fa-spinner fa-spin"></i>
+                            {% elif stocktake.status == 'completed' %}<i class="fas fa-check-circle"></i>
+                            {% elif stocktake.status == 'cancelled' %}<i class="fas fa-ban"></i>{% endif %}
+                        </div>
+                        <div class="status-info">
+                            <h4 class="status-name {{ stocktake.status }}">
+                                {% if stocktake.status == 'draft' %}草稿
+                                {% elif stocktake.status == 'in_progress' %}进行中
+                                {% elif stocktake.status == 'completed' %}已完成
+                                {% elif stocktake.status == 'cancelled' %}已取消{% endif %}
+                            </h4>
+                            <p class="status-desc">
+                                {% if stocktake.status == 'draft' %}盘点单已创建，点击"开始盘点"进入盘点流程
+                                {% elif stocktake.status == 'in_progress' %}盘点进行中，请录入实际盘点数量
+                                {% elif stocktake.status == 'completed' %}盘点已完成，库存差异已自动调整
+                                {% elif stocktake.status == 'cancelled' %}盘点已取消{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-flow">
+                        <div class="flow-step {% if stocktake.status in ['draft', 'in_progress', 'completed'] %}completed{% endif %}">
+                            <div class="step-dot"><i class="fas fa-file-alt"></i></div>
+                            <span class="step-name">创建草稿</span>
+                        </div>
+                        <div class="flow-step {% if stocktake.status in ['in_progress', 'completed'] %}completed{% endif %} {% if stocktake.status == 'in_progress' %}active{% endif %}">
+                            <div class="step-dot"><i class="fas fa-clipboard-check"></i></div>
+                            <span class="step-name">开始盘点</span>
+                        </div>
+                        <div class="flow-step {% if stocktake.status == 'completed' %}completed{% endif %}">
+                            <div class="step-dot"><i class="fas fa-check"></i></div>
+                            <span class="step-name">完成盘点</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计卡片 -->
+            <div class="stats-grid" id="section-stats">
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i class="fas fa-boxes"></i></div>
+                    <div class="stat-info">
+                        <h3>{{ variance_summary.total_items if variance_summary else 0 }}</h3>
+                        <p>总商品数</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <h3>{{ variance_summary.counted_items if variance_summary else 0 }}</h3>
+                        <p>已盘点</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="stat-info">
+                        <h3>{{ variance_summary.variance_items if variance_summary else 0 }}</h3>
+                        <p>有差异</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-info">
+                        <h3>¥{{ "%.0f"|format(variance_summary.total_loss_value if variance_summary else 0) }}</h3>
+                        <p>盘亏金额</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 基本信息 -->
+            <div class="info-card" id="section-info">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> 基本信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">盘点单号</span>
+                            <span class="info-value">{{ stocktake.take_no }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">盘点类型</span>
+                            <span class="info-value">
+                                {% if stocktake.take_type == 'full' %}全盘
+                                {% elif stocktake.take_type == 'partial' %}抽盘
+                                {% else %}循环盘点{% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">仓库</span>
+                            <span class="info-value">{{ stocktake.warehouse.name if stocktake.warehouse else '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">创建人</span>
+                            <span class="info-value">{{ stocktake.creator.display_name if stocktake.creator else '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">创建时间</span>
+                            <span class="info-value">{{ stocktake.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">更新时间</span>
+                            <span class="info-value">{{ stocktake.updated_at.strftime('%Y-%m-%d %H:%M') if stocktake.updated_at else '-' }}</span>
+                        </div>
+                        <div class="info-item full">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="info-label">盘点进度</span>
+                                <span class="info-value">{{ "%.0f"|format(stocktake.progress if stocktake.progress else 0) }}%</span>
+                            </div>
+                            <div class="progress-wrapper">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: {{ stocktake.progress if stocktake.progress else 0 }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if stocktake.remark %}
+                        <div class="info-item full">
+                            <span class="info-label">备注</span>
+                            <span class="info-value">{{ stocktake.remark }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 盘点明细 -->
+            <div class="items-card" id="section-items">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-list"></i> 盘点明细</h5>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">共 {{ items|length }} 件商品</span>
+                </div>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">商品信息</th>
+                            <th>系统数量</th>
+                            <th>实盘数量</th>
+                            <th>差异</th>
+                            <th>状态</th>
+                            <th style="width: 100px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-thumb">{{ item.product.name[0] if item.product else '?' }}</div>
+                                    <div class="product-info">
+                                        <h6>{{ item.product.name if item.product else '-' }}</h6>
+                                        <small>{{ item.product.sku if item.product else '-' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="qty-badge system"><i class="fas fa-database"></i> {{ item.system_qty }}</span></td>
+                            <td>
+                                {% if item.actual_qty is not none %}
+                                <span class="qty-badge actual"><i class="fas fa-hand-paper"></i> {{ item.actual_qty }}</span>
+                                {% else %}<span style="color: var(--text-muted);">-</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if item.variance_qty %}
+                                <span class="{{ 'variance-positive' if item.variance_qty > 0 else 'variance-negative' }}">
+                                    {{ '+' if item.variance_qty > 0 else '' }}{{ item.variance_qty }}
+                                </span>
+                                {% else %}<span style="color: var(--text-muted);">-</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if item.status == 'pending' %}<span class="status-badge pending"><i class="fas fa-clock"></i> 待盘点</span>
+                                {% elif item.status == 'counted' %}<span class="status-badge counted"><i class="fas fa-edit"></i> 已录入</span>
+                                {% elif item.status == 'confirmed' %}<span class="status-badge confirmed"><i class="fas fa-check"></i> 已确认</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if item.status == 'counted' and item.variance_qty != 0 and stocktake.status == 'in_progress' %}
+                                <button type="button" class="action-btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal" data-item-id="{{ item.id }}">
+                                    <i class="fas fa-check"></i> 确认
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state"><i class="fas fa-inbox"></i>暂无盘点明细</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 操作历史 -->
+            <div class="info-card" id="section-history">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-history"></i> 操作历史</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for h in history %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon"><i class="fas fa-circle"></i></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">{{ h.action }}</div>
+                                {% if h.detail %}<div class="timeline-detail">{{ h.detail }}</div>{% endif %}
+                                <div class="timeline-time">{{ h.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-state" style="padding: 2rem;">
+                            <i class="fas fa-history" style="font-size: 1.5rem;"></i>暂无操作记录
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 侧边栏快捷导航 -->
+        <div class="detail-sidebar">
+            <div class="quick-nav">
+                <div class="quick-nav-title">快捷导航</div>
+                
+                <div class="quick-nav-section">
+                    <div class="quick-nav-section-title">页面区域</div>
+                    <a href="#section-overview" class="quick-nav-item active"><i class="fas fa-info-circle"></i> 概览</a>
+                    <a href="#section-status" class="quick-nav-item"><i class="fas fa-tasks"></i> 盘点状态</a>
+                    <a href="#section-stats" class="quick-nav-item"><i class="fas fa-chart-bar"></i> 统计数据</a>
+                    <a href="#section-info" class="quick-nav-item"><i class="fas fa-file-alt"></i> 基本信息</a>
+                    <a href="#section-items" class="quick-nav-item"><i class="fas fa-list"></i> 盘点明细</a>
+                    <a href="#section-history" class="quick-nav-item"><i class="fas fa-history"></i> 操作历史</a>
+                </div>
+                
+                <div class="quick-nav-section">
+                    <div class="quick-nav-section-title">快捷链接</div>
+                    <a href="{{ url_for('stocktake.index') }}" class="quick-nav-item"><i class="fas fa-clipboard-list"></i> 盘点列表</a>
+                    <a href="{{ url_for('inventory.index') }}" class="quick-nav-item"><i class="fas fa-boxes"></i> 库存管理</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 确认差异弹窗 -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="confirm-form" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-check-circle" style="color: #8b5cf6;"></i> 确认差异</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">调整原因 <span class="text-danger">*</span></label>
+                        <textarea class="form-control w-100" name="adjustment_reason" rows="3" required placeholder="请输入差异调整原因" style="width: 100%;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> 确认</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 取消弹窗 -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('stocktake.cancel', take_id=stocktake.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i> 取消盘点</h5>
+                </div>
+                <div class="modal-body">
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">取消后盘点数据将被删除，此操作不可恢复</p>
+                    <div class="mb-3">
+                        <label class="form-label">取消原因</label>
+                        <textarea class="form-control w-100" name="reason" rows="3" placeholder="请输入取消原因" style="width: 100%;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">返回</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> 确认取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 确认差异弹窗设置
+document.getElementById('confirmModal').addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const itemId = button.dataset.itemId;
+    document.getElementById('confirm-form').action = `/stocktake/{{ stocktake.id }}/confirm/${itemId}`;
+});
+
+// 侧边栏导航高亮
+document.addEventListener('DOMContentLoaded', function() {
+    const navItems = document.querySelectorAll('.quick-nav-item[href^="#"]');
+    const sections = [];
+    
+    navItems.forEach(item => {
+        const targetId = item.getAttribute('href').substring(1);
+        const section = document.getElementById(targetId);
+        if (section) sections.push({ nav: item, section: section });
+    });
+    
+    function updateActiveNav() {
+        const scrollPos = window.scrollY + 100;
+        let activeSection = sections[0];
+        sections.forEach(item => {
+            if (item.section.offsetTop <= scrollPos) activeSection = item;
+        });
+        navItems.forEach(nav => nav.classList.remove('active'));
+        if (activeSection) activeSection.nav.classList.add('active');
+    }
+    
+    window.addEventListener('scroll', updateActiveNav);
+    updateActiveNav();
+    
+    // 平滑滚动
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const target = document.getElementById(targetId);
+            if (target) window.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1420 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}量子仓储 - NEXUS{% endblock %}
+{% block breadcrumb %}量子仓储{% endblock %}
+
+{% block content %}
+<div class="warehouse-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-icon">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="title-text">
+                <h1 class="page-title">量子仓储系统</h1>
+                <p class="page-subtitle">QUANTUM WAREHOUSE MANAGEMENT</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="export-dropdown-wrapper">
+                <button class="export-btn" id="exportBtn">
+                    <i class="fas fa-download"></i>
+                    <span>导出数据</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="export-dropdown" id="exportDropdown">
+                    <a href="{{ url_for('inventory.export_inventory', format='excel') }}" class="dropdown-item">
+                        <i class="fas fa-file-excel excel-icon"></i>
+                        <div class="item-text">
+                            <span class="item-title">Excel 格式</span>
+                            <span class="item-desc">适合数据分析</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('inventory.export_inventory', format='csv') }}" class="dropdown-item">
+                        <i class="fas fa-file-csv csv-icon"></i>
+                        <div class="item-text">
+                            <span class="item-title">CSV 格式</span>
+                            <span class="item-desc">导出更快速</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 搜索栏 -->
+    <div class="search-section">
+        <form class="search-form" method="GET" action="{{ url_for('inventory.index') }}">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="q" class="search-input" id="searchInput"
+                       placeholder="输入关键词搜索..."
+                       value="{{ search_keyword or '' }}">
+                <div class="search-hints">
+                    <span class="hint-tag">SKU</span>
+                    <span class="hint-divider">·</span>
+                    <span class="hint-tag">商品名称</span>
+                </div>
+                <button type="submit" class="search-submit">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </form>
+        {% if search_keyword %}
+        <div class="search-info">
+            <div class="search-tag">
+                <i class="fas fa-filter"></i>
+                <span>搜索: <strong>{{ search_keyword }}</strong></span>
+                <a href="{{ url_for('inventory.index') }}" class="clear-search" title="清除搜索">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+            <span class="result-count">找到 {{ pagination.total }} 项结果</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-boxes-stacked"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ pagination.total }}</span>
+                <span class="stat-label">产品总数</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ products|selectattr('total_stock', 'greaterthan', 50)|list|length }}</span>
+                <span class="stat-label">库存充足</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ products|selectattr('total_stock', 'lessthan', 51)|list|length }}</span>
+                <span class="stat-label">低库存预警</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">3</span>
+                <span class="stat-label">仓库节点</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 物品列表 -->
+    <div class="inventory-table-card">
+        <div class="table-header">
+            <span class="table-title">
+                <i class="fas fa-list"></i> 物品清单
+            </span>
+            <span class="table-count">共 {{ pagination.total }} 项</span>
+        </div>
+        
+        <div class="table-wrapper">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th style="width: 280px;">商品信息</th>
+                        <th>分类 & 标签</th>
+                        <th>价格信息</th>
+                        <th>库存状态</th>
+                        <th style="width: 140px; text-align: right;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr class="product-row">
+                        <td class="id-cell">
+                            <span class="id-badge">#{{ p.id }}</span>
+                        </td>
+                        <td>
+                            <div class="product-info">
+                                <div class="product-icon">
+                                    <i class="fas fa-cube"></i>
+                                </div>
+                                <div class="product-details">
+                                    <span class="product-name">{{ p.name }}</span>
+                                    <span class="product-sku">
+                                        <i class="fas fa-barcode"></i> {{ p.sku }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="category-tags">
+                                <span class="category-badge">
+                                    <i class="fas fa-{{ p.category.icon }}"></i> {{ p.category.name }}
+                                </span>
+                                <div class="tags-list">
+                                    {% for tag in p.tags %}
+                                    <span class="tag-chip" style="--tag-color: {{ tag.color }}">
+                                        {{ tag.name }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="price-info">
+                                <div class="price-row">
+                                    <span class="price-label">成本</span>
+                                    <span class="price-value muted">¥{{ p.cost }}</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="price-label">售价</span>
+                                    <span class="price-value highlight">¥{{ p.price }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% set total = p.total_stock %}
+                            {% set stock_percent = (total / 500 * 100)|int %}
+                            {% set stock_status = 'critical' if total <= 20 else 'low' if total <= 50 else 'normal' %}
+                            <div class="stock-indicator {{ stock_status }}">
+                                <div class="stock-bar">
+                                    <div class="stock-fill" style="width: {{ [stock_percent, 100]|min }}%;"></div>
+                                </div>
+                                <div class="stock-info">
+                                    <span class="stock-value">{{ total }}</span>
+                                    <span class="stock-unit">件</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="table-btn primary" onclick="openAdjustModal('{{ p.id }}', '{{ p.name }}')" title="调拨库存">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                                <a href="{{ url_for('inventory.edit', product_id=p.id) }}" class="table-btn" title="编辑商品">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <a href="{{ url_for('inventory.view', product_id=p.id) }}" class="table-btn" title="查看详情">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-table">
+                                <i class="fas fa-box-open"></i>
+                                <p>未检测到物品数据</p>
+                                <span>NO INVENTORY DATA DETECTED</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if pagination.pages > 1 %}
+        <div class="table-pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('inventory.index', page=pagination.prev_num, q=search_keyword or '') }}" class="page-btn">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% else %}
+            <span class="page-btn disabled"><i class="fas fa-chevron-left"></i></span>
+            {% endif %}
+            
+            <div class="page-info">
+                <span class="current">{{ pagination.page }}</span>
+                <span class="separator">/</span>
+                <span class="total">{{ pagination.pages }}</span>
+            </div>
+            
+            <div class="page-jump">
+                <span class="jump-label">跳转</span>
+                <input type="number" class="jump-input" id="pageJumpInput" 
+                       min="1" max="{{ pagination.pages }}" 
+                       placeholder="{{ pagination.page }}">
+                <button type="button" class="jump-btn" id="pageJumpBtn" 
+                        data-base-url="{{ url_for('inventory.index') }}"
+                        data-search="{{ search_keyword or '' }}"
+                        data-max="{{ pagination.pages }}">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('inventory.index', page=pagination.next_num, q=search_keyword or '') }}" class="page-btn">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% else %}
+            <span class="page-btn disabled"><i class="fas fa-chevron-right"></i></span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- 库存调整模态框 -->
+<div id="adjustModal" class="modal-overlay">
+    <div class="adjust-modal">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <h3>库存调拨指令</h3>
+            <button type="button" class="modal-close" onclick="closeAdjustModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-target">
+            <span class="target-label">目标商品</span>
+            <span class="target-name" id="modalProductName">未选择</span>
+        </div>
+        
+        <form method="POST" action="{{ url_for('inventory.index') }}" class="adjust-form">
+            {{ adjust_form.hidden_tag() }}
+            
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-warehouse"></i> 操作仓库
+                </label>
+                {{ adjust_form.warehouse_id(class="form-input") }}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-arrows-alt-h"></i> 操作类型
+                    </label>
+                    {{ adjust_form.move_type(class="form-input") }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-sort-numeric-up"></i> 数量
+                    </label>
+                    {{ adjust_form.quantity(class="form-input") }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-comment"></i> 备注说明
+                </label>
+                {{ adjust_form.remark(class="form-input", placeholder="如：季度盘点损耗") }}
+            </div>
+            
+            <div class="modal-actions">
+                {{ adjust_form.submit(class="submit-btn") }}
+                <button type="button" class="cancel-btn" onclick="closeAdjustModal()">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* ============ 基础布局 ============ */
+.warehouse-panel {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ 页面头部 ============ */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.title-icon {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
+}
+
+.title-text .page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.title-text .page-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin-top: 0.3rem;
+}
+
+.header-right .export-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.5rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.header-right .export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+}
+
+.header-right .export-btn .dropdown-arrow {
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.export-dropdown-wrapper.open .export-btn .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* ============ 导出下拉菜单 ============ */
+.export-dropdown-wrapper {
+    position: relative;
+}
+
+.export-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    background: var(--bg-surface);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(99, 102, 241, 0.1);
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+}
+
+.export-dropdown-wrapper.open .export-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.export-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.export-dropdown .dropdown-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.export-dropdown .excel-icon {
+    font-size: 1.25rem;
+    color: #10b981;
+}
+
+.export-dropdown .csv-icon {
+    font-size: 1.25rem;
+    color: #06b6d4;
+}
+
+.export-dropdown .item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.export-dropdown .item-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.export-dropdown .item-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ============ 搜索栏 - 独立区块 ============ */
+.search-section {
+    margin-bottom: 1.5rem;
+}
+
+.search-form {
+    width: 100%;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem 0.75rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    transition: all 0.3s ease;
+    gap: 1rem;
+}
+
+.search-box:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+}
+
+.search-icon {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 1rem;
+    padding: 0.5rem 0;
+    padding-left: 0.5rem;
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.search-input:focus + .search-hints,
+.search-input:not(:placeholder-shown) + .search-hints {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.search-hints {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-right: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.hint-tag {
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.15);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.hint-divider {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+.search-submit {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.search-submit:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.search-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+}
+
+.search-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.search-tag i {
+    color: var(--color-primary);
+}
+
+.search-tag strong {
+    color: var(--color-primary);
+}
+
+.clear-search {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(239, 68, 68, 0.15);
+    border-radius: 6px;
+    color: #ef4444;
+    text-decoration: none;
+    margin-left: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.clear-search:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.result-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ============ 统计卡片 ============ */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+}
+
+.stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ============ 表格卡片 ============ */
+.inventory-table-card {
+    background: var(--bg-surface);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.table-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 1rem;
+}
+
+.table-title i {
+    color: var(--color-primary);
+}
+
+.table-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.inventory-table th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.inventory-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+}
+
+.product-row {
+    transition: background 0.2s ease;
+}
+
+.product-row:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.id-badge {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* 商品信息 */
+.product-info {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.product-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-size: 1.1rem;
+}
+
+.product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.product-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.product-sku {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.product-sku i {
+    margin-right: 0.3rem;
+}
+
+/* 分类标签 */
+.category-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #a5b4fc;
+    width: fit-content;
+}
+
+.tags-list {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.tag-chip {
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--tag-color, var(--text-muted));
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: var(--tag-color, var(--text-muted));
+    opacity: 0.8;
+}
+
+/* 价格信息 */
+.price-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.price-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.price-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    min-width: 30px;
+}
+
+.price-value {
+    font-weight: 500;
+}
+
+.price-value.muted { color: var(--text-muted); }
+.price-value.highlight { color: var(--text-main); }
+
+/* 库存指示器 */
+.stock-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.stock-bar {
+    width: 80px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stock-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.stock-indicator.normal .stock-fill { background: linear-gradient(90deg, #10b981, #34d399); }
+.stock-indicator.low .stock-fill { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.stock-indicator.critical .stock-fill { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+.stock-info {
+    display: flex;
+    align-items: baseline;
+    gap: 0.2rem;
+}
+
+.stock-value {
+    font-weight: 600;
+}
+
+.stock-indicator.critical .stock-value { color: #ef4444; }
+.stock-indicator.low .stock-value { color: #f59e0b; }
+
+.stock-unit {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.table-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.table-btn:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.table-btn.primary {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* 空状态 */
+.empty-table {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+}
+
+.empty-table i {
+    font-size: 3rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.empty-table p {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+}
+
+.empty-table span {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    letter-spacing: 1px;
+}
+
+/* 分页 */
+.table-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.page-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.page-info .current {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.page-info .separator { color: var(--text-muted); }
+.page-info .total { color: var(--text-muted); }
+
+.page-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 页码跳转 */
+.page-jump {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255,255,255,0.1);
+}
+
+.jump-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.jump-input {
+    width: 50px;
+    height: 34px;
+    padding: 0 0.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    text-align: center;
+    outline: none;
+    transition: all 0.2s ease;
+    -moz-appearance: textfield;
+}
+
+.jump-input::-webkit-outer-spin-button,
+.jump-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.jump-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.jump-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.jump-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.jump-input.error {
+    border-color: #ef4444;
+    animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* ============ 库存调整模态框 ============ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.adjust-modal {
+    position: relative;
+    width: calc(100% - 2rem);
+    max-width: 460px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 100px rgba(99, 102, 241, 0.3), 0 30px 80px rgba(0, 0, 0, 0.6);
+    transform: scale(0.9) translateY(30px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.modal-overlay.show .adjust-modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.adjust-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.adjust-modal .modal-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+}
+
+.adjust-modal .modal-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-main);
+}
+
+.modal-close {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border: none;
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(239,68,68,0.2);
+    color: #ef4444;
+}
+
+.modal-target {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.target-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.target-name {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.adjust-form {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.form-label i {
+    color: var(--color-primary);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-glow);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.submit-btn {
+    flex: 1;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(99, 102, 241, 0.4);
+}
+
+.cancel-btn {
+    padding: 0.85rem 1.5rem;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* ============ 响应式 ============ */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.25rem;
+    }
+    
+    .header-left {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .header-right .export-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .search-box {
+        flex-wrap: wrap;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 导出下拉菜单控制
+const exportBtn = document.getElementById('exportBtn');
+const exportWrapper = exportBtn.closest('.export-dropdown-wrapper');
+
+exportBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    exportWrapper.classList.toggle('open');
+});
+
+// 点击其他地方关闭下拉菜单
+document.addEventListener('click', function(e) {
+    if (!exportWrapper.contains(e.target)) {
+        exportWrapper.classList.remove('open');
+    }
+});
+
+// 库存调整弹窗控制
+const adjustModal = document.getElementById('adjustModal');
+
+function openAdjustModal(id, name) {
+    adjustModal.classList.add('show');
+    document.getElementById('modalProductName').innerText = name;
+    const productIdField = document.getElementById('product_id');
+    if (productIdField) productIdField.value = id;
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAdjustModal() {
+    adjustModal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// 点击遮罩关闭调整弹窗
+adjustModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAdjustModal();
+    }
+});
+
+// ESC 键关闭
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        exportWrapper.classList.remove('open');
+        closeAdjustModal();
+    }
+});
+
+// 页码跳转功能
+const pageJumpInput = document.getElementById('pageJumpInput');
+const pageJumpBtn = document.getElementById('pageJumpBtn');
+
+if (pageJumpBtn && pageJumpInput) {
+    function jumpToPage() {
+        const page = parseInt(pageJumpInput.value);
+        const max = parseInt(pageJumpBtn.dataset.max);
+        const baseUrl = pageJumpBtn.dataset.baseUrl;
+        const search = pageJumpBtn.dataset.search;
+        
+        if (page && page >= 1 && page <= max) {
+            let url = baseUrl + '?page=' + page;
+            if (search) {
+                url += '&q=' + encodeURIComponent(search);
+            }
+            window.location.href = url;
+        } else {
+            pageJumpInput.classList.add('error');
+            setTimeout(() => pageJumpInput.classList.remove('error'), 500);
+        }
+    }
+    
+    pageJumpBtn.addEventListener('click', jumpToPage);
+    
+    pageJumpInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            jumpToPage();
+        }
+    });
+}
+
+// 搜索框输入时隐藏提示标签
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('focus', function() {
+        this.placeholder = '';
+    });
+    searchInput.addEventListener('blur', function() {
+        if (!this.value) {
+            this.placeholder = '输入关键词搜索...';
+        }
+    });
+}
+</script>
+{% endblock %}

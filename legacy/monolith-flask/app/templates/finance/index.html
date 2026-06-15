@@ -1,0 +1,711 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}财务中心 - NEXUS{% endblock %}
+{% block breadcrumb %}财务中心{% endblock %}
+
+{% block content %}
+<div class="finance-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-area">
+                <div class="title-icon">
+                    <i class="fas fa-coins"></i>
+                    <span class="icon-pulse"></span>
+                </div>
+                <div>
+                    <h1 class="page-title">智能财务中心</h1>
+                    <p class="page-subtitle">INTELLIGENT FINANCE CENTER</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <button class="action-btn outline" onclick="refreshData()">
+                <i class="fas fa-sync-alt"></i>
+                <span>刷新数据</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 核心指标卡片 -->
+    <div class="metrics-grid">
+        <div class="metric-card primary">
+            <div class="metric-bg-icon">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-header">
+                    <span class="metric-label">应收账款总额</span>
+                    <span class="metric-badge">实时</span>
+                </div>
+                <div class="metric-value">¥{{ "{:,.0f}".format(total_receivable) }}</div>
+                <div class="metric-footer">
+                    <span class="metric-change up"><i class="fas fa-arrow-up"></i> 8.5%</span>
+                    <span class="metric-period">较上月</span>
+                </div>
+            </div>
+            <div class="metric-chart">
+                <svg viewBox="0 0 100 40" class="sparkline">
+                    <polyline fill="none" stroke="currentColor" stroke-width="2"
+                        points="0,35 10,30 20,32 30,25 40,28 50,20 60,22 70,15 80,18 90,10 100,12"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="metric-card warning">
+            <div class="metric-bg-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-header">
+                    <span class="metric-label">待收款订单</span>
+                    <span class="metric-badge alert">需处理</span>
+                </div>
+                <div class="metric-value">{{ pending_count }}</div>
+                <div class="metric-footer">
+                    <a href="{{ url_for('finance.receivables') }}" class="metric-link">查看详情 <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-card danger">
+            <div class="metric-bg-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-header">
+                    <span class="metric-label">逾期订单</span>
+                    {% if overdue_count > 0 %}
+                    <span class="metric-badge danger pulse">紧急</span>
+                    {% endif %}
+                </div>
+                <div class="metric-value">{{ overdue_count }}</div>
+                <div class="metric-footer">
+                    <span class="metric-hint">需及时跟进催收</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-card success">
+            <div class="metric-bg-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-header">
+                    <span class="metric-label">未到期金额</span>
+                </div>
+                <div class="metric-value">¥{{ "{:,.0f}".format(aging['current']['amount']) }}</div>
+                <div class="metric-footer">
+                    <span class="metric-sub">{{ aging['current']['count'] }} 笔订单</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 功能快捷入口 -->
+    <div class="quick-access-section">
+        <h3 class="section-title">
+            <i class="fas fa-th-large"></i> 快捷功能
+        </h3>
+        <div class="quick-cards">
+            <a href="{{ url_for('finance.receivables') }}" class="quick-card">
+                <div class="quick-icon receivables">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="quick-info">
+                    <span class="quick-name">应收账款</span>
+                    <span class="quick-desc">管理客户应收款项</span>
+                </div>
+                <div class="quick-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('finance.credits') }}" class="quick-card">
+                <div class="quick-icon credits">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="quick-info">
+                    <span class="quick-name">客户信用</span>
+                    <span class="quick-desc">信用额度管理</span>
+                </div>
+                <div class="quick-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('finance.statements') }}" class="quick-card">
+                <div class="quick-icon statements">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="quick-info">
+                    <span class="quick-name">对账单</span>
+                    <span class="quick-desc">生成客户对账单</span>
+                </div>
+                <div class="quick-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('finance.aging_report') }}" class="quick-card">
+                <div class="quick-icon reports">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <div class="quick-info">
+                    <span class="quick-name">账龄报表</span>
+                    <span class="quick-desc">详细账龄分析</span>
+                </div>
+                <div class="quick-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 账龄分析 -->
+    <div class="aging-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="fas fa-chart-bar"></i> 账龄分析
+            </h3>
+            <a href="{{ url_for('finance.aging_report') }}" class="section-link">
+                查看完整报表 <i class="fas fa-external-link-alt"></i>
+            </a>
+        </div>
+        
+        <div class="aging-visual">
+            <!-- 账龄条形图 -->
+            <div class="aging-chart">
+                <div class="aging-bar-container">
+                    {% set total = aging['current']['amount'] + aging['0-30']['amount'] + aging['31-60']['amount'] + aging['61-90']['amount'] + aging['90+']['amount'] %}
+                    {% if total > 0 %}
+                    <div class="aging-bar current" style="width: {{ (aging['current']['amount'] / total * 100)|round(1) }}%;" 
+                         data-tooltip="未到期: ¥{{ '{:,.0f}'.format(aging['current']['amount']) }}"></div>
+                    <div class="aging-bar low" style="width: {{ (aging['0-30']['amount'] / total * 100)|round(1) }}%;"
+                         data-tooltip="0-30天: ¥{{ '{:,.0f}'.format(aging['0-30']['amount']) }}"></div>
+                    <div class="aging-bar medium" style="width: {{ (aging['31-60']['amount'] / total * 100)|round(1) }}%;"
+                         data-tooltip="31-60天: ¥{{ '{:,.0f}'.format(aging['31-60']['amount']) }}"></div>
+                    <div class="aging-bar high" style="width: {{ (aging['61-90']['amount'] / total * 100)|round(1) }}%;"
+                         data-tooltip="61-90天: ¥{{ '{:,.0f}'.format(aging['61-90']['amount']) }}"></div>
+                    <div class="aging-bar critical" style="width: {{ (aging['90+']['amount'] / total * 100)|round(1) }}%;"
+                         data-tooltip="90天+: ¥{{ '{:,.0f}'.format(aging['90+']['amount']) }}"></div>
+                    {% else %}
+                    <div class="aging-bar empty" style="width: 100%;">暂无数据</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- 账龄详情卡片 -->
+            <div class="aging-details">
+                <div class="aging-item">
+                    <div class="aging-dot current"></div>
+                    <div class="aging-info">
+                        <span class="aging-label">未到期</span>
+                        <span class="aging-amount">¥{{ "{:,.0f}".format(aging['current']['amount']) }}</span>
+                    </div>
+                    <span class="aging-count">{{ aging['current']['count'] }} 笔</span>
+                </div>
+                
+                <div class="aging-item">
+                    <div class="aging-dot low"></div>
+                    <div class="aging-info">
+                        <span class="aging-label">0-30天</span>
+                        <span class="aging-amount">¥{{ "{:,.0f}".format(aging['0-30']['amount']) }}</span>
+                    </div>
+                    <span class="aging-count">{{ aging['0-30']['count'] }} 笔</span>
+                </div>
+                
+                <div class="aging-item">
+                    <div class="aging-dot medium"></div>
+                    <div class="aging-info">
+                        <span class="aging-label">31-60天</span>
+                        <span class="aging-amount">¥{{ "{:,.0f}".format(aging['31-60']['amount']) }}</span>
+                    </div>
+                    <span class="aging-count">{{ aging['31-60']['count'] }} 笔</span>
+                </div>
+                
+                <div class="aging-item">
+                    <div class="aging-dot high"></div>
+                    <div class="aging-info">
+                        <span class="aging-label">61-90天</span>
+                        <span class="aging-amount">¥{{ "{:,.0f}".format(aging['61-90']['amount']) }}</span>
+                    </div>
+                    <span class="aging-count">{{ aging['61-90']['count'] }} 笔</span>
+                </div>
+                
+                <div class="aging-item">
+                    <div class="aging-dot critical"></div>
+                    <div class="aging-info">
+                        <span class="aging-label">90天以上</span>
+                        <span class="aging-amount">¥{{ "{:,.0f}".format(aging['90+']['amount']) }}</span>
+                    </div>
+                    <span class="aging-count">{{ aging['90+']['count'] }} 笔</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.finance-panel {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.title-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    border: 2px solid #10b981;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-main), #10b981);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 1px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.action-btn.outline {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.action-btn.outline:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+/* 核心指标卡片 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    position: relative;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.metric-card.primary { border-left: 3px solid #3b82f6; }
+.metric-card.warning { border-left: 3px solid #f59e0b; }
+.metric-card.danger { border-left: 3px solid #ef4444; }
+.metric-card.success { border-left: 3px solid #10b981; }
+
+.metric-bg-icon {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 5rem;
+    opacity: 0.05;
+    color: var(--text-main);
+}
+
+.metric-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.metric-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.metric-badge.alert {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.metric-badge.danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.metric-badge.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.metric-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.metric-change {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.metric-change.up { color: #10b981; }
+.metric-change.down { color: #ef4444; }
+
+.metric-period {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.metric-link {
+    font-size: 0.8rem;
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.metric-link:hover { color: #60a5fa; }
+
+.metric-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.metric-sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.metric-chart {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    width: 60px;
+    height: 30px;
+    opacity: 0.6;
+}
+
+.sparkline {
+    color: #3b82f6;
+}
+
+/* 快捷功能入口 */
+.quick-access-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+}
+
+.section-title i { color: #10b981; }
+
+.quick-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.quick-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.quick-card:hover {
+    transform: translateX(5px);
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.quick-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.quick-icon.receivables { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.quick-icon.credits { background: linear-gradient(135deg, #10b981, #059669); }
+.quick-icon.statements { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.quick-icon.reports { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.quick-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.quick-name {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.quick-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.quick-arrow {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.quick-card:hover .quick-arrow {
+    transform: translateX(5px);
+    color: #10b981;
+}
+
+/* 账龄分析 */
+.aging-section {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-link {
+    font-size: 0.85rem;
+    color: #10b981;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.section-link:hover { color: #34d399; }
+
+.aging-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.aging-chart {
+    padding: 0.5rem 0;
+}
+
+.aging-bar-container {
+    display: flex;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.05);
+}
+
+.aging-bar {
+    height: 100%;
+    min-width: 2px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.aging-bar:hover {
+    filter: brightness(1.2);
+}
+
+.aging-bar.current { background: linear-gradient(90deg, #10b981, #059669); }
+.aging-bar.low { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.aging-bar.medium { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.aging-bar.high { background: linear-gradient(90deg, #f97316, #ea580c); }
+.aging-bar.critical { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.aging-bar.empty { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.aging-details {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+}
+
+.aging-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.aging-item:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.aging-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.aging-dot.current { background: #10b981; }
+.aging-dot.low { background: #3b82f6; }
+.aging-dot.medium { background: #f59e0b; }
+.aging-dot.high { background: #f97316; }
+.aging-dot.critical { background: #ef4444; }
+
+.aging-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.aging-info .aging-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.aging-info .aging-amount {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.aging-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .metrics-grid,
+    .quick-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .aging-details {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .metrics-grid,
+    .quick-cards,
+    .aging-details {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+function refreshData() {
+    location.reload();
+}
+</script>
+{% endblock %}

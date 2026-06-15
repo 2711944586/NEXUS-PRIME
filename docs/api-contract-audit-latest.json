@@ -1,0 +1,1525 @@
+{
+  "summary": {
+    "frontend_uses": 168,
+    "matched": 168,
+    "missing": 0,
+    "backend_exact_routes": 114,
+    "backend_resources": 31,
+    "backend_path_aliases": 14
+  },
+  "missing": [],
+  "matched": [
+    {
+      "method": "ANY",
+      "path": "ai-sessions",
+      "raw": "ai-sessions",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 613,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:ai-sessions>"
+    },
+    {
+      "method": "POST",
+      "path": "ai/analyze/inventory",
+      "raw": "ai/analyze/inventory",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 1043,
+      "source": "ApiService call",
+      "backend": "ai/analyze/inventory"
+    },
+    {
+      "method": "POST",
+      "path": "ai/analyze/structured",
+      "raw": "ai/analyze/structured",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 894,
+      "source": "ApiService call",
+      "backend": "ai/analyze/structured"
+    },
+    {
+      "method": "POST",
+      "path": "ai/analyze/structured",
+      "raw": "ai/analyze/structured",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 958,
+      "source": "ApiService call",
+      "backend": "ai/analyze/structured"
+    },
+    {
+      "method": "POST",
+      "path": "ai/chat",
+      "raw": "ai/chat",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 1015,
+      "source": "ApiService call",
+      "backend": "ai/chat"
+    },
+    {
+      "method": "POST",
+      "path": "ai/diagnostics",
+      "raw": "ai/diagnostics",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 893,
+      "source": "ApiService call",
+      "backend": "ai/diagnostics"
+    },
+    {
+      "method": "POST",
+      "path": "ai/diagnostics",
+      "raw": "ai/diagnostics",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 942,
+      "source": "ApiService call",
+      "backend": "ai/diagnostics"
+    },
+    {
+      "method": "GET",
+      "path": "ai/sessions",
+      "raw": "ai/sessions",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 889,
+      "source": "ApiService call",
+      "backend": "ai/sessions"
+    },
+    {
+      "method": "POST",
+      "path": "ai/sessions",
+      "raw": "ai/sessions",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 986,
+      "source": "ApiService call",
+      "backend": "ai/sessions"
+    },
+    {
+      "method": "GET",
+      "path": "ai/sessions/{param}/messages",
+      "raw": "ai/sessions/${session.id}/messages",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 973,
+      "source": "ApiService call",
+      "backend": "ai/sessions/<int:session_id>/messages"
+    },
+    {
+      "method": "GET",
+      "path": "ai/settings",
+      "raw": "ai/settings",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 892,
+      "source": "ApiService call",
+      "backend": "ai/settings"
+    },
+    {
+      "method": "GET",
+      "path": "ai/settings",
+      "raw": "ai/settings",
+      "file": "frontend/src/app/pages/settings.page.ts",
+      "line": 585,
+      "source": "ApiService call",
+      "backend": "ai/settings"
+    },
+    {
+      "method": "PUT",
+      "path": "ai/settings",
+      "raw": "ai/settings",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 919,
+      "source": "ApiService call",
+      "backend": "ai/settings"
+    },
+    {
+      "method": "PUT",
+      "path": "ai/settings",
+      "raw": "ai/settings",
+      "file": "frontend/src/app/pages/settings.page.ts",
+      "line": 617,
+      "source": "ApiService call",
+      "backend": "ai/settings"
+    },
+    {
+      "method": "GET",
+      "path": "analytics/executive",
+      "raw": "analytics/executive",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 891,
+      "source": "ApiService call",
+      "backend": "analytics/executive"
+    },
+    {
+      "method": "GET",
+      "path": "analytics/executive",
+      "raw": "analytics/executive",
+      "file": "frontend/src/app/pages/contract-collection.page.ts",
+      "line": 221,
+      "source": "ApiService call",
+      "backend": "analytics/executive"
+    },
+    {
+      "method": "GET",
+      "path": "analytics/executive",
+      "raw": "analytics/executive",
+      "file": "frontend/src/app/pages/customer-operations.page.ts",
+      "line": 201,
+      "source": "ApiService call",
+      "backend": "analytics/executive"
+    },
+    {
+      "method": "GET",
+      "path": "analytics/executive",
+      "raw": "analytics/executive",
+      "file": "frontend/src/app/pages/executive-metrics.page.ts",
+      "line": 234,
+      "source": "ApiService call",
+      "backend": "analytics/executive"
+    },
+    {
+      "method": "GET",
+      "path": "analytics/executive",
+      "raw": "analytics/executive",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 285,
+      "source": "ApiService call",
+      "backend": "analytics/executive"
+    },
+    {
+      "method": "GET",
+      "path": "analytics/executive",
+      "raw": "analytics/executive",
+      "file": "frontend/src/app/pages/profile.page.ts",
+      "line": 416,
+      "source": "ApiService call",
+      "backend": "analytics/executive"
+    },
+    {
+      "method": "ANY",
+      "path": "articles",
+      "raw": "articles",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 486,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:articles>"
+    },
+    {
+      "method": "POST",
+      "path": "articles",
+      "raw": "articles",
+      "file": "frontend/src/app/pages/content.page.ts",
+      "line": 391,
+      "source": "ApiService call",
+      "backend": "<resource:articles>"
+    },
+    {
+      "method": "GET",
+      "path": "articles/{param}/comments",
+      "raw": "articles/${article.id}/comments",
+      "file": "frontend/src/app/pages/content.page.ts",
+      "line": 415,
+      "source": "ApiService call",
+      "backend": "articles/<int:article_id>/comments"
+    },
+    {
+      "method": "POST",
+      "path": "articles/{param}/comments",
+      "raw": "articles/${article.id}/comments",
+      "file": "frontend/src/app/pages/content.page.ts",
+      "line": 430,
+      "source": "ApiService call",
+      "backend": "articles/<int:article_id>/comments"
+    },
+    {
+      "method": "ANY",
+      "path": "audit-logs",
+      "raw": "audit-logs",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 553,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:audit-logs>"
+    },
+    {
+      "method": "GET",
+      "path": "auth/captcha",
+      "raw": "auth/captcha",
+      "file": "frontend/src/app/pages/login.page.ts",
+      "line": 532,
+      "source": "ApiService call",
+      "backend": "auth/captcha"
+    },
+    {
+      "method": "GET",
+      "path": "auth/csrf",
+      "raw": "auth/csrf",
+      "file": "frontend/src/app/core/auth.service.ts",
+      "line": 18,
+      "source": "ApiService call",
+      "backend": "auth/csrf"
+    },
+    {
+      "method": "POST",
+      "path": "auth/login",
+      "raw": "auth/login",
+      "file": "frontend/src/app/core/auth.service.ts",
+      "line": 24,
+      "source": "ApiService call",
+      "backend": "auth/login"
+    },
+    {
+      "method": "POST",
+      "path": "auth/logout",
+      "raw": "auth/logout",
+      "file": "frontend/src/app/core/auth.service.ts",
+      "line": 67,
+      "source": "ApiService call",
+      "backend": "auth/logout"
+    },
+    {
+      "method": "GET",
+      "path": "auth/me",
+      "raw": "auth/me",
+      "file": "frontend/src/app/core/auth.service.ts",
+      "line": 57,
+      "source": "ApiService call",
+      "backend": "auth/me"
+    },
+    {
+      "method": "POST",
+      "path": "auth/register",
+      "raw": "auth/register",
+      "file": "frontend/src/app/core/auth.service.ts",
+      "line": 35,
+      "source": "ApiService call",
+      "backend": "auth/register"
+    },
+    {
+      "method": "GET",
+      "path": "auth/register-policy",
+      "raw": "auth/register-policy",
+      "file": "frontend/src/app/pages/login.page.ts",
+      "line": 604,
+      "source": "ApiService call",
+      "backend": "auth/register-policy"
+    },
+    {
+      "method": "POST",
+      "path": "bulk-actions",
+      "raw": "bulk-actions",
+      "file": "frontend/src/app/pages/dispatch-center.page.ts",
+      "line": 223,
+      "source": "ApiService call",
+      "backend": "bulk-actions"
+    },
+    {
+      "method": "ANY",
+      "path": "files",
+      "raw": "files",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 453,
+      "source": "BusinessAction endpoint",
+      "backend": "<path:files->files>"
+    },
+    {
+      "method": "POST",
+      "path": "files/upload",
+      "raw": "files/upload",
+      "file": "frontend/src/app/pages/files.page.ts",
+      "line": 399,
+      "source": "ApiService call",
+      "backend": "files/upload"
+    },
+    {
+      "method": "ANY",
+      "path": "files/{param}/download",
+      "raw": "files/:id/download",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 326,
+      "source": "endpoint expression",
+      "backend": "files/<int:file_id>/download"
+    },
+    {
+      "method": "GET",
+      "path": "files/{param}/download",
+      "raw": "files/:id/download",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 326,
+      "source": "BusinessAction endpoint",
+      "backend": "files/<int:file_id>/download"
+    },
+    {
+      "method": "ANY",
+      "path": "finance/credits",
+      "raw": "finance/credits",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 350,
+      "source": "BusinessAction endpoint",
+      "backend": "finance/credits"
+    },
+    {
+      "method": "ANY",
+      "path": "finance/credits",
+      "raw": "finance/credits",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 350,
+      "source": "endpoint expression",
+      "backend": "finance/credits"
+    },
+    {
+      "method": "GET",
+      "path": "finance/credits",
+      "raw": "finance/credits",
+      "file": "frontend/src/app/pages/contract-collection.page.ts",
+      "line": 220,
+      "source": "ApiService call",
+      "backend": "finance/credits"
+    },
+    {
+      "method": "ANY",
+      "path": "finance/credits/{param}/freeze",
+      "raw": "finance/credits/:id/freeze",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 235,
+      "source": "endpoint expression",
+      "backend": "finance/credits/<int:credit_id>/freeze"
+    },
+    {
+      "method": "POST",
+      "path": "finance/credits/{param}/freeze",
+      "raw": "finance/credits/:id/freeze",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 235,
+      "source": "BusinessAction endpoint",
+      "backend": "finance/credits/<int:credit_id>/freeze"
+    },
+    {
+      "method": "ANY",
+      "path": "finance/credits/{param}/unfreeze",
+      "raw": "finance/credits/:id/unfreeze",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 236,
+      "source": "endpoint expression",
+      "backend": "finance/credits/<int:credit_id>/unfreeze"
+    },
+    {
+      "method": "POST",
+      "path": "finance/credits/{param}/unfreeze",
+      "raw": "finance/credits/:id/unfreeze",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 236,
+      "source": "BusinessAction endpoint",
+      "backend": "finance/credits/<int:credit_id>/unfreeze"
+    },
+    {
+      "method": "POST",
+      "path": "finance/credits/{param}/{param}",
+      "raw": "finance/credits/${row.id}/${action}",
+      "file": "frontend/src/app/pages/credit.page.ts",
+      "line": 222,
+      "source": "ApiService call",
+      "backend": "finance/credits/<int:credit_id>/freeze"
+    },
+    {
+      "method": "ANY",
+      "path": "finance/receivables/{param}/reminder",
+      "raw": "finance/receivables/:id/reminder",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 204,
+      "source": "endpoint expression",
+      "backend": "finance/receivables/<int:receivable_id>/reminder"
+    },
+    {
+      "method": "POST",
+      "path": "finance/receivables/{param}/reminder",
+      "raw": "finance/receivables/:id/reminder",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 204,
+      "source": "BusinessAction endpoint",
+      "backend": "finance/receivables/<int:receivable_id>/reminder"
+    },
+    {
+      "method": "POST",
+      "path": "finance/receivables/{param}/reminder",
+      "raw": "finance/receivables/${target.id}/reminder",
+      "file": "frontend/src/app/pages/receivables.page.ts",
+      "line": 376,
+      "source": "ApiService call",
+      "backend": "finance/receivables/<int:receivable_id>/reminder"
+    },
+    {
+      "method": "ANY",
+      "path": "generated-reports",
+      "raw": "generated-reports",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 420,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:generated-reports>"
+    },
+    {
+      "method": "GET",
+      "path": "health",
+      "raw": "health",
+      "file": "frontend/src/app/shell/app-shell.component.ts",
+      "line": 1111,
+      "source": "ApiService call",
+      "backend": "health"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/pages/ai.page.ts",
+      "line": 890,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/pages/command-center.page.ts",
+      "line": 1180,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/pages/dispatch-center.page.ts",
+      "line": 193,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/pages/executive-metrics.page.ts",
+      "line": 235,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/pages/profile.page.ts",
+      "line": 417,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/pages/warehouse-flow.page.ts",
+      "line": 225,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/command-center",
+      "raw": "manufacturing/command-center",
+      "file": "frontend/src/app/shell/app-shell.component.ts",
+      "line": 1096,
+      "source": "ApiService call",
+      "backend": "manufacturing/command-center"
+    },
+    {
+      "method": "GET",
+      "path": "manufacturing/workflow-board",
+      "raw": "manufacturing/workflow-board",
+      "file": "frontend/src/app/pages/command-center.page.ts",
+      "line": 1184,
+      "source": "ApiService call",
+      "backend": "manufacturing/workflow-board"
+    },
+    {
+      "method": "DELETE",
+      "path": "me/avatar",
+      "raw": "me/avatar",
+      "file": "frontend/src/app/pages/profile.page.ts",
+      "line": 507,
+      "source": "ApiService call",
+      "backend": "me/avatar"
+    },
+    {
+      "method": "POST",
+      "path": "me/avatar",
+      "raw": "me/avatar",
+      "file": "frontend/src/app/pages/profile.page.ts",
+      "line": 481,
+      "source": "ApiService call",
+      "backend": "me/avatar"
+    },
+    {
+      "method": "ANY",
+      "path": "me/preferences",
+      "raw": "me/preferences",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 641,
+      "source": "BusinessAction endpoint",
+      "backend": "me/preferences"
+    },
+    {
+      "method": "ANY",
+      "path": "me/preferences",
+      "raw": "me/preferences",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 641,
+      "source": "endpoint expression",
+      "backend": "me/preferences"
+    },
+    {
+      "method": "PUT",
+      "path": "me/profile",
+      "raw": "me/profile",
+      "file": "frontend/src/app/core/auth.service.ts",
+      "line": 46,
+      "source": "ApiService call",
+      "backend": "me/profile"
+    },
+    {
+      "method": "ANY",
+      "path": "notifications",
+      "raw": "notifications",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 583,
+      "source": "BusinessAction endpoint",
+      "backend": "<path:notifications->notifications>"
+    },
+    {
+      "method": "POST",
+      "path": "notifications/complete",
+      "raw": "notifications/complete",
+      "file": "frontend/src/app/pages/notifications.page.ts",
+      "line": 351,
+      "source": "ApiService call",
+      "backend": "notifications/complete"
+    },
+    {
+      "method": "POST",
+      "path": "notifications/complete",
+      "raw": "notifications/complete",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 336,
+      "source": "ApiService call",
+      "backend": "notifications/complete"
+    },
+    {
+      "method": "POST",
+      "path": "notifications/mark-read",
+      "raw": "notifications/mark-read",
+      "file": "frontend/src/app/pages/notifications.page.ts",
+      "line": 330,
+      "source": "ApiService call",
+      "backend": "notifications/mark-read"
+    },
+    {
+      "method": "ANY",
+      "path": "notifications/{param}",
+      "raw": "notifications/:id",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 439,
+      "source": "endpoint expression",
+      "backend": "notifications/complete"
+    },
+    {
+      "method": "PATCH",
+      "path": "notifications/{param}",
+      "raw": "notifications/:id",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 439,
+      "source": "BusinessAction endpoint",
+      "backend": "<path:notifications/{id}->notifications>"
+    },
+    {
+      "method": "GET",
+      "path": "operations/capacity",
+      "raw": "operations/capacity",
+      "file": "frontend/src/app/pages/capacity-planning.page.ts",
+      "line": 390,
+      "source": "ApiService call",
+      "backend": "operations/capacity"
+    },
+    {
+      "method": "POST",
+      "path": "operations/capacity/review",
+      "raw": "operations/capacity/review",
+      "file": "frontend/src/app/pages/capacity-planning.page.ts",
+      "line": 451,
+      "source": "ApiService call",
+      "backend": "operations/capacity/review"
+    },
+    {
+      "method": "POST",
+      "path": "operations/contract-review",
+      "raw": "operations/contract-review",
+      "file": "frontend/src/app/pages/contract-collection.page.ts",
+      "line": 233,
+      "source": "ApiService call",
+      "backend": "operations/contract-review"
+    },
+    {
+      "method": "GET",
+      "path": "operations/costs",
+      "raw": "operations/costs",
+      "file": "frontend/src/app/pages/budget-cost.page.ts",
+      "line": 404,
+      "source": "ApiService call",
+      "backend": "operations/costs"
+    },
+    {
+      "method": "POST",
+      "path": "operations/costs/review",
+      "raw": "operations/costs/review",
+      "file": "frontend/src/app/pages/budget-cost.page.ts",
+      "line": 465,
+      "source": "ApiService call",
+      "backend": "operations/costs/review"
+    },
+    {
+      "method": "ANY",
+      "path": "operations/customer-followup",
+      "raw": "operations/customer-followup",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 469,
+      "source": "endpoint expression",
+      "backend": "operations/customer-followup"
+    },
+    {
+      "method": "POST",
+      "path": "operations/customer-followup",
+      "raw": "operations/customer-followup",
+      "file": "frontend/src/app/pages/customer-operations.page.ts",
+      "line": 212,
+      "source": "ApiService call",
+      "backend": "operations/customer-followup"
+    },
+    {
+      "method": "POST",
+      "path": "operations/customer-followup",
+      "raw": "operations/customer-followup",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 469,
+      "source": "BusinessAction endpoint",
+      "backend": "operations/customer-followup"
+    },
+    {
+      "method": "GET",
+      "path": "operations/data-quality",
+      "raw": "operations/data-quality",
+      "file": "frontend/src/app/pages/data-quality.page.ts",
+      "line": 328,
+      "source": "ApiService call",
+      "backend": "operations/data-quality"
+    },
+    {
+      "method": "POST",
+      "path": "operations/data-quality-notice",
+      "raw": "operations/data-quality-notice",
+      "file": "frontend/src/app/pages/executive-metrics.page.ts",
+      "line": 246,
+      "source": "ApiService call",
+      "backend": "operations/data-quality-notice"
+    },
+    {
+      "method": "POST",
+      "path": "operations/data-quality/remediation",
+      "raw": "operations/data-quality/remediation",
+      "file": "frontend/src/app/pages/data-quality.page.ts",
+      "line": 346,
+      "source": "ApiService call",
+      "backend": "operations/data-quality/remediation"
+    },
+    {
+      "method": "GET",
+      "path": "operations/deployment-readiness",
+      "raw": "operations/deployment-readiness",
+      "file": "frontend/src/app/pages/settings.page.ts",
+      "line": 586,
+      "source": "ApiService call",
+      "backend": "operations/deployment-readiness"
+    },
+    {
+      "method": "POST",
+      "path": "operations/deployment-readiness/task",
+      "raw": "operations/deployment-readiness/task",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 360,
+      "source": "ApiService call",
+      "backend": "operations/deployment-readiness/task"
+    },
+    {
+      "method": "POST",
+      "path": "operations/deployment-readiness/task",
+      "raw": "operations/deployment-readiness/task",
+      "file": "frontend/src/app/pages/settings.page.ts",
+      "line": 653,
+      "source": "ApiService call",
+      "backend": "operations/deployment-readiness/task"
+    },
+    {
+      "method": "POST",
+      "path": "operations/dispatch-task",
+      "raw": "operations/dispatch-task",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 297,
+      "source": "ApiService call",
+      "backend": "operations/dispatch-task"
+    },
+    {
+      "method": "POST",
+      "path": "operations/dispatch-task",
+      "raw": "operations/dispatch-task",
+      "file": "frontend/src/app/pages/warehouse-flow.page.ts",
+      "line": 236,
+      "source": "ApiService call",
+      "backend": "operations/dispatch-task"
+    },
+    {
+      "method": "GET",
+      "path": "operations/exceptions",
+      "raw": "operations/exceptions",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 283,
+      "source": "ApiService call",
+      "backend": "operations/exceptions"
+    },
+    {
+      "method": "GET",
+      "path": "operations/integrations",
+      "raw": "operations/integrations",
+      "file": "frontend/src/app/pages/integration-monitor.page.ts",
+      "line": 451,
+      "source": "ApiService call",
+      "backend": "operations/integrations"
+    },
+    {
+      "method": "POST",
+      "path": "operations/integrations/resync",
+      "raw": "operations/integrations/resync",
+      "file": "frontend/src/app/pages/integration-monitor.page.ts",
+      "line": 468,
+      "source": "ApiService call",
+      "backend": "operations/integrations/resync"
+    },
+    {
+      "method": "GET",
+      "path": "operations/maintenance",
+      "raw": "operations/maintenance",
+      "file": "frontend/src/app/pages/maintenance.page.ts",
+      "line": 418,
+      "source": "ApiService call",
+      "backend": "operations/maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "operations/maintenance-workorder",
+      "raw": "operations/maintenance-workorder",
+      "file": "frontend/src/app/pages/maintenance.page.ts",
+      "line": 456,
+      "source": "ApiService call",
+      "backend": "operations/maintenance-workorder"
+    },
+    {
+      "method": "GET",
+      "path": "operations/mobile-terminal",
+      "raw": "operations/mobile-terminal",
+      "file": "frontend/src/app/pages/mobile-terminal.page.ts",
+      "line": 402,
+      "source": "ApiService call",
+      "backend": "operations/mobile-terminal"
+    },
+    {
+      "method": "POST",
+      "path": "operations/mobile-terminal/task",
+      "raw": "operations/mobile-terminal/task",
+      "file": "frontend/src/app/pages/mobile-terminal.page.ts",
+      "line": 446,
+      "source": "ApiService call",
+      "backend": "operations/mobile-terminal/task"
+    },
+    {
+      "method": "GET",
+      "path": "operations/procurement-control",
+      "raw": "operations/procurement-control",
+      "file": "frontend/src/app/pages/procurement.page.ts",
+      "line": 517,
+      "source": "ApiService call",
+      "backend": "operations/procurement-control"
+    },
+    {
+      "method": "POST",
+      "path": "operations/procurement-control/task",
+      "raw": "operations/procurement-control/task",
+      "file": "frontend/src/app/pages/procurement.page.ts",
+      "line": 615,
+      "source": "ApiService call",
+      "backend": "operations/procurement-control/task"
+    },
+    {
+      "method": "GET",
+      "path": "operations/quality-inspection",
+      "raw": "operations/quality-inspection",
+      "file": "frontend/src/app/pages/quality-inspection.page.ts",
+      "line": 445,
+      "source": "ApiService call",
+      "backend": "operations/quality-inspection"
+    },
+    {
+      "method": "POST",
+      "path": "operations/quality-inspection",
+      "raw": "operations/quality-inspection",
+      "file": "frontend/src/app/pages/quality-inspection.page.ts",
+      "line": 483,
+      "source": "ApiService call",
+      "backend": "operations/quality-inspection"
+    },
+    {
+      "method": "GET",
+      "path": "operations/rules",
+      "raw": "operations/rules",
+      "file": "frontend/src/app/pages/rules-engine.page.ts",
+      "line": 429,
+      "source": "ApiService call",
+      "backend": "operations/rules"
+    },
+    {
+      "method": "POST",
+      "path": "operations/rules/review",
+      "raw": "operations/rules/review",
+      "file": "frontend/src/app/pages/rules-engine.page.ts",
+      "line": 488,
+      "source": "ApiService call",
+      "backend": "operations/rules/review"
+    },
+    {
+      "method": "POST",
+      "path": "operations/service-workorder",
+      "raw": "operations/service-workorder",
+      "file": "frontend/src/app/pages/service-workorders.page.ts",
+      "line": 223,
+      "source": "ApiService call",
+      "backend": "operations/service-workorder"
+    },
+    {
+      "method": "GET",
+      "path": "operations/supplier-collaboration",
+      "raw": "operations/supplier-collaboration",
+      "file": "frontend/src/app/pages/supplier-performance.page.ts",
+      "line": 425,
+      "source": "ApiService call",
+      "backend": "operations/supplier-collaboration"
+    },
+    {
+      "method": "POST",
+      "path": "operations/supplier-collaboration/task",
+      "raw": "operations/supplier-collaboration/task",
+      "file": "frontend/src/app/pages/supplier-performance.page.ts",
+      "line": 500,
+      "source": "ApiService call",
+      "backend": "operations/supplier-collaboration/task"
+    },
+    {
+      "method": "GET",
+      "path": "operations/task-queue",
+      "raw": "operations/task-queue",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 284,
+      "source": "ApiService call",
+      "backend": "operations/task-queue"
+    },
+    {
+      "method": "GET",
+      "path": "operations/todo",
+      "raw": "operations/todo",
+      "file": "frontend/src/app/pages/executive-metrics.page.ts",
+      "line": 236,
+      "source": "ApiService call",
+      "backend": "operations/todo"
+    },
+    {
+      "method": "GET",
+      "path": "operations/todo",
+      "raw": "operations/todo",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 282,
+      "source": "ApiService call",
+      "backend": "operations/todo"
+    },
+    {
+      "method": "GET",
+      "path": "operations/todo",
+      "raw": "operations/todo",
+      "file": "frontend/src/app/pages/profile.page.ts",
+      "line": 418,
+      "source": "ApiService call",
+      "backend": "operations/todo"
+    },
+    {
+      "method": "ANY",
+      "path": "orders",
+      "raw": "orders",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 243,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:orders>"
+    },
+    {
+      "method": "ANY",
+      "path": "products",
+      "raw": "products",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 133,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:products>"
+    },
+    {
+      "method": "POST",
+      "path": "products",
+      "raw": "products",
+      "file": "frontend/src/app/pages/materials.page.ts",
+      "line": 329,
+      "source": "ApiService call",
+      "backend": "<resource:products>"
+    },
+    {
+      "method": "ANY",
+      "path": "purchase-orders",
+      "raw": "purchase-orders",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 278,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:purchase-orders>"
+    },
+    {
+      "method": "POST",
+      "path": "purchase-orders",
+      "raw": "purchase-orders",
+      "file": "frontend/src/app/pages/supplier-performance.page.ts",
+      "line": 472,
+      "source": "ApiService call",
+      "backend": "<resource:purchase-orders>"
+    },
+    {
+      "method": "ANY",
+      "path": "purchase-orders/{param}/approve",
+      "raw": "purchase-orders/:id/approve",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 141,
+      "source": "endpoint expression",
+      "backend": "purchase-orders/<int:po_id>/approve"
+    },
+    {
+      "method": "ANY",
+      "path": "purchase-orders/{param}/approve",
+      "raw": "purchase-orders/${target.id}/approve",
+      "file": "frontend/src/app/pages/procurement.page.ts",
+      "line": 549,
+      "source": "endpoint expression",
+      "backend": "purchase-orders/<int:po_id>/approve"
+    },
+    {
+      "method": "POST",
+      "path": "purchase-orders/{param}/approve",
+      "raw": "purchase-orders/:id/approve",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 141,
+      "source": "BusinessAction endpoint",
+      "backend": "purchase-orders/<int:po_id>/approve"
+    },
+    {
+      "method": "ANY",
+      "path": "purchase-orders/{param}/receive",
+      "raw": "purchase-orders/:id/receive",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 142,
+      "source": "endpoint expression",
+      "backend": "purchase-orders/<int:po_id>/receive"
+    },
+    {
+      "method": "POST",
+      "path": "purchase-orders/{param}/receive",
+      "raw": "purchase-orders/:id/receive",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 142,
+      "source": "BusinessAction endpoint",
+      "backend": "purchase-orders/<int:po_id>/receive"
+    },
+    {
+      "method": "ANY",
+      "path": "purchase-orders/{param}/submit",
+      "raw": "purchase-orders/:id/submit",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 140,
+      "source": "endpoint expression",
+      "backend": "purchase-orders/<int:po_id>/submit"
+    },
+    {
+      "method": "ANY",
+      "path": "purchase-orders/{param}/submit",
+      "raw": "purchase-orders/${target.id}/submit",
+      "file": "frontend/src/app/pages/procurement.page.ts",
+      "line": 549,
+      "source": "endpoint expression",
+      "backend": "purchase-orders/<int:po_id>/submit"
+    },
+    {
+      "method": "POST",
+      "path": "purchase-orders/{param}/submit",
+      "raw": "purchase-orders/:id/submit",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 140,
+      "source": "BusinessAction endpoint",
+      "backend": "purchase-orders/<int:po_id>/submit"
+    },
+    {
+      "method": "ANY",
+      "path": "receivables",
+      "raw": "receivables",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 314,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:receivables>"
+    },
+    {
+      "method": "ANY",
+      "path": "receivables/{param}/payment",
+      "raw": "receivables/:id/payment",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 203,
+      "source": "endpoint expression",
+      "backend": "receivables/<int:receivable_id>/payment"
+    },
+    {
+      "method": "POST",
+      "path": "receivables/{param}/payment",
+      "raw": "receivables/:id/payment",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 203,
+      "source": "BusinessAction endpoint",
+      "backend": "receivables/<int:receivable_id>/payment"
+    },
+    {
+      "method": "POST",
+      "path": "receivables/{param}/payment",
+      "raw": "receivables/${target.id}/payment",
+      "file": "frontend/src/app/pages/receivables.page.ts",
+      "line": 346,
+      "source": "ApiService call",
+      "backend": "receivables/<int:receivable_id>/payment"
+    },
+    {
+      "method": "ANY",
+      "path": "replenishment-suggestions",
+      "raw": "replenishment-suggestions",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 208,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:replenishment-suggestions>"
+    },
+    {
+      "method": "ANY",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 50,
+      "source": "endpoint expression",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "ANY",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 109,
+      "source": "endpoint expression",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 50,
+      "source": "BusinessAction endpoint",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 109,
+      "source": "BusinessAction endpoint",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/materials.page.ts",
+      "line": 307,
+      "source": "ApiService call",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/procurement.page.ts",
+      "line": 585,
+      "source": "ApiService call",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/generate",
+      "raw": "replenishment-suggestions/generate",
+      "file": "frontend/src/app/pages/replenishment.page.ts",
+      "line": 236,
+      "source": "ApiService call",
+      "backend": "replenishment-suggestions/generate"
+    },
+    {
+      "method": "ANY",
+      "path": "replenishment-suggestions/{param}/accept",
+      "raw": "replenishment-suggestions/:id/accept",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 108,
+      "source": "endpoint expression",
+      "backend": "replenishment-suggestions/<int:suggestion_id>/accept"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/{param}/accept",
+      "raw": "replenishment-suggestions/:id/accept",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 108,
+      "source": "BusinessAction endpoint",
+      "backend": "replenishment-suggestions/<int:suggestion_id>/accept"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/{param}/accept",
+      "raw": "replenishment-suggestions/${suggestion.id}/accept",
+      "file": "frontend/src/app/pages/procurement.page.ts",
+      "line": 593,
+      "source": "ApiService call",
+      "backend": "replenishment-suggestions/<int:suggestion_id>/accept"
+    },
+    {
+      "method": "POST",
+      "path": "replenishment-suggestions/{param}/accept",
+      "raw": "replenishment-suggestions/${target.id}/accept",
+      "file": "frontend/src/app/pages/replenishment.page.ts",
+      "line": 256,
+      "source": "ApiService call",
+      "backend": "replenishment-suggestions/<int:suggestion_id>/accept"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/contract_collection",
+      "raw": "reports/generate/contract_collection",
+      "file": "frontend/src/app/pages/contract-collection.page.ts",
+      "line": 253,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "ANY",
+      "path": "reports/generate/customer_operations",
+      "raw": "reports/generate/customer_operations",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 470,
+      "source": "endpoint expression",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/customer_operations",
+      "raw": "reports/generate/customer_operations",
+      "file": "frontend/src/app/pages/customer-operations.page.ts",
+      "line": 232,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/customer_operations",
+      "raw": "reports/generate/customer_operations",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 470,
+      "source": "BusinessAction endpoint",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/financial_overview",
+      "raw": "reports/generate/financial_overview",
+      "file": "frontend/src/app/pages/credit.page.ts",
+      "line": 238,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/financial_overview",
+      "raw": "reports/generate/financial_overview",
+      "file": "frontend/src/app/pages/executive-metrics.page.ts",
+      "line": 265,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/inventory_movement",
+      "raw": "reports/generate/inventory_movement",
+      "file": "frontend/src/app/pages/warehouse-flow.page.ts",
+      "line": 255,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "ANY",
+      "path": "reports/generate/inventory_summary",
+      "raw": "reports/generate/inventory_summary",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 297,
+      "source": "endpoint expression",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/inventory_summary",
+      "raw": "reports/generate/inventory_summary",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 297,
+      "source": "BusinessAction endpoint",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/quality_inspection",
+      "raw": "reports/generate/quality_inspection",
+      "file": "frontend/src/app/pages/quality-inspection.page.ts",
+      "line": 510,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/service_overview",
+      "raw": "reports/generate/service_overview",
+      "file": "frontend/src/app/pages/service-workorders.page.ts",
+      "line": 243,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/supplier_performance",
+      "raw": "reports/generate/supplier_performance",
+      "file": "frontend/src/app/pages/supplier-performance.page.ts",
+      "line": 441,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "reports/generate/{param}",
+      "raw": "reports/generate/${type}",
+      "file": "frontend/src/app/pages/reports.page.ts",
+      "line": 453,
+      "source": "ApiService call",
+      "backend": "reports/generate/<report_type>"
+    },
+    {
+      "method": "POST",
+      "path": "sales/orders",
+      "raw": "sales/orders",
+      "file": "frontend/src/app/pages/fulfillment.page.ts",
+      "line": 363,
+      "source": "ApiService call",
+      "backend": "sales/orders"
+    },
+    {
+      "method": "ANY",
+      "path": "sales/orders/{param}/transition",
+      "raw": "sales/orders/:id/transition",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 171,
+      "source": "endpoint expression",
+      "backend": "sales/orders/<int:order_id>/transition"
+    },
+    {
+      "method": "POST",
+      "path": "sales/orders/{param}/transition",
+      "raw": "sales/orders/:id/transition",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 171,
+      "source": "BusinessAction endpoint",
+      "backend": "sales/orders/<int:order_id>/transition"
+    },
+    {
+      "method": "POST",
+      "path": "sales/orders/{param}/transition",
+      "raw": "sales/orders/${target.id}/transition",
+      "file": "frontend/src/app/pages/fulfillment.page.ts",
+      "line": 335,
+      "source": "ApiService call",
+      "backend": "sales/orders/<int:order_id>/transition"
+    },
+    {
+      "method": "GET",
+      "path": "search",
+      "raw": "search",
+      "file": "frontend/src/app/shell/app-shell.component.ts",
+      "line": 990,
+      "source": "ApiService call",
+      "backend": "search"
+    },
+    {
+      "method": "ANY",
+      "path": "stock",
+      "raw": "stock",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 172,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:stock>"
+    },
+    {
+      "method": "POST",
+      "path": "stock-alerts/check",
+      "raw": "stock-alerts/check",
+      "file": "frontend/src/app/pages/dispatch-center.page.ts",
+      "line": 206,
+      "source": "ApiService call",
+      "backend": "stock-alerts/check"
+    },
+    {
+      "method": "POST",
+      "path": "stock-alerts/check",
+      "raw": "stock-alerts/check",
+      "file": "frontend/src/app/pages/operations-tasks.page.ts",
+      "line": 317,
+      "source": "ApiService call",
+      "backend": "stock-alerts/check"
+    },
+    {
+      "method": "ANY",
+      "path": "stocktakes",
+      "raw": "stocktakes",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 385,
+      "source": "BusinessAction endpoint",
+      "backend": "<path:stocktakes->stocktakes>"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/create",
+      "raw": "stocktakes/create",
+      "file": "frontend/src/app/pages/stocktake.page.ts",
+      "line": 246,
+      "source": "ApiService call",
+      "backend": "stocktakes/create"
+    },
+    {
+      "method": "ANY",
+      "path": "stocktakes/{param}/complete",
+      "raw": "stocktakes/:id/complete",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 269,
+      "source": "endpoint expression",
+      "backend": "stocktakes/<int:take_id>/complete"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/{param}/complete",
+      "raw": "stocktakes/:id/complete",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 269,
+      "source": "BusinessAction endpoint",
+      "backend": "stocktakes/<int:take_id>/complete"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/{param}/complete",
+      "raw": "stocktakes/${take.id}/complete",
+      "file": "frontend/src/app/pages/stocktake.page.ts",
+      "line": 312,
+      "source": "ApiService call",
+      "backend": "stocktakes/<int:take_id>/complete"
+    },
+    {
+      "method": "ANY",
+      "path": "stocktakes/{param}/count",
+      "raw": "stocktakes/:id/count",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 268,
+      "source": "endpoint expression",
+      "backend": "stocktakes/<int:take_id>/count"
+    },
+    {
+      "method": "ANY",
+      "path": "stocktakes/{param}/count",
+      "raw": "stocktakes/${this.id()}/count",
+      "file": "frontend/src/app/pages/record-detail.page.ts",
+      "line": 338,
+      "source": "endpoint expression",
+      "backend": "stocktakes/<int:take_id>/count"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/{param}/count",
+      "raw": "stocktakes/:id/count",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 268,
+      "source": "BusinessAction endpoint",
+      "backend": "stocktakes/<int:take_id>/count"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/{param}/count",
+      "raw": "stocktakes/${take.id}/count",
+      "file": "frontend/src/app/pages/stocktake.page.ts",
+      "line": 292,
+      "source": "ApiService call",
+      "backend": "stocktakes/<int:take_id>/count"
+    },
+    {
+      "method": "ANY",
+      "path": "stocktakes/{param}/start",
+      "raw": "stocktakes/:id/start",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 267,
+      "source": "endpoint expression",
+      "backend": "stocktakes/<int:take_id>/start"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/{param}/start",
+      "raw": "stocktakes/:id/start",
+      "file": "frontend/src/app/pages/detail-data.ts",
+      "line": 267,
+      "source": "BusinessAction endpoint",
+      "backend": "stocktakes/<int:take_id>/start"
+    },
+    {
+      "method": "POST",
+      "path": "stocktakes/{param}/start",
+      "raw": "stocktakes/${take.id}/start",
+      "file": "frontend/src/app/pages/stocktake.page.ts",
+      "line": 272,
+      "source": "ApiService call",
+      "backend": "stocktakes/<int:take_id>/start"
+    },
+    {
+      "method": "ANY",
+      "path": "users",
+      "raw": "users",
+      "file": "frontend/src/app/pages/workspace-data.ts",
+      "line": 519,
+      "source": "BusinessAction endpoint",
+      "backend": "<resource:users>"
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import {
+  LucideBarChart3,
+  LucideBell,
+  LucideBoxes,
+  LucideCircleDollarSign,
+  LucideFolderOpen,
+  LucideGauge,
+  LucideLockKeyhole,
+  LucideNetwork,
+  LucideScanLine,
+  LucideSend,
+  LucideSettings2,
+  LucideShieldAlert,
+  LucideShoppingCart,
+  LucideSparkles,
+  LucideUserRound,
+  LucideX
+} from '@lucide/angular';
+import { ButtonModule } from 'primeng/button';
+
+import { DockGroup, DockItem } from '../core/models';
+import { VisualAsset } from '../core/visual-assets';
+import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
+
+const ICONS = [
+  LucideBarChart3,
+  LucideBell,
+  LucideBoxes,
+  LucideCircleDollarSign,
+  LucideFolderOpen,
+  LucideGauge,
+  LucideLockKeyhole,
+  LucideNetwork,
+  LucideScanLine,
+  LucideSend,
+  LucideSettings2,
+  LucideShieldAlert,
+  LucideShoppingCart,
+  LucideSparkles,
+  LucideUserRound,
+  LucideX
+];
+
+@Component({
+  selector: 'app-module-map',
+  standalone: true,
+  host: { style: 'display: contents' },
+  imports: [CommonModule, RouterLink, ButtonModule, ...ICONS],
+  template: `
+    <div
+      class="module-panel-backdrop"
+      role="presentation"
+      tabindex="-1"
+      (click)="close.emit()"
+      (keydown.escape)="close.emit()"
+    >
+      <aside
+        id="module-map-panel"
+        class="module-panel atlas-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="模块地图"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="drawer-nav">
+          <div class="drawer-head">
+            <div class="atlas-brand in-drawer">
+              <span class="atlas-brand-mark">NX</span>
+              <span>
+                <strong>NEXUS Prime</strong>
+                <em>模块地图</em>
+              </span>
+            </div>
+            <button pButton type="button" [text]="true" [rounded]="true" (click)="close.emit()" aria-label="关闭更多模块">
+              <svg lucideX size="18" strokeWidth="2.2"></svg>
+            </button>
+          </div>
+
+          <section class="module-command-deck" aria-label="当前业务指挥面">
+            <article>
+              <span>当前闭环</span>
+              <strong>{{ currentWorkflow.title }}</strong>
+              <em>{{ activeWorkflowStep.label }} · {{ activeWorkflowStep.metric }}</em>
+            </article>
+            <article>
+              <span>链路健康</span>
+              <strong>{{ shellHealth }}%</strong>
+              <em>{{ serviceHealthLabel }} · {{ serviceHealthLatencyLabel }}</em>
+            </article>
+            <article>
+              <span>风险队列</span>
+              <strong>{{ riskCount }} 条</strong>
+              <em>低库存、采购与应收联动</em>
+            </article>
+          </section>
+
+          <section class="module-photo-rail" aria-label="真实业务现场">
+            @for (photo of modulePhotos; track photo.src) {
+              <figure>
+                <img [src]="photo.src" [alt]="photo.alt" loading="eager" decoding="async" />
+                <figcaption>
+                  <span>{{ photo.label }}</span>
+                  <strong>{{ photo.caption }}</strong>
+                </figcaption>
+              </figure>
+            }
+          </section>
+
+          <section class="drawer-section module-library">
+            <div class="module-library-head">
+              <span class="nav-group-label">模块库</span>
+              <strong>{{ groups.length }} 组</strong>
+            </div>
+            @for (group of groups; track group.key) {
+              <div class="drawer-group module-card-group" [style.--dock-group-tone]="group.tone">
+                <div class="drawer-group-head">
+                  <strong>{{ group.label }}</strong>
+                  <em>{{ group.items.length }}</em>
+                </div>
+                <div class="module-card-grid">
+                  @for (item of group.items; track item.path) {
+                    <a class="module-card-link" [routerLink]="item.path" [class.active]="itemIsActive(item)" (click)="close.emit()" [style.--dock-tone]="item.accent">
+                      <span class="drawer-icon">
+                        @switch (item.icon) {
+                          @case ('gauge') { <svg lucideGauge size="18" strokeWidth="2.25"></svg> }
+                          @case ('boxes') { <svg lucideBoxes size="18" strokeWidth="2.25"></svg> }
+                          @case ('network') { <svg lucideNetwork size="18" strokeWidth="2.25"></svg> }
+                          @case ('shopping-cart') { <svg lucideShoppingCart size="18" strokeWidth="2.25"></svg> }
+                          @case ('send') { <svg lucideSend size="18" strokeWidth="2.25"></svg> }
+                          @case ('scan-line') { <svg lucideScanLine size="18" strokeWidth="2.25"></svg> }
+                          @case ('shield-alert') { <svg lucideShieldAlert size="18" strokeWidth="2.25"></svg> }
+                          @case ('bar-chart-3') { <svg lucideBarChart3 size="18" strokeWidth="2.25"></svg> }
+                          @case ('folder-open') { <svg lucideFolderOpen size="18" strokeWidth="2.25"></svg> }
+                          @case ('lock-keyhole') { <svg lucideLockKeyhole size="18" strokeWidth="2.25"></svg> }
+                          @case ('bell') { <svg lucideBell size="18" strokeWidth="2.25"></svg> }
+                          @case ('sparkles') { <svg lucideSparkles size="18" strokeWidth="2.25"></svg> }
+                          @case ('circle-dollar-sign') { <svg lucideCircleDollarSign size="18" strokeWidth="2.25"></svg> }
+                          @case ('user-round') { <svg lucideUserRound size="18" strokeWidth="2.25"></svg> }
+                          @case ('settings-2') { <svg lucideSettings2 size="18" strokeWidth="2.25"></svg> }
+                        }
+                      </span>
+                      <span>
+                        <strong>{{ item.label }}</strong>
+                        <em>{{ item.quickActions[0]?.label || item.group }}</em>
+                      </span>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </section>
+        </div>
+      </aside>
+    </div>
+  `
+})
+export class AppModuleMapComponent {
+  @Input({ required: true }) currentWorkflow!: WorkflowBlueprint;
+  @Input({ required: true }) activeWorkflowStep!: WorkflowStage;
+  @Input() shellHealth = 0;
+  @Input() serviceHealthLabel = '';
+  @Input() serviceHealthLatencyLabel = '';
+  @Input() riskCount = 0;
+  @Input() modulePhotos: VisualAsset[] = [];
+  @Input() groups: DockGroup[] = [];
+  @Input({ required: true }) itemIsActive!: (item: DockItem) => boolean;
+
+  @Output() close = new EventEmitter<void>();
+}

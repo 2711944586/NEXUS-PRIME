@@ -1,0 +1,272 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}库存分析报表{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="report-page-header">
+        <div class="header-left">
+            <a href="{{ url_for('reports.index') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                <span>返回报表中心</span>
+            </a>
+            <h2 class="report-title">
+                <i class="fas fa-boxes"></i>
+                <span>库存分析报表</span>
+            </h2>
+        </div>
+        <div class="header-right">
+            <button class="print-btn" onclick="window.print()">
+                <i class="fas fa-print"></i>
+                <span>打印报表</span>
+            </button>
+        </div>
+    </div>
+    
+    <style>
+    .report-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        gap: 1rem;
+    }
+    .header-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--bg-surface, rgba(255,255,255,0.95));
+        border: 1px solid rgba(99, 102, 241, 0.15);
+        border-radius: 10px;
+        color: var(--text-muted, #64748b);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.25s ease;
+    }
+    .back-link:hover {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.3);
+        color: var(--color-primary, #6366f1);
+        transform: translateX(-3px);
+    }
+    .back-link i {
+        font-size: 0.8rem;
+        transition: transform 0.25s ease;
+    }
+    .back-link:hover i {
+        transform: translateX(-2px);
+    }
+    .report-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--color-primary, #6366f1), #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .report-title i {
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, #10b981, #06b6d4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .print-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.7rem 1.25rem;
+        background: linear-gradient(135deg, var(--color-primary, #6366f1), #8b5cf6);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+    .print-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+    .print-btn i {
+        font-size: 0.95rem;
+    }
+    [data-theme="light"] .back-link {
+        background: rgba(255, 255, 255, 0.95);
+        color: #475569;
+    }
+    [data-theme="light"] .back-link:hover {
+        color: #6366f1;
+    }
+    </style>
+    
+    <!-- 库存概览 -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card glass-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                    <h4 class="mb-1">¥ {{ "{:,.0f}".format(inventory_value) }}</h4>
+                    <p class="text-muted small mb-0">库存总值</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card glass-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-cubes fa-2x text-primary mb-2"></i>
+                    <h4 class="mb-1">{{ "{:,}".format(total_stock) }}</h4>
+                    <p class="text-muted small mb-0">库存总数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card glass-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-bag fa-2x text-info mb-2"></i>
+                    <h4 class="mb-1">{{ total_products }}</h4>
+                    <p class="text-muted small mb-0">产品种类</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card glass-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                    <h4 class="mb-1">{{ zero_stock_count }}</h4>
+                    <p class="text-muted small mb-0">零库存产品</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 类别库存统计 -->
+    <div class="card glass-card mb-4">
+        <div class="card-body">
+            <h5 class="mb-3">
+                <i class="fas fa-chart-pie me-2"></i>
+                类别库存统计
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>类别</th>
+                            <th>产品数量</th>
+                            <th>库存总数</th>
+                            <th>库存总值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in category_stock %}
+                        <tr>
+                            <td><strong>{{ item.category }}</strong></td>
+                            <td>{{ item.product_count }}</td>
+                            <td>{{ "{:,}".format(item.total_stock or 0) }}</td>
+                            <td class="text-success">¥ {{ "{:,.2f}".format(item.total_value or 0) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- 低库存预警 -->
+        <div class="col-lg-6">
+            <div class="card glass-card">
+                <div class="card-body">
+                    <h5 class="mb-3">
+                        <i class="fas fa-bell me-2 text-warning"></i>
+                        低库存预警 (库存 < 10)
+                    </h5>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>产品名称</th>
+                                    <th>SKU</th>
+                                    <th>库存</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product, stock_qty in low_stock_products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td><code>{{ product.sku }}</code></td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if stock_qty == 0 else 'warning' }}">
+                                            {{ stock_qty }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 高库存产品 -->
+        <div class="col-lg-6">
+            <div class="card glass-card">
+                <div class="card-body">
+                    <h5 class="mb-3">
+                        <i class="fas fa-warehouse me-2 text-primary"></i>
+                        高库存产品 (库存 > 100)
+                    </h5>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>产品名称</th>
+                                    <th>SKU</th>
+                                    <th>库存</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product, stock_qty in high_stock_products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td><code>{{ product.sku }}</code></td>
+                                    <td>
+                                        <span class="badge bg-success">{{ stock_qty }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .sidebar, .topbar { display: none !important; }
+    .main-content { margin: 0 !important; width: 100% !important; }
+}
+</style>
+{% endblock %}

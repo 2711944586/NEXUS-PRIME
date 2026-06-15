@@ -1,0 +1,1268 @@
+/* ===== 禁用主题切换时的过渡动画 ===== */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+:root {
+    /* --- 核心色板 (Primary HSL) --- */
+    --hue-primary: 238;  /* 科技紫蓝 */
+    --hue-success: 150;  /* 矩阵绿 */
+    --hue-danger: 340;   /* 警告红 */
+    --hue-warning: 35;   /* 琥珀黄 */
+
+    /* --- 动画参数 - 丝滑流畅 --- */
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    /* --- 尺寸 --- */
+    --sidebar-width: 260px;
+    --header-height: 70px;
+    --border-radius-lg: 16px;
+    --border-radius-md: 10px;
+    --border-radius-sm: 6px;
+    
+    /* --- 主色 (可供两个主题共用) --- */
+    --color-primary: #6366f1;
+    --color-primary-rgb: 99, 102, 241;
+    --color-primary-glow: rgba(99, 102, 241, 0.15);
+    
+    /* --- 辅助色 --- */
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #06b6d4;
+    
+    /* --- 默认主题变量 (亮色模式) --- */
+    /* 背景 */
+    --bg-body: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #f1f5f9 60%, #e2e8f0 100%);
+    --bg-surface: rgba(255, 255, 255, 0.92);
+    --bg-sidebar: rgba(255, 255, 255, 0.97);
+    --bg-elevated: rgba(255, 255, 255, 0.98);
+    --bg-card: rgba(255, 255, 255, 0.92);
+    
+    /* 文本 */
+    --text-main: #1e293b;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+    
+    /* 边框与阴影 */
+    --border-color: rgba(99, 102, 241, 0.12);
+    --glass-border-color: rgba(99, 102, 241, 0.15);
+    --shadow-sm: 0 4px 20px -2px rgba(99, 102, 241, 0.08);
+    --shadow-md: 0 8px 30px -4px rgba(99, 102, 241, 0.12);
+    --glass-border: 1px solid rgba(99, 102, 241, 0.12);
+    
+    /* 输入框 */
+    --input-bg: rgba(248, 250, 252, 0.9);
+    --input-border: rgba(99, 102, 241, 0.2);
+    
+    /* 表格 */
+    --table-header-bg: rgba(248, 250, 252, 0.95);
+    --table-row-hover: rgba(99, 102, 241, 0.06);
+    --table-border: rgba(99, 102, 241, 0.08);
+}
+
+/* === 夜间模式 (Dark Mode) === */
+[data-theme="dark"] {
+    /* 背景 */
+    --bg-body: #0a0e1a;
+    --bg-surface: rgba(22, 28, 45, 0.85); 
+    --bg-sidebar: rgba(12, 17, 30, 0.95);
+    --bg-elevated: rgba(30, 38, 60, 0.9);
+    --bg-card: rgba(22, 28, 45, 0.85);
+    
+    /* 文本 */
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    
+    /* 边框与阴影 */
+    --border-color: rgba(255, 255, 255, 0.08);
+    --glass-border-color: rgba(255, 255, 255, 0.08);
+    --shadow-sm: 0 4px 20px -2px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    
+    /* 主题特定 */
+    --color-primary-glow: rgba(99, 102, 241, 0.4);
+    
+    /* 输入框 */
+    --input-bg: rgba(0, 0, 0, 0.25);
+    --input-border: rgba(255, 255, 255, 0.1);
+    
+    /* 表格 */
+    --table-header-bg: rgba(255, 255, 255, 0.02);
+    --table-row-hover: rgba(99, 102, 241, 0.05);
+    --table-border: rgba(255, 255, 255, 0.05);
+}
+
+/* === 日间模式 (Light Mode) - 高级科技感 === */
+[data-theme="light"] {
+    /* 背景 - 使用优雅的蓝灰渐变 */
+    --bg-body: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #f1f5f9 60%, #e2e8f0 100%);
+    --bg-surface: rgba(255, 255, 255, 0.92);
+    --bg-sidebar: rgba(255, 255, 255, 0.97);
+    --bg-elevated: rgba(255, 255, 255, 0.98);
+    
+    /* 文本 - 使用深色确保可读性 */
+    --text-main: #1e293b;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+    
+    /* 边框与阴影 - 柔和的紫色调 */
+    --border-color: rgba(99, 102, 241, 0.12);
+    --glass-border-color: rgba(99, 102, 241, 0.15);
+    --shadow-sm: 0 4px 20px -2px rgba(99, 102, 241, 0.08);
+    --shadow-md: 0 8px 30px -4px rgba(99, 102, 241, 0.12);
+    --glass-border: 1px solid rgba(99, 102, 241, 0.12);
+    
+    /* 主题特定 - 亮色主题使用较浅的辉光 */
+    --color-primary-glow: rgba(99, 102, 241, 0.15);
+    
+    /* 输入框 */
+    --input-bg: rgba(248, 250, 252, 0.9);
+    --input-border: rgba(99, 102, 241, 0.2);
+    
+    /* 表格 */
+    --table-header-bg: rgba(248, 250, 252, 0.95);
+    --table-row-hover: rgba(99, 102, 241, 0.06);
+    --table-border: rgba(99, 102, 241, 0.08);
+}
+
+/* === 亮色主题 Body 背景 === */
+[data-theme="light"] body {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #f1f5f9 60%, #e2e8f0 100%);
+    background-attachment: fixed;
+}
+
+/* === 亮色主题侧边栏 === */
+[data-theme="light"] .sidebar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    box-shadow: 
+        2px 0 30px rgba(99, 102, 241, 0.08),
+        inset -1px 0 0 rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .nav-item {
+    color: #475569;
+}
+
+[data-theme="light"] .nav-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--color-primary);
+}
+
+[data-theme="light"] .nav-item.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+    color: var(--color-primary);
+    border-left-color: var(--color-primary);
+}
+
+[data-theme="light"] .nav-badge {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+/* === 亮色主题卡片 === */
+[data-theme="light"] .n-card,
+[data-theme="light"] .cyber-card,
+[data-theme="light"] .glass-panel,
+[data-theme="light"] .metric-card,
+[data-theme="light"] .module-tile {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    box-shadow: 
+        0 4px 20px rgba(99, 102, 241, 0.06),
+        0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .n-card:hover,
+[data-theme="light"] .cyber-card:hover,
+[data-theme="light"] .glass-panel:hover,
+[data-theme="light"] .metric-card:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 
+        0 8px 40px rgba(99, 102, 241, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* === 亮色主题表格 === */
+[data-theme="light"] .inventory-table th {
+    background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+    color: #334155;
+    border-bottom: 2px solid rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .inventory-table td {
+    border-bottom: 1px solid rgba(99, 102, 241, 0.06);
+    color: #334155;
+}
+
+[data-theme="light"] .product-row:hover {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.04), rgba(139, 92, 246, 0.02));
+}
+
+[data-theme="light"] .inventory-table-card {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .table-header {
+    background: linear-gradient(180deg, #fafbfc, #f8fafc);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* === 亮色主题输入框 === */
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+[data-theme="light"] .form-input,
+[data-theme="light"] .search-input,
+[data-theme="light"] .cyber-input {
+    background: #fafbfc;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #1e293b;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] .form-input:focus,
+[data-theme="light"] .search-input:focus,
+[data-theme="light"] .cyber-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 
+        0 0 0 3px rgba(99, 102, 241, 0.12),
+        0 2px 8px rgba(99, 102, 241, 0.08);
+    background: #fff;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] .search-input::placeholder {
+    color: #94a3b8;
+}
+
+/* === 亮色主题按钮 === */
+[data-theme="light"] .action-btn.outline,
+[data-theme="light"] .table-btn,
+[data-theme="light"] .btn-ghost {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #475569;
+}
+
+[data-theme="light"] .action-btn.outline:hover,
+[data-theme="light"] .table-btn:hover,
+[data-theme="light"] .btn-ghost:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* === 亮色主题下拉菜单 === */
+[data-theme="light"] .custom-dropdown,
+[data-theme="light"] .user-dropdown .dropdown-menu {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 
+        0 10px 40px rgba(99, 102, 241, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .dropdown-item {
+    color: #334155 !important;
+}
+
+[data-theme="light"] .dropdown-item:hover {
+    background: rgba(99, 102, 241, 0.08) !important;
+    color: var(--color-primary) !important;
+}
+
+/* === 亮色主题模态框 === */
+[data-theme="light"] .modal-overlay {
+    background: rgba(15, 23, 42, 0.4);
+}
+
+[data-theme="light"] .upload-modal,
+[data-theme="light"] .adjust-modal,
+[data-theme="light"] .ai-key-card {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 
+        0 25px 80px rgba(99, 102, 241, 0.15),
+        0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* === 亮色主题统计卡片 === */
+[data-theme="light"] .stat-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.9));
+}
+
+[data-theme="light"] .stat-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .stat-label {
+    color: #64748b;
+}
+
+/* === 亮色主题粒子效果 === */
+[data-theme="light"] #particles-js {
+    opacity: 0.5;
+}
+
+/* === 亮色主题全局光晕 === */
+[data-theme="light"] .global-glow-layer {
+    background: 
+        radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.02) 0%, transparent 60%);
+}
+
+/* === 亮色主题看板 === */
+[data-theme="light"] .kanban-column {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .order-card {
+    background: #fafbfc;
+    border: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .order-card:hover {
+    background: #fff;
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+}
+
+/* === 亮色主题 Topbar === */
+[data-theme="light"] .topbar {
+    background: transparent;
+}
+
+[data-theme="light"] .user-trigger {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .theme-switcher {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+/* === 亮色主题文字渐变 === */
+[data-theme="light"] .text-gradient,
+[data-theme="light"] .gradient-text {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #0891b2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === 亮色主题品牌 === */
+[data-theme="light"] .brand-name {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .brand-edition {
+    color: #64748b;
+}
+
+/* === 亮色主题 AI 聊天 === */
+[data-theme="light"] .ai-bubble {
+    background: rgba(248, 250, 252, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .ai-msg.user .ai-bubble {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08));
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* === 亮色主题图表面板 === */
+[data-theme="light"] .chart-container {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* === 亮色主题活动列表 === */
+[data-theme="light"] .activity-item {
+    background: rgba(248, 250, 252, 0.8);
+    border-left-color: var(--color-primary);
+}
+
+[data-theme="light"] .activity-item:hover {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+/* === 亮色主题徽章 === */
+[data-theme="light"] .cyber-badge {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.2);
+    color: #4f46e5;
+}
+
+/* === 亮色主题模块网格 === */
+[data-theme="light"] .module-tile {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .module-tile:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+}
+
+[data-theme="light"] .module-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .module-desc {
+    color: #64748b;
+}
+
+/* === 亮色主题页面标题 === */
+[data-theme="light"] .page-title {
+    background: linear-gradient(135deg, #1e293b, #4f46e5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .page-subtitle {
+    color: #64748b;
+}
+
+/* === 亮色主题 Metric Value === */
+[data-theme="light"] .metric-value {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === 亮色主题状态点 === */
+[data-theme="light"] .status-dot {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+/* === 亮色主题通知区 === */
+[data-theme="light"] .notification-item {
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .notification-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+/* === 亮色主题 CMS 模块 === */
+[data-theme="light"] .cms-header {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05), rgba(0, 212, 255, 0.03));
+}
+
+[data-theme="light"] .cms-title-section h2 {
+    background: linear-gradient(135deg, #1e293b, #4f46e5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .category-filter {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .filter-btn {
+    color: #475569;
+}
+
+[data-theme="light"] .filter-btn:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .filter-btn.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+[data-theme="light"] .article-card {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .article-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .article-card:hover .article-title {
+    color: #6366f1;
+}
+
+[data-theme="light"] .article-excerpt {
+    color: #64748b;
+}
+
+[data-theme="light"] .article-footer {
+    background: rgba(248, 250, 252, 0.9);
+    border-top-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .author-name {
+    color: #475569;
+}
+
+/* === 亮色主题个人资料 === */
+[data-theme="light"] .edit-glass,
+[data-theme="light"] .profile-glass {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .edit-header h3 {
+    background: linear-gradient(90deg, #4f46e5, #0891b2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .form-field label {
+    color: #475569;
+}
+
+[data-theme="light"] .form-field input,
+[data-theme="light"] .form-field textarea,
+[data-theme="light"] .form-field select {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-field input:focus,
+[data-theme="light"] .form-field textarea:focus,
+[data-theme="light"] .form-field select:focus {
+    border-color: #6366f1;
+    background: #fff;
+}
+
+[data-theme="light"] .avatar-hint {
+    color: #64748b;
+}
+
+[data-theme="light"] .section-title {
+    color: #475569;
+}
+
+/* === 亮色主题 AI 聊天增强 === */
+[data-theme="light"] .chat-container {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.98));
+}
+
+[data-theme="light"] .chat-header {
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .chat-title h3 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .model-label {
+    background: rgba(99, 102, 241, 0.08);
+    color: #6366f1;
+}
+
+[data-theme="light"] .chat-messages {
+    background: transparent;
+}
+
+[data-theme="light"] .message-user .message-bubble {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+[data-theme="light"] .message-ai .message-bubble {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #1e293b;
+}
+
+[data-theme="light"] .welcome-card {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .welcome-title {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .welcome-subtitle {
+    color: #64748b;
+}
+
+[data-theme="light"] .suggestion-card {
+    background: rgba(248, 250, 252, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #1e293b;
+}
+
+[data-theme="light"] .suggestion-card:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="light"] .chat-input-area {
+    background: rgba(255, 255, 255, 0.98);
+    border-top-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .chat-input {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #1e293b;
+}
+
+[data-theme="light"] .chat-input:focus {
+    border-color: #6366f1;
+    background: #fff;
+}
+
+[data-theme="light"] .context-toggle {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #475569;
+}
+
+[data-theme="light"] .context-toggle:hover,
+[data-theme="light"] .context-toggle.active {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+/* === 亮色主题文件管理器 === */
+[data-theme="light"] .files-header,
+[data-theme="light"] .file-card,
+[data-theme="light"] .upload-zone {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .file-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .file-meta {
+    color: #64748b;
+}
+
+/* === 亮色主题设置页面 === */
+[data-theme="light"] .settings-card,
+[data-theme="light"] .settings-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .settings-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .settings-desc {
+    color: #64748b;
+}
+
+/* === 亮色主题表头和标题 === */
+[data-theme="light"] h1, 
+[data-theme="light"] h2, 
+[data-theme="light"] h3, 
+[data-theme="light"] h4, 
+[data-theme="light"] h5, 
+[data-theme="light"] h6 {
+    color: #1e293b;
+}
+
+[data-theme="light"] p {
+    color: #475569;
+}
+
+/* === 亮色主题统计面板 === */
+[data-theme="light"] .stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .stat-card .stat-value {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === 亮色主题数据表格 === */
+[data-theme="light"] table th {
+    background: rgba(248, 250, 252, 0.95);
+    color: #334155;
+}
+
+[data-theme="light"] table td {
+    color: #1e293b;
+    border-color: rgba(99, 102, 241, 0.06);
+}
+
+[data-theme="light"] table tr:hover td {
+    background: rgba(99, 102, 241, 0.03);
+}
+
+/* === 亮色主题库存模块 === */
+[data-theme="light"] .product-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .product-sku {
+    color: #64748b;
+}
+
+/* === 亮色主题销售模块 === */
+[data-theme="light"] .order-id {
+    color: #1e293b;
+}
+
+[data-theme="light"] .order-info {
+    color: #475569;
+}
+
+/* === 亮色主题空状态 === */
+[data-theme="light"] .empty-state {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .empty-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .empty-desc {
+    color: #64748b;
+}
+
+/* === 亮色主题通用文本修复 === */
+[data-theme="light"] .glass-panel,
+[data-theme="light"] .n-card,
+[data-theme="light"] .cyber-card,
+[data-theme="light"] .metric-card {
+    color: #1e293b;
+}
+
+[data-theme="light"] .glass-panel h1,
+[data-theme="light"] .glass-panel h2,
+[data-theme="light"] .glass-panel h3,
+[data-theme="light"] .glass-panel h4,
+[data-theme="light"] .glass-panel h5,
+[data-theme="light"] .glass-panel h6,
+[data-theme="light"] .n-card h1,
+[data-theme="light"] .n-card h2,
+[data-theme="light"] .n-card h3,
+[data-theme="light"] .n-card h4 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .glass-panel p,
+[data-theme="light"] .n-card p,
+[data-theme="light"] .cyber-card p {
+    color: #475569;
+}
+
+[data-theme="light"] .glass-panel span,
+[data-theme="light"] .n-card span {
+    color: #475569;
+}
+
+/* === 亮色主题面板标题 === */
+[data-theme="light"] .panel-title,
+[data-theme="light"] .panel-header h3,
+[data-theme="light"] .section-title {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .panel-header {
+    border-bottom-color: rgba(99, 102, 241, 0.1);
+}
+
+/* === 亮色主题列表项 === */
+[data-theme="light"] .member-name,
+[data-theme="light"] .item-title,
+[data-theme="light"] .list-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .member-dept,
+[data-theme="light"] .item-desc,
+[data-theme="light"] .list-desc {
+    color: #64748b;
+}
+
+[data-theme="light"] .member-item,
+[data-theme="light"] .list-item {
+    border-bottom-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .member-item:hover,
+[data-theme="light"] .list-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+/* === 亮色主题角色徽章 === */
+[data-theme="light"] .role-badge {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+/* === 亮色主题趋势指示器 === */
+[data-theme="light"] .stat-trend {
+    color: #10b981;
+}
+
+[data-theme="light"] .stat-trend.negative {
+    color: #ef4444;
+}
+
+/* === 亮色主题链接 === */
+[data-theme="light"] .view-all,
+[data-theme="light"] a.link {
+    color: #6366f1;
+}
+
+[data-theme="light"] .view-all:hover,
+[data-theme="light"] a.link:hover {
+    color: #4f46e5;
+}
+
+/* === 亮色主题审计日志 === */
+[data-theme="light"] .log-item,
+[data-theme="light"] .audit-item {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .log-item:hover,
+[data-theme="light"] .audit-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+[data-theme="light"] .log-type,
+[data-theme="light"] .log-action {
+    color: #1e293b;
+}
+
+[data-theme="light"] .log-time,
+[data-theme="light"] .log-details {
+    color: #64748b;
+}
+
+/* === 亮色主题通知 === */
+[data-theme="light"] .notification-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .notification-message,
+[data-theme="light"] .notification-time {
+    color: #64748b;
+}
+
+/* === 亮色主题报表模块 === */
+[data-theme="light"] .report-card,
+[data-theme="light"] .chart-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .report-title,
+[data-theme="light"] .chart-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .report-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .report-label,
+[data-theme="light"] .chart-label {
+    color: #64748b;
+}
+
+/* === 亮色主题仪表盘 === */
+[data-theme="light"] .dashboard-section h2,
+[data-theme="light"] .section-header h2 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .welcome-text,
+[data-theme="light"] .greeting {
+    color: #1e293b;
+}
+
+[data-theme="light"] .welcome-subtitle,
+[data-theme="light"] .subgreeting {
+    color: #64748b;
+}
+
+/* === 亮色主题快捷操作 === */
+[data-theme="light"] .quick-action,
+[data-theme="light"] .action-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #1e293b;
+}
+
+[data-theme="light"] .quick-action:hover,
+[data-theme="light"] .action-card:hover {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="light"] .quick-action span,
+[data-theme="light"] .action-card span {
+    color: #1e293b;
+}
+
+/* === 亮色主题时间线 === */
+[data-theme="light"] .timeline-item,
+[data-theme="light"] .activity-item {
+    color: #1e293b;
+}
+
+[data-theme="light"] .timeline-time,
+[data-theme="light"] .activity-time {
+    color: #64748b;
+}
+
+/* === 亮色主题订单看板 === */
+[data-theme="light"] .kanban-header h3 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .kanban-count {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+[data-theme="light"] .order-customer,
+[data-theme="light"] .order-amount {
+    color: #1e293b;
+}
+
+[data-theme="light"] .order-date,
+[data-theme="light"] .order-items {
+    color: #64748b;
+}
+
+/* === 亮色主题发票 === */
+[data-theme="light"] .invoice-card {
+    background: rgba(255, 255, 255, 0.98);
+    color: #1e293b;
+}
+
+[data-theme="light"] .invoice-title,
+[data-theme="light"] .invoice-number {
+    color: #1e293b;
+}
+
+[data-theme="light"] .invoice-info {
+    color: #475569;
+}
+
+/* === 亮色主题库存管理 === */
+[data-theme="light"] .filter-section,
+[data-theme="light"] .toolbar {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .filter-label {
+    color: #475569;
+}
+
+/* === 亮色主题状态标签 === */
+[data-theme="light"] .status-badge,
+[data-theme="light"] .tag {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+[data-theme="light"] .status-badge.success,
+[data-theme="light"] .tag.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+[data-theme="light"] .status-badge.warning,
+[data-theme="light"] .tag.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+[data-theme="light"] .status-badge.danger,
+[data-theme="light"] .tag.danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+/* === 亮色主题分页 === */
+[data-theme="light"] .pagination {
+    color: #475569;
+}
+
+[data-theme="light"] .pagination a,
+[data-theme="light"] .pagination button {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #475569;
+}
+
+[data-theme="light"] .pagination a:hover,
+[data-theme="light"] .pagination button:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+[data-theme="light"] .pagination .active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+/* === 亮色主题面包屑 === */
+[data-theme="light"] .breadcrumb,
+[data-theme="light"] .breadcrumb-item {
+    color: #64748b;
+}
+
+[data-theme="light"] .breadcrumb a {
+    color: #6366f1;
+}
+
+/* === 亮色主题搜索结果 === */
+[data-theme="light"] .search-result,
+[data-theme="light"] .result-item {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #1e293b;
+}
+
+[data-theme="light"] .search-result:hover,
+[data-theme="light"] .result-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+/* === 亮色主题 Tab 导航 === */
+[data-theme="light"] .tab-nav,
+[data-theme="light"] .tabs {
+    border-bottom-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .tab-item,
+[data-theme="light"] .tab-btn {
+    color: #64748b;
+}
+
+[data-theme="light"] .tab-item:hover,
+[data-theme="light"] .tab-btn:hover {
+    color: #6366f1;
+}
+
+[data-theme="light"] .tab-item.active,
+[data-theme="light"] .tab-btn.active {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+}
+
+/* === 亮色主题工具提示 === */
+[data-theme="light"] .tooltip {
+    background: rgba(30, 41, 59, 0.95);
+    color: white;
+}
+
+/* === 亮色主题进度条 === */
+[data-theme="light"] .progress-bar {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* === 亮色主题头部区域 === */
+[data-theme="light"] .header-content h1,
+[data-theme="light"] .header-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .header-subtitle,
+[data-theme="light"] .header-desc {
+    color: #64748b;
+}
+
+/* === 亮色主题代码块 === */
+[data-theme="light"] code {
+    background: rgba(99, 102, 241, 0.08);
+    color: #6366f1;
+}
+
+[data-theme="light"] pre {
+    background: rgba(248, 250, 252, 0.95);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #1e293b;
+}
+
+/* === 亮色主题通用容器 === */
+[data-theme="light"] .content-wrapper,
+[data-theme="light"] .page-content,
+[data-theme="light"] .main-content {
+    color: #1e293b;
+}
+
+/* === 亮色主题信息框 === */
+[data-theme="light"] .info-box,
+[data-theme="light"] .alert-info {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.2);
+    color: #4f46e5;
+}
+
+[data-theme="light"] .warning-box,
+[data-theme="light"] .alert-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.2);
+    color: #d97706;
+}
+
+[data-theme="light"] .success-box,
+[data-theme="light"] .alert-success {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #059669;
+}
+
+[data-theme="light"] .error-box,
+[data-theme="light"] .alert-danger {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+}
+
+/* === 亮色主题表格增强 === */
+[data-theme="light"] .data-table,
+[data-theme="light"] .table-responsive {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .table-empty,
+[data-theme="light"] .no-data {
+    color: #64748b;
+}
+
+/* === 亮色主题AI设置 === */
+[data-theme="light"] .ai-key-card,
+[data-theme="light"] .api-settings {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .ai-key-card h3,
+[data-theme="light"] .api-settings h3 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .ai-key-card p,
+[data-theme="light"] .api-settings p {
+    color: #64748b;
+}
+
+/* === 亮色主题详情页 === */
+[data-theme="light"] .detail-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .detail-value {
+    color: #1e293b;
+}
+
+[data-theme="light"] .detail-row {
+    border-bottom-color: rgba(99, 102, 241, 0.08);
+}
+
+/* === 亮色主题数字统计 === */
+[data-theme="light"] .number,
+[data-theme="light"] .count,
+[data-theme="light"] .total {
+    color: #1e293b;
+}
+
+/* === 亮色主题图标按钮 === */
+[data-theme="light"] .icon-btn {
+    color: #64748b;
+}
+
+[data-theme="light"] .icon-btn:hover {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+/* === 亮色主题 - 通用强制覆盖 === */
+[data-theme="light"] body {
+    color: #1e293b;
+}
+
+[data-theme="light"] .main-content,
+[data-theme="light"] .page-wrapper,
+[data-theme="light"] .content-area {
+    color: #1e293b;
+}
+
+/* 确保所有文本元素在日间模式下可读 */
+[data-theme="light"] .text-white,
+[data-theme="light"] [class*="text-main"] {
+    color: #1e293b !important;
+}
+
+/* 强制覆盖卡片内文本 */
+[data-theme="light"] .glass-panel *:not(i):not(.btn-primary):not(.badge):not(.status-badge):not([class*="gradient"]):not(.avatar-initials):not(.tile-icon):not(.stat-icon):not(.icon):not([style*="background"]) {
+    color: inherit;
+}
+
+/* 确保标题在日间模式下是深色 */
+[data-theme="light"] .glass-panel h1:not([class*="gradient"]),
+[data-theme="light"] .glass-panel h2:not([class*="gradient"]),
+[data-theme="light"] .glass-panel h3:not([class*="gradient"]),
+[data-theme="light"] .glass-panel h4:not([class*="gradient"]) {
+    color: #1e293b !important;
+}
+
+/* 确保描述文本在日间模式下可读 */
+[data-theme="light"] .glass-panel p,
+[data-theme="light"] .glass-panel span:not(.badge):not(.avatar-initials):not([class*="icon"]) {
+    color: #475569;
+}
+
+/* 按钮保持原有颜色 */
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-primary span,
+[data-theme="light"] .btn-primary i {
+    color: white !important;
+}
+
+/* 渐变图标背景中的图标保持白色 */
+[data-theme="light"] [style*="gradient"] i,
+[data-theme="light"] [class*="gradient-bg"] i,
+[data-theme="light"] .stat-icon i,
+[data-theme="light"] .tile-icon i,
+[data-theme="light"] .module-icon i {
+    color: white !important;
+}

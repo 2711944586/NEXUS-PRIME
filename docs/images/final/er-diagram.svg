@@ -1,0 +1,235 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="820" viewBox="0 0 1280 820" role="img" aria-labelledby="title desc">
+  <title id="title">NEXUS Prime ER Diagram</title>
+  <desc id="desc">Core database relationships for auth, products, inventory, sales, purchase, finance, content, reports, AI sessions and audit logs.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbfb"/>
+      <stop offset="1" stop-color="#edf5f2"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#0f172a" flood-opacity=".12"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .bg { fill: url(#bg); }
+      .title { font: 800 32px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 600 14px Arial, sans-serif; fill: #64748b; }
+      .entity { filter: url(#shadow); }
+      .box { fill: #fff; stroke: #dbe5e8; stroke-width: 1.2; rx: 16; }
+      .box-head { fill: url(#head); rx: 16; }
+      .box-title { font: 800 16px Arial, sans-serif; fill: #fff; }
+      .field { font: 600 12px Arial, sans-serif; fill: #334155; }
+      .pk { fill: #0f766e; font-weight: 800; }
+      .fk { fill: #2563eb; font-weight: 800; }
+      .line { fill: none; stroke: #64748b; stroke-width: 1.8; marker-end: url(#arrow); }
+      .line-soft { fill: none; stroke: #94a3b8; stroke-width: 1.4; stroke-dasharray: 6 6; marker-end: url(#arrow); }
+      .label { font: 700 11px Arial, sans-serif; fill: #475569; }
+    </style>
+  </defs>
+  <rect class="bg" width="1280" height="820"/>
+  <text class="title" x="56" y="58">NEXUS Prime Core ER Diagram</text>
+  <text class="subtitle" x="56" y="84">Manufacturing operations data model: identity, master data, inventory, purchase, sales, finance, content, reports, AI and audit.</text>
+
+  <g class="entity" transform="translate(56 126)">
+    <rect class="box" width="190" height="136"/>
+    <rect class="box-head" width="190" height="42"/>
+    <text class="box-title" x="16" y="27">auth_users</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">email, username</text>
+    <text class="field fk" x="16" y="102">FK role_id</text>
+    <text class="field fk" x="16" y="122">FK department_id</text>
+  </g>
+  <g class="entity" transform="translate(300 126)">
+    <rect class="box" width="170" height="102"/>
+    <rect class="box-head" width="170" height="42"/>
+    <text class="box-title" x="16" y="27">auth_roles</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">name, permissions</text>
+  </g>
+  <g class="entity" transform="translate(300 252)">
+    <rect class="box" width="170" height="102"/>
+    <rect class="box-head" width="170" height="42"/>
+    <text class="box-title" x="16" y="27">departments</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">name, code</text>
+  </g>
+
+  <g class="entity" transform="translate(536 112)">
+    <rect class="box" width="206" height="150"/>
+    <rect class="box-head" width="206" height="42"/>
+    <text class="box-title" x="16" y="27">biz_products</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">sku, name, price</text>
+    <text class="field fk" x="16" y="102">FK category_id</text>
+    <text class="field fk" x="16" y="122">FK supplier_id</text>
+    <text class="field" x="16" y="142">min_stock, is_active</text>
+  </g>
+  <g class="entity" transform="translate(796 112)">
+    <rect class="box" width="184" height="102"/>
+    <rect class="box-head" width="184" height="42"/>
+    <text class="box-title" x="16" y="27">biz_categories</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">name, icon</text>
+  </g>
+  <g class="entity" transform="translate(796 240)">
+    <rect class="box" width="184" height="118"/>
+    <rect class="box-head" width="184" height="42"/>
+    <text class="box-title" x="16" y="27">biz_partners</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">name, type</text>
+    <text class="field" x="16" y="102">contact, credit</text>
+  </g>
+  <g class="entity" transform="translate(1038 112)">
+    <rect class="box" width="170" height="118"/>
+    <rect class="box-head" width="170" height="42"/>
+    <text class="box-title" x="16" y="27">biz_tags</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">name, color</text>
+    <text class="field fk" x="16" y="102">via product_tags</text>
+  </g>
+
+  <g class="entity" transform="translate(536 324)">
+    <rect class="box" width="206" height="136"/>
+    <rect class="box-head" width="206" height="42"/>
+    <text class="box-title" x="16" y="27">stock_quantities</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK product_id</text>
+    <text class="field fk" x="16" y="102">FK warehouse_id</text>
+    <text class="field" x="16" y="122">quantity, location</text>
+  </g>
+  <g class="entity" transform="translate(796 412)">
+    <rect class="box" width="184" height="118"/>
+    <rect class="box-head" width="184" height="42"/>
+    <text class="box-title" x="16" y="27">warehouses</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">name, address</text>
+    <text class="field" x="16" y="102">capacity</text>
+  </g>
+  <g class="entity" transform="translate(536 510)">
+    <rect class="box" width="206" height="118"/>
+    <rect class="box-head" width="206" height="42"/>
+    <text class="box-title" x="16" y="27">stock_logs</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK product / warehouse</text>
+    <text class="field" x="16" y="102">delta, source</text>
+  </g>
+
+  <g class="entity" transform="translate(56 396)">
+    <rect class="box" width="206" height="136"/>
+    <rect class="box-head" width="206" height="42"/>
+    <text class="box-title" x="16" y="27">trade_orders</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK customer_id</text>
+    <text class="field" x="16" y="102">status, amount</text>
+    <text class="field" x="16" y="122">ordered_at</text>
+  </g>
+  <g class="entity" transform="translate(300 396)">
+    <rect class="box" width="190" height="136"/>
+    <rect class="box-head" width="190" height="42"/>
+    <text class="box-title" x="16" y="27">trade_items</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK order_id</text>
+    <text class="field fk" x="16" y="102">FK product_id</text>
+    <text class="field" x="16" y="122">qty, unit_price</text>
+  </g>
+  <g class="entity" transform="translate(56 586)">
+    <rect class="box" width="206" height="136"/>
+    <rect class="box-head" width="206" height="42"/>
+    <text class="box-title" x="16" y="27">purchase_orders</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK supplier_id</text>
+    <text class="field" x="16" y="102">approval_status</text>
+    <text class="field" x="16" y="122">receive_status</text>
+  </g>
+  <g class="entity" transform="translate(300 586)">
+    <rect class="box" width="190" height="136"/>
+    <rect class="box-head" width="190" height="42"/>
+    <text class="box-title" x="16" y="27">purchase_items</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK order_id</text>
+    <text class="field fk" x="16" y="102">FK product_id</text>
+    <text class="field" x="16" y="122">qty, received_qty</text>
+  </g>
+
+  <g class="entity" transform="translate(796 586)">
+    <rect class="box" width="206" height="136"/>
+    <rect class="box-head" width="206" height="42"/>
+    <text class="box-title" x="16" y="27">finance_receivables</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK order_id</text>
+    <text class="field" x="16" y="102">amount, due_date</text>
+    <text class="field" x="16" y="122">status, aging</text>
+  </g>
+  <g class="entity" transform="translate(1038 586)">
+    <rect class="box" width="184" height="118"/>
+    <rect class="box-head" width="184" height="42"/>
+    <text class="box-title" x="16" y="27">finance_payments</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK receivable_id</text>
+    <text class="field" x="16" y="102">amount, paid_at</text>
+  </g>
+
+  <g class="entity" transform="translate(1038 294)">
+    <rect class="box" width="184" height="118"/>
+    <rect class="box-head" width="184" height="42"/>
+    <text class="box-title" x="16" y="27">cms_attachments</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field" x="16" y="82">filename, type</text>
+    <text class="field" x="16" y="102">storage_path</text>
+  </g>
+  <g class="entity" transform="translate(1038 452)">
+    <rect class="box" width="184" height="118"/>
+    <rect class="box-head" width="184" height="42"/>
+    <text class="box-title" x="16" y="27">sys_ai_sessions</text>
+    <text class="field pk" x="16" y="62">PK id</text>
+    <text class="field fk" x="16" y="82">FK user_id</text>
+    <text class="field" x="16" y="102">title, source</text>
+  </g>
+  <g class="entity" transform="translate(1038 738)">
+    <rect class="box" width="184" height="62"/>
+    <rect class="box-head" width="184" height="34"/>
+    <text class="box-title" x="14" y="23">sys_audit_logs</text>
+    <text class="field fk" x="14" y="52">user, action, object</text>
+  </g>
+
+  <path class="line" d="M246 164 H300"/>
+  <text class="label" x="258" y="154">role</text>
+  <path class="line" d="M246 222 C270 222 270 304 300 304"/>
+  <text class="label" x="256" y="286">department</text>
+  <path class="line" d="M742 150 H796"/>
+  <text class="label" x="758" y="140">category</text>
+  <path class="line" d="M742 218 C768 218 768 282 796 282"/>
+  <text class="label" x="756" y="270">supplier</text>
+  <path class="line-soft" d="M742 164 C860 164 930 160 1038 160"/>
+  <text class="label" x="900" y="148">tags</text>
+  <path class="line" d="M638 262 V324"/>
+  <text class="label" x="650" y="300">stock</text>
+  <path class="line" d="M742 392 C770 392 770 458 796 458"/>
+  <text class="label" x="756" y="444">warehouse</text>
+  <path class="line" d="M638 460 V510"/>
+  <text class="label" x="650" y="496">logs</text>
+  <path class="line" d="M262 448 H300"/>
+  <text class="label" x="270" y="438">items</text>
+  <path class="line" d="M490 448 C520 448 520 205 536 205"/>
+  <text class="label" x="504" y="286">product</text>
+  <path class="line" d="M262 640 H300"/>
+  <text class="label" x="270" y="630">items</text>
+  <path class="line" d="M490 640 C520 640 520 232 536 232"/>
+  <text class="label" x="504" y="520">product</text>
+  <path class="line" d="M796 652 C662 652 602 472 490 454"/>
+  <text class="label" x="602" y="624">sales to receivable</text>
+  <path class="line" d="M1002 650 H1038"/>
+  <text class="label" x="1006" y="640">payments</text>
+  <path class="line-soft" d="M980 304 H1038"/>
+  <text class="label" x="992" y="294">files</text>
+  <path class="line-soft" d="M246 204 C520 760 892 520 1038 502"/>
+  <text class="label" x="874" y="532">AI owner</text>
+  <path class="line-soft" d="M246 226 C508 796 890 760 1038 766"/>
+  <text class="label" x="830" y="784">audit trail</text>
+</svg>

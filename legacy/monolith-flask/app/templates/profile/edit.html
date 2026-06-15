@@ -1,0 +1,316 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}编辑资料{% endblock %}
+{% block breadcrumb %}个人中心 / 编辑资料{% endblock %}
+
+{% block styles %}
+<style>
+.edit-container {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+}
+.edit-container::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(99,102,241,0.16), transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(14,165,233,0.12), transparent 45%);
+    pointer-events: none;
+    filter: blur(50px);
+    z-index: 0;
+}
+
+.edit-glass {
+    position: relative;
+    z-index: 1;
+    border-radius: 24px;
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(26px);
+    border: 1px solid rgba(148,163,184,0.18);
+    box-shadow: 0 28px 90px rgba(2,6,23,0.55);
+    padding: 2.2rem;
+    animation: floatUp 0.55s ease forwards;
+}
+@keyframes floatUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+.edit-header h3 {
+    font-weight: 700;
+    background: linear-gradient(90deg, #a5b4fc, #22d3ee);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 头像上传区 */
+.avatar-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+.avatar-preview-ring {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    padding: 4px;
+    background: linear-gradient(135deg, #6366f1, #14b8a6, #f472b6);
+    animation: rotateRing 4s linear infinite;
+    cursor: pointer;
+    transition: transform var(--transition-smooth);
+}
+.avatar-preview-ring:hover {
+    transform: scale(1.05);
+}
+@keyframes rotateRing {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+.avatar-preview-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(15,23,42,0.95);
+    display: grid;
+    place-items: center;
+}
+.avatar-preview-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.avatar-preview-inner i {
+    font-size: 3rem;
+    color: rgba(148,163,184,0.5);
+}
+.avatar-hint {
+    margin-top: 0.85rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+/* 表单样式 */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem 1.6rem;
+}
+@media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+}
+.form-grid .full { grid-column: 1 / -1; }
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+.form-field label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #94a3b8;
+    letter-spacing: 0.03em;
+}
+.form-field input,
+.form-field textarea,
+.form-field select {
+    border-radius: 14px;
+    border: 1px solid rgba(148,163,184,0.2);
+    background: rgba(2,6,23,0.5);
+    color: #e2e8f0;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.95rem;
+    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+    outline: none;
+    border-color: rgba(99,102,241,0.7);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+}
+.form-field textarea { resize: vertical; min-height: 100px; }
+.form-field .char-count {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-align: right;
+}
+
+.section-divider {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid rgba(148,163,184,0.12);
+}
+
+.section-title {
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.section-title i { color: #6366f1; }
+
+/* 底部按钮 */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+.btn-save {
+    flex: 1;
+    padding: 0.9rem 1.5rem;
+    border-radius: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #6366f1, #14b8a6);
+    border: none;
+    color: #fff;
+    box-shadow: 0 15px 40px rgba(99,102,241,0.35);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+.btn-save:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 50px rgba(99,102,241,0.45);
+}
+.btn-cancel {
+    padding: 0.9rem 1.8rem;
+    border-radius: 16px;
+    background: rgba(148,163,184,0.1);
+    border: 1px solid rgba(148,163,184,0.25);
+    color: #94a3b8;
+    transition: background var(--transition-smooth);
+}
+.btn-cancel:hover {
+    background: rgba(148,163,184,0.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-container">
+    <div class="edit-glass">
+        <div class="edit-header">
+            <h3><i class="fas fa-user-edit me-2"></i>编辑个人资料</h3>
+            <a href="{{ url_for('profile.view') }}" class="btn btn-ghost"><i class="fas fa-arrow-left me-2"></i>返回</a>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="profileForm">
+            {{ form.hidden_tag() }}
+
+            <!-- 头像上传 -->
+            <div class="avatar-upload">
+                <label for="avatar-input" class="avatar-preview-ring" title="点击更换头像">
+                    <div class="avatar-preview-inner">
+                        {% if current_user.avatar %}
+                            {% if current_user.avatar.startswith('http') %}
+                            <img id="avatar-img" src="{{ current_user.avatar }}" alt="头像">
+                            {% else %}
+                            <img id="avatar-img" src="{{ url_for('static', filename=current_user.avatar) }}" alt="头像">
+                            {% endif %}
+                        {% else %}
+                        <i id="avatar-placeholder" class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                </label>
+                {{ form.avatar(class="d-none", id="avatar-input") }}
+                <span class="avatar-hint"><i class="fas fa-camera me-1"></i>点击上传新头像 (JPG/PNG/GIF)</span>
+            </div>
+
+            <!-- 基本信息 -->
+            <div class="section-title"><i class="fas fa-id-card"></i> 基本信息</div>
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form.username.label }}
+                    {{ form.username(class="form-control", placeholder="请输入用户名") }}
+                </div>
+                <div class="form-field">
+                    {{ form.email.label }}
+                    {{ form.email(class="form-control", placeholder="请输入邮箱") }}
+                </div>
+                <div class="form-field">
+                    {{ form.phone.label }}
+                    {{ form.phone(class="form-control", placeholder="请输入手机号") }}
+                </div>
+                <div class="form-field">
+                    {{ form.department.label }}
+                    {{ form.department(class="form-control", placeholder="请输入所属部门") }}
+                </div>
+                <div class="form-field full">
+                    {{ form.position.label }}
+                    {{ form.position(class="form-control", placeholder="请输入职位名称") }}
+                </div>
+                <div class="form-field full">
+                    {{ form.bio.label }}
+                    {{ form.bio(class="form-control", rows="3", placeholder="简单介绍一下自己...", id="bioInput") }}
+                    <span class="char-count"><span id="bioCount">0</span>/500</span>
+                </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <!-- 偏好设置 -->
+            <div class="section-title"><i class="fas fa-sliders-h"></i> 偏好设置</div>
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form.theme_preference.label }}
+                    {{ form.theme_preference(class="form-control") }}
+                </div>
+                <div class="form-field">
+                    {{ form.language.label }}
+                    {{ form.language(class="form-control") }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save"><i class="fas fa-check me-2"></i>保存更改</button>
+                <a href="{{ url_for('profile.view') }}" class="btn-cancel">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 头像预览
+document.getElementById('avatar-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        let img = document.getElementById('avatar-img');
+        const placeholder = document.getElementById('avatar-placeholder');
+        if (!img && placeholder) {
+            img = document.createElement('img');
+            img.id = 'avatar-img';
+            placeholder.replaceWith(img);
+        }
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+// 简介字数统计
+const bioInput = document.getElementById('bioInput');
+const bioCount = document.getElementById('bioCount');
+if (bioInput && bioCount) {
+    const updateCount = () => bioCount.textContent = bioInput.value.length;
+    bioInput.addEventListener('input', updateCount);
+    updateCount();
+}
+</script>
+{% endblock %}

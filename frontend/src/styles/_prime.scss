@@ -1,0 +1,110 @@
+.p-component {
+  font-family: var(--font-sans);
+}
+
+.p-button {
+  min-height: 38px;
+  border-radius: var(--radius-md);
+  border-color: color-mix(in srgb, var(--accent) 86%, #07110d);
+  color: var(--accent-contrast);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #ffffff 8%), color-mix(in srgb, var(--accent) 86%, #07110d));
+  font-weight: 760;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+
+.p-button:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--ink-strong));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 10px 24px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.p-button.p-button-text {
+  color: var(--ink);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.p-button.p-button-secondary.p-button-text {
+  color: var(--muted-strong);
+}
+
+.p-button.p-button-secondary:not(.p-button-text) {
+  border-color: var(--line);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface-strong) 78%, transparent);
+  box-shadow: none;
+}
+
+.p-button.p-button-info {
+  border-color: color-mix(in srgb, var(--info) 84%, #07110d);
+  color: var(--accent-2-contrast);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--info) 90%, #ffffff 8%), color-mix(in srgb, var(--info) 84%, #07110d));
+}
+
+.p-button.p-button-danger,
+.p-button.p-button-text.p-button-danger {
+  color: var(--danger);
+}
+
+.p-button.p-button-danger:not(.p-button-text) {
+  border-color: color-mix(in srgb, var(--danger) 86%, #07110d);
+  color: #fff;
+  background: color-mix(in srgb, var(--danger) 86%, #07110d);
+}
+
+.p-inputtext,
+.p-select,
+.p-textarea {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  border-color: var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.p-inputtext:enabled:focus,
+.p-select:focus,
+.p-textarea:enabled:focus {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.p-tag {
+  border-radius: var(--radius-sm);
+  font-weight: 820;
+  letter-spacing: 0;
+}
+
+.p-skeleton {
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-muted) 78%, var(--line));
+}
+
+.p-tooltip-text {
+  border-radius: var(--radius-sm);
+  background: #14211d;
+  color: #f8fafc;
+  box-shadow: var(--shadow-md);
+}
+
+.p-toast-message {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}
+
+.p-dialog,
+.p-confirmdialog {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}

@@ -1,0 +1,1541 @@
+{% extends "layouts/base.html" %}
+
+{% block breadcrumb %}指挥舱 / Command Center{% endblock %}
+
+{% block content %}
+<div class="command-center">
+    <!-- 1. KPI 卡片区 -->
+    <section class="kpi-section">
+        <div class="kpi-grid">
+            <!-- 用户卡片 -->
+            <div class="kpi-card">
+                <div class="kpi-icon users">
+                    <i class="fas fa-users"></i>
+                    <div class="icon-ring"></div>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">总用户数</span>
+                    <span class="kpi-value" data-count="{{ kpi.total_users }}">{{ "{:,}".format(kpi.total_users) }}</span>
+                    <div class="kpi-trend up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+12.5% 较上月</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 产品卡片 -->
+            <div class="kpi-card">
+                <div class="kpi-icon products">
+                    <i class="fas fa-box-open"></i>
+                    <div class="icon-ring"></div>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">产品 SKU</span>
+                    <span class="kpi-value" data-count="{{ kpi.total_products }}">{{ "{:,}".format(kpi.total_products) }}</span>
+                    <div class="kpi-trend warning">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>15 件低库存</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 订单卡片 -->
+            <div class="kpi-card">
+                <div class="kpi-icon orders">
+                    <i class="fas fa-shopping-cart"></i>
+                    <div class="icon-ring"></div>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">累计订单</span>
+                    <span class="kpi-value" data-count="{{ kpi.total_orders }}">{{ "{:,}".format(kpi.total_orders) }}</span>
+                    <div class="kpi-trend up">
+                        <i class="fas fa-chart-line"></i>
+                        <span>+8.3% 增长</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收入卡片 -->
+            <div class="kpi-card featured">
+                <div class="kpi-icon revenue">
+                    <i class="fas fa-gem"></i>
+                    <div class="icon-ring"></div>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-label">总收入</span>
+                    <span class="kpi-value holographic" data-count="{{ kpi.total_revenue }}">¥{{ "{:,.0f}".format(kpi.total_revenue) }}</span>
+                    <div class="kpi-trend up">
+                        <i class="fas fa-fire"></i>
+                        <span>创历史新高</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. 主数据区 -->
+    <section class="main-data-section">
+        <div class="data-grid">
+            <!-- 左侧：销售趋势图 -->
+            <div class="chart-panel glass-card">
+                <div class="panel-header">
+                    <div class="header-left">
+                        <div class="panel-icon">
+                            <i class="fas fa-chart-area"></i>
+                        </div>
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">销售趋势分析</h3>
+                            <span class="panel-subtitle">Sales Trend Analysis</span>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <div class="status-live">
+                            <span class="live-dot"></span>
+                            <span>实时</span>
+                        </div>
+                        <div class="chart-actions">
+                            <button class="action-btn" title="刷新数据">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="action-btn" title="导出">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="salesChart" class="chart-container"></div>
+                <div class="chart-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">日均销售</span>
+                        <span class="summary-value">¥{{ "{:,.0f}".format(kpi.total_revenue / 30) }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">峰值日</span>
+                        <span class="summary-value highlight">¥{{ "{:,.0f}".format(kpi.total_revenue / 15) }}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">转化率</span>
+                        <span class="summary-value">68.2%</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">客单价</span>
+                        <span class="summary-value">¥{{ "{:,.0f}".format(kpi.total_revenue / (kpi.total_orders if kpi.total_orders > 0 else 1)) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：数据面板 -->
+            <div class="side-panels">
+                <!-- 实时活动 -->
+                <div class="activity-panel glass-card">
+                    <div class="panel-header compact">
+                        <div class="header-left">
+                            <i class="fas fa-broadcast-tower pulse-icon"></i>
+                            <h3 class="panel-title">系统动态</h3>
+                        </div>
+                        <span class="activity-count">{{ logs|length }} 条</span>
+                    </div>
+                    <div class="activity-list">
+                        {% for log in logs %}
+                        <div class="activity-item" style="animation-delay: {{ loop.index0 * 0.08 }}s;">
+                            <div class="activity-icon {{ log.move_type }}">
+                                {% if log.move_type == 'inbound' %}
+                                <i class="fas fa-arrow-down"></i>
+                                {% elif log.move_type == 'outbound' %}
+                                <i class="fas fa-arrow-up"></i>
+                                {% else %}
+                                <i class="fas fa-sync-alt"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content">
+                                <span class="activity-title">{{ log.product.name if log.product else 'Unknown' }}</span>
+                                <span class="activity-meta">
+                                    <i class="far fa-clock"></i>
+                                    {{ log.created_at.strftime('%H:%M') }}
+                                </span>
+                            </div>
+                            <span class="activity-amount {{ 'positive' if log.move_type == 'inbound' else 'negative' }}">
+                                {{ '+' if log.move_type == 'inbound' else '-' }}{{ log.quantity }}
+                            </span>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-satellite-dish"></i>
+                            <span>暂无动态</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 库存分布饼图 -->
+                <div class="distribution-panel glass-card">
+                    <div class="panel-header compact">
+                        <div class="header-left">
+                            <i class="fas fa-chart-pie"></i>
+                            <h3 class="panel-title">库存分布</h3>
+                        </div>
+                    </div>
+                    <div id="pieChart" class="pie-container"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. 数据分析区域 -->
+    <section class="analytics-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-analytics"></i>
+                数据洞察
+            </h2>
+            <span class="section-subtitle">Business Analytics</span>
+        </div>
+        <div class="analytics-grid">
+            <!-- 订单状态分布 -->
+            <div class="chart-panel glass-card">
+                <div class="panel-header">
+                    <div class="header-left">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">订单状态分布</h3>
+                            <span class="panel-subtitle">Order Status Distribution</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="orderStatusChart" class="chart-container-sm"></div>
+            </div>
+
+            <!-- 库存出入库趋势 -->
+            <div class="chart-panel glass-card">
+                <div class="panel-header">
+                    <div class="header-left">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">库存出入库趋势</h3>
+                            <span class="panel-subtitle">Inventory Flow Trend</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="inventoryTrendChart" class="chart-container-sm"></div>
+            </div>
+
+            <!-- 商品分类占比 -->
+            <div class="chart-panel glass-card">
+                <div class="panel-header">
+                    <div class="header-left">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">商品分类占比</h3>
+                            <span class="panel-subtitle">Product Category Share</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="categoryChart" class="chart-container-sm"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. 快捷模块入口 -->
+    <section class="modules-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-th-large"></i>
+                快速访问
+            </h2>
+            <span class="section-subtitle">Quick Access Modules</span>
+        </div>
+        <div class="modules-grid">
+            <a href="{{ url_for('inventory.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #10b981;">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">量子仓储</span>
+                    <span class="module-desc">库存管理系统</span>
+                </div>
+                <span class="module-badge">{{ kpi.total_products }} SKU</span>
+            </a>
+
+            <a href="{{ url_for('sales.kanban') }}" class="module-card">
+                <div class="module-icon" style="--color: #6366f1;">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">商业订单</span>
+                    <span class="module-desc">销售管理看板</span>
+                </div>
+                <span class="module-badge">{{ kpi.total_orders }} 单</span>
+            </a>
+
+            <a href="{{ url_for('purchase.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #f59e0b;">
+                    <i class="fas fa-truck-loading"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">采购管理</span>
+                    <span class="module-desc">供应商与采购单</span>
+                </div>
+                <span class="module-badge">NEW</span>
+            </a>
+
+            <a href="{{ url_for('finance.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #ef4444;">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">财务中心</span>
+                    <span class="module-desc">应收账款与信用</span>
+                </div>
+                <span class="module-badge">NEW</span>
+            </a>
+
+            <a href="{{ url_for('stocktake.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #14b8a6;">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">库存盘点</span>
+                    <span class="module-desc">盘点任务管理</span>
+                </div>
+                <span class="module-badge">NEW</span>
+            </a>
+
+            <a href="{{ url_for('notification.alerts') }}" class="module-card">
+                <div class="module-icon" style="--color: #f97316;">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">库存预警</span>
+                    <span class="module-desc">预警与补货建议</span>
+                </div>
+                <span class="module-badge">NEW</span>
+            </a>
+
+            <a href="{{ url_for('cms.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #fbbf24;">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">资讯中心</span>
+                    <span class="module-desc">内容管理系统</span>
+                </div>
+                <span class="module-badge">CMS</span>
+            </a>
+
+            <a href="{{ url_for('ai.chat_page') }}" class="module-card">
+                <div class="module-icon" style="--color: #a855f7;">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">AI 智脑</span>
+                    <span class="module-desc">DeepSeek 助手</span>
+                </div>
+                <span class="module-badge">在线</span>
+            </a>
+
+            <a href="{{ url_for('reports.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #8b5cf6;">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">数据分析</span>
+                    <span class="module-desc">报表与洞察</span>
+                </div>
+                <span class="module-badge">PRO</span>
+            </a>
+
+            <a href="{{ url_for('system.team') }}" class="module-card">
+                <div class="module-icon" style="--color: #06b6d4;">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">团队管理</span>
+                    <span class="module-desc">人员与权限</span>
+                </div>
+                <span class="module-badge">{{ kpi.total_users }} 人</span>
+            </a>
+
+            <a href="{{ url_for('cms.files') }}" class="module-card">
+                <div class="module-icon" style="--color: #ec4899;">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">数字资产</span>
+                    <span class="module-desc">文件存储管理</span>
+                </div>
+                <span class="module-badge">Files</span>
+            </a>
+
+            <a href="{{ url_for('notification.index') }}" class="module-card">
+                <div class="module-icon" style="--color: #3b82f6;">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">消息通知</span>
+                    <span class="module-desc">系统消息中心</span>
+                </div>
+                <span class="module-badge">Msg</span>
+            </a>
+
+            <a href="{{ url_for('system.data_import') }}" class="module-card">
+                <div class="module-icon" style="--color: #22c55e;">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">数据导入</span>
+                    <span class="module-desc">批量数据处理</span>
+                </div>
+                <span class="module-badge">Import</span>
+            </a>
+
+            <a href="{{ url_for('system.audit_log') }}" class="module-card">
+                <div class="module-icon" style="--color: #64748b;">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">审计日志</span>
+                    <span class="module-desc">操作记录追踪</span>
+                </div>
+                <span class="module-badge">Audit</span>
+            </a>
+
+            <a href="{{ url_for('system.settings') }}" class="module-card">
+                <div class="module-icon" style="--color: #78716c;">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">系统设置</span>
+                    <span class="module-desc">配置与参数</span>
+                </div>
+                <span class="module-badge">Config</span>
+            </a>
+
+            <a href="{{ url_for('profile.view') }}" class="module-card">
+                <div class="module-icon" style="--color: #0ea5e9;">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="module-info">
+                    <span class="module-name">个人中心</span>
+                    <span class="module-desc">账户与安全</span>
+                </div>
+                <span class="module-badge">Profile</span>
+            </a>
+        </div>
+    </section>
+</div>
+
+<style>
+/* ============ Command Center Layout ============ */
+.command-center {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ KPI Section ============ */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+}
+
+@media (max-width: 1400px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+}
+
+.kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border-color);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 12px 40px -8px rgba(99, 102, 241, 0.2);
+}
+
+.kpi-card:hover::before {
+    opacity: 1;
+}
+
+.kpi-card.featured {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), var(--bg-surface));
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.kpi-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.kpi-icon.users {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05));
+    color: #6366f1;
+}
+
+.kpi-icon.products {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+    color: #10b981;
+}
+
+.kpi-icon.orders {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05));
+    color: #fbbf24;
+}
+
+.kpi-icon.revenue {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+    color: #ef4444;
+}
+
+.icon-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 16px;
+    border: 2px solid currentColor;
+    opacity: 0.2;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.2; }
+    50% { transform: scale(1.05); opacity: 0.1; }
+}
+
+.kpi-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.kpi-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.kpi-value {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    background: linear-gradient(135deg, var(--text-main), var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+}
+
+.kpi-value.holographic {
+    background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4, #10b981, #6366f1);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: holographic 3s linear infinite;
+}
+
+@keyframes holographic {
+    to { background-position: 200% center; }
+}
+
+.kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    margin-top: 0.35rem;
+}
+
+.kpi-trend.up { color: #10b981; }
+.kpi-trend.down { color: #ef4444; }
+.kpi-trend.warning { color: #fbbf24; }
+
+/* ============ Main Data Section ============ */
+.data-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .data-grid { grid-template-columns: 1fr; }
+}
+
+.glass-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* Chart Panel */
+.chart-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
+.panel-header.compact {
+    padding: 1rem 1.25rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.panel-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+}
+
+.panel-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.panel-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-live {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #10b981;
+    text-transform: uppercase;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.chart-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--glass-border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.chart-container {
+    height: 300px;
+    padding: 1rem;
+}
+
+.chart-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--glass-border-color);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.summary-item {
+    text-align: center;
+}
+
+.summary-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.summary-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.summary-value.highlight {
+    color: #10b981;
+}
+
+/* Side Panels */
+.side-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Activity Panel */
+.activity-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-height: 280px;
+}
+
+.activity-count {
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    padding: 0.25rem 0.6rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 10px;
+}
+
+.activity-list {
+    flex: 1;
+    padding: 0.75rem;
+    overflow-y: auto;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 10px;
+    border-left: 3px solid var(--color-primary);
+    animation: slideIn 0.3s ease backwards;
+    transition: all 0.2s;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.activity-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.activity-icon.inbound {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.activity-icon.outbound {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.activity-icon.transfer {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.activity-amount {
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.activity-amount.positive { color: #10b981; }
+.activity-amount.negative { color: #ef4444; }
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 2rem;
+    opacity: 0.3;
+    margin-bottom: 0.5rem;
+}
+
+/* Distribution Panel */
+.distribution-panel {
+    height: 200px;
+}
+
+.pie-container {
+    height: calc(100% - 50px);
+    padding: 0.5rem;
+}
+
+.pulse-icon {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============ Modules Section ============ */
+.modules-section {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent);
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid var(--glass-border-color);
+}
+
+.section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.section-title i {
+    color: var(--color-primary);
+}
+
+.section-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 1400px) {
+    .modules-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .modules-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.module-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border-color);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.module-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.15);
+}
+
+.module-card.featured {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--bg-surface));
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.module-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(var(--color-rgb, 99, 102, 241), 0.15), rgba(var(--color-rgb), 0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--color, var(--color-primary));
+    transition: all 0.3s;
+}
+
+.module-card:hover .module-icon {
+    transform: scale(1.1);
+}
+
+.module-info {
+    text-align: center;
+}
+
+.module-name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.module-desc {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+}
+
+.module-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.module-badge.pulse {
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+/* 亮色主题下快速访问模块图标颜色修复 */
+[data-theme="light"] .module-icon {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.08));
+}
+
+[data-theme="light"] .module-icon i {
+    color: var(--color, #6366f1) !important;
+    opacity: 1;
+}
+
+[data-theme="light"] .module-card .module-icon[style*="--color: #10b981"] i { color: #059669 !important; }
+[data-theme="light"] .module-card .module-icon[style*="--color: #6366f1"] i { color: #4f46e5 !important; }
+[data-theme="light"] .module-card .module-icon[style*="--color: #fbbf24"] i { color: #d97706 !important; }
+[data-theme="light"] .module-card .module-icon[style*="--color: #a855f7"] i { color: #9333ea !important; }
+[data-theme="light"] .module-card .module-icon[style*="--color: #8b5cf6"] i { color: #7c3aed !important; }
+[data-theme="light"] .module-card .module-icon[style*="--color: #06b6d4"] i { color: #0891b2 !important; }
+
+[data-theme="light"] .module-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .module-desc {
+    color: #64748b;
+}
+
+/* ============ Analytics Section ============ */
+.analytics-section {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent);
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid var(--glass-border-color);
+    margin-top: 1.5rem;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 1400px) {
+    .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .analytics-grid { grid-template-columns: 1fr; }
+}
+
+.chart-container-sm {
+    height: 260px;
+    padding: 1rem;
+}
+
+/* 刷新按钮旋转动画 */
+.action-btn.refreshing i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Toast 提示样式 */
+.toast-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 9999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.toast-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-notification.success {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.toast-notification.success i {
+    color: #10b981;
+}
+
+.toast-notification.error {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.toast-notification.error i {
+    color: #ef4444;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== 销售趋势图 ==========
+    const salesChart = echarts.init(document.getElementById('salesChart'));
+    let currentChartDates = {{ chart_dates | tojson }};
+    let currentChartValues = {{ chart_values | tojson }};
+    
+    function getSalesChartOption(dates, values) {
+        return {
+            backgroundColor: 'transparent',
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '10%',
+                top: '10%',
+                containLabel: true
+            },
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                borderColor: 'rgba(99, 102, 241, 0.5)',
+                borderWidth: 1,
+                textStyle: { color: '#fff', fontSize: 13 },
+                axisPointer: {
+                    type: 'cross',
+                    crossStyle: { color: '#6366f1' }
+                }
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: dates,
+                axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+                axisLabel: { color: '#94a3b8', fontSize: 11 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+                splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.08)', type: 'dashed' } },
+                axisLabel: { color: '#94a3b8', fontSize: 11 }
+            },
+            series: [{
+                name: '订单数',
+                type: 'line',
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 8,
+                lineStyle: {
+                    width: 3,
+                    color: {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 1, y2: 0,
+                        colorStops: [
+                            { offset: 0, color: '#6366f1' },
+                            { offset: 0.5, color: '#8b5cf6' },
+                            { offset: 1, color: '#06b6d4' }
+                        ]
+                    },
+                    shadowColor: 'rgba(99, 102, 241, 0.4)',
+                    shadowBlur: 10
+                },
+                itemStyle: {
+                    color: '#6366f1',
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: 'rgba(99, 102, 241, 0.3)' },
+                            { offset: 0.5, color: 'rgba(139, 92, 246, 0.1)' },
+                            { offset: 1, color: 'rgba(6, 182, 212, 0)' }
+                        ]
+                    }
+                },
+                data: values,
+                emphasis: {
+                    focus: 'series',
+                    itemStyle: {
+                        color: '#6366f1',
+                        borderColor: '#fff',
+                        borderWidth: 3,
+                        shadowBlur: 15,
+                        shadowColor: 'rgba(99, 102, 241, 0.5)'
+                    }
+                }
+            }],
+            animation: true,
+            animationDuration: 1500,
+            animationEasing: 'cubicOut'
+        };
+    }
+    
+    salesChart.setOption(getSalesChartOption(currentChartDates, currentChartValues));
+
+    // ========== 库存分布饼图 ==========
+    const pieChart = echarts.init(document.getElementById('pieChart'));
+    
+    const pieOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(99, 102, 241, 0.5)',
+            textStyle: { color: '#fff' }
+        },
+        series: [{
+            type: 'pie',
+            radius: ['45%', '70%'],
+            center: ['50%', '50%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 6,
+                borderColor: 'rgba(15, 23, 42, 0.5)',
+                borderWidth: 2
+            },
+            label: { show: false },
+            emphasis: { label: { show: false } },
+            labelLine: { show: false },
+            data: {{ category_data | tojson }}
+        }]
+    };
+    
+    pieChart.setOption(pieOption);
+
+    // ========== 订单状态分布图 ==========
+    const orderStatusChart = echarts.init(document.getElementById('orderStatusChart'));
+    
+    const orderStatusOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(99, 102, 241, 0.5)',
+            textStyle: { color: '#fff' },
+            formatter: '{b}: {c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            right: '5%',
+            top: 'center',
+            textStyle: { color: '#94a3b8', fontSize: 11 },
+            itemWidth: 12,
+            itemHeight: 12
+        },
+        series: [{
+            type: 'pie',
+            radius: ['40%', '65%'],
+            center: ['35%', '50%'],
+            avoidLabelOverlap: true,
+            itemStyle: {
+                borderRadius: 8,
+                borderColor: 'rgba(15, 23, 42, 0.5)',
+                borderWidth: 2
+            },
+            label: { show: false },
+            labelLine: { show: false },
+            data: {{ order_status_data | tojson }}
+        }]
+    };
+    
+    orderStatusChart.setOption(orderStatusOption);
+
+    // ========== 库存出入库趋势图 ==========
+    const inventoryTrendChart = echarts.init(document.getElementById('inventoryTrendChart'));
+    const inventoryTrend = {{ inventory_trend | tojson }};
+    
+    const inventoryTrendOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(99, 102, 241, 0.5)',
+            textStyle: { color: '#fff', fontSize: 12 }
+        },
+        legend: {
+            data: ['入库', '出库'],
+            right: '5%',
+            top: '5%',
+            textStyle: { color: '#94a3b8', fontSize: 11 },
+            itemWidth: 16,
+            itemHeight: 3
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '10%',
+            top: '18%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: inventoryTrend.dates,
+            axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+            axisLabel: { color: '#94a3b8', fontSize: 10 }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.2)' } },
+            splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.08)', type: 'dashed' } },
+            axisLabel: { color: '#94a3b8', fontSize: 10 }
+        },
+        series: [
+            {
+                name: '入库',
+                type: 'line',
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: { width: 2, color: '#10b981' },
+                itemStyle: { color: '#10b981' },
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: 'rgba(16, 185, 129, 0.25)' },
+                            { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+                        ]
+                    }
+                },
+                data: inventoryTrend.inbound
+            },
+            {
+                name: '出库',
+                type: 'line',
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: { width: 2, color: '#f43f5e' },
+                itemStyle: { color: '#f43f5e' },
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: 'rgba(244, 63, 94, 0.25)' },
+                            { offset: 1, color: 'rgba(244, 63, 94, 0)' }
+                        ]
+                    }
+                },
+                data: inventoryTrend.outbound
+            }
+        ]
+    };
+    
+    inventoryTrendChart.setOption(inventoryTrendOption);
+
+    // ========== 商品分类占比图 ==========
+    const categoryChart = echarts.init(document.getElementById('categoryChart'));
+    
+    const categoryOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(99, 102, 241, 0.5)',
+            textStyle: { color: '#fff' },
+            formatter: '{b}: {c}%'
+        },
+        series: [{
+            type: 'pie',
+            radius: '65%',
+            center: ['50%', '50%'],
+            roseType: 'area',
+            itemStyle: {
+                borderRadius: 8,
+                borderColor: 'rgba(15, 23, 42, 0.5)',
+                borderWidth: 2
+            },
+            label: {
+                show: true,
+                color: '#94a3b8',
+                fontSize: 10,
+                formatter: '{b}'
+            },
+            data: {{ category_data | tojson }}
+        }]
+    };
+    
+    categoryChart.setOption(categoryOption);
+
+    // ========== 响应式调整 ==========
+    window.addEventListener('resize', function() {
+        salesChart.resize();
+        pieChart.resize();
+        orderStatusChart.resize();
+        inventoryTrendChart.resize();
+        categoryChart.resize();
+    });
+
+    // ========== 刷新按钮功能 ==========
+    const refreshBtn = document.querySelector('.chart-actions .action-btn[title="刷新数据"]');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async function() {
+            const icon = this.querySelector('i');
+            this.classList.add('refreshing');
+            
+            try {
+                const response = await fetch('{{ url_for("main.refresh_chart") }}');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentChartDates = data.dates;
+                    currentChartValues = data.values;
+                    salesChart.setOption(getSalesChartOption(currentChartDates, currentChartValues));
+                    showToast('数据已刷新', 'success');
+                } else {
+                    showToast('刷新失败', 'error');
+                }
+            } catch (error) {
+                console.error('刷新失败:', error);
+                showToast('网络错误', 'error');
+            } finally {
+                setTimeout(() => {
+                    this.classList.remove('refreshing');
+                }, 500);
+            }
+        });
+    }
+
+    // ========== 下载按钮功能 ==========
+    const downloadBtn = document.querySelector('.chart-actions .action-btn[title="导出"]');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            // 导出图表为图片
+            const dataUrl = salesChart.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                backgroundColor: '#0f172a'
+            });
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = '销售趋势图_' + new Date().toLocaleDateString('zh-CN').replace(/\//g, '-') + '.png';
+            link.href = dataUrl;
+            link.click();
+            
+            showToast('图表已导出', 'success');
+        });
+    }
+
+    // ========== Toast 提示函数 ==========
+    function showToast(message, type = 'success') {
+        // 移除旧的 toast
+        const oldToast = document.querySelector('.toast-notification');
+        if (oldToast) oldToast.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        
+        // 触发动画
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+        
+        // 3秒后移除
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // ========== 数字滚动动画 ==========
+    document.querySelectorAll('.kpi-value').forEach((el, i) => {
+        const text = el.textContent;
+        const num = parseInt(text.replace(/[^0-9]/g, ''));
+        const prefix = text.startsWith('¥') ? '¥' : '';
+        el.textContent = prefix + '0';
+        
+        setTimeout(() => {
+            animateCounter(el, num, prefix);
+        }, i * 150);
+    });
+
+    function animateCounter(el, end, prefix = '') {
+        const duration = 1500;
+        const start = 0;
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = Math.floor(start + (end - start) * easeOut);
+            el.textContent = prefix + current.toLocaleString();
+            if (progress < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    }
+});
+</script>
+{% endblock %}

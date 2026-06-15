@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盘点报告 - NEXUS PRIME</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
+            padding: 40px;
+            color: #333;
+            background: #fff;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #8b5cf6;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #8b5cf6;
+            margin-bottom: 5px;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-item .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-item .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8b5cf6;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tbody tr:hover {
+            background: #fafafa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-draft {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        
+        .status-in_progress {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>库存盘点报告</h1>
+        <p class="subtitle">NEXUS PRIME 智能仓储系统</p>
+    </div>
+    
+    <div class="info-section">
+        <div class="info-item">
+            <div class="label">盘点总数</div>
+            <div class="value">{{ stocktakes|length }}</div>
+        </div>
+        <div class="info-item">
+            <div class="label">进行中</div>
+            <div class="value">{{ stocktakes|selectattr('status', 'equalto', 'in_progress')|list|length }}</div>
+        </div>
+        <div class="info-item">
+            <div class="label">已完成</div>
+            <div class="value">{{ stocktakes|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+        </div>
+        <div class="info-item">
+            <div class="label">覆盖仓库</div>
+            <div class="value">{{ warehouses|length }}</div>
+        </div>
+    </div>
+    
+    {% if stocktakes %}
+    <table>
+        <thead>
+            <tr>
+                <th>盘点单号</th>
+                <th>仓库</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>进度</th>
+                <th>创建时间</th>
+                <th>创建人</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for st in stocktakes %}
+            <tr>
+                <td>{{ st.take_no }}</td>
+                <td>{{ st.warehouse.name if st.warehouse else '-' }}</td>
+                <td>
+                    <span class="type-badge">
+                        {% if st.take_type == 'full' %}全盘
+                        {% elif st.take_type == 'partial' %}抽盘
+                        {% elif st.take_type == 'cycle' %}循环盘点
+                        {% else %}{{ st.take_type }}{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <span class="status-badge status-{{ st.status }}">
+                        {% if st.status == 'draft' %}草稿
+                        {% elif st.status == 'in_progress' %}进行中
+                        {% elif st.status == 'completed' %}已完成
+                        {% elif st.status == 'cancelled' %}已取消
+                        {% else %}{{ st.status }}{% endif %}
+                    </span>
+                </td>
+                <td>{{ st.progress|default(0) }}%</td>
+                <td>{{ st.created_at.strftime('%Y-%m-%d %H:%M') if st.created_at else '-' }}</td>
+                <td>{{ st.creator.username if st.creator else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">
+        <p>暂无盘点数据</p>
+    </div>
+    {% endif %}
+    
+    <div class="footer">
+        <span>生成时间: {{ export_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        <span>NEXUS PRIME 财务系统</span>
+    </div>
+    
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

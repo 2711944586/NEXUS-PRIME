@@ -1,0 +1,169 @@
+@layer app {
+  .deployment-settings-card {
+    overflow: hidden;
+  }
+
+  .deployment-readiness-board,
+  .deployment-service-snapshot,
+  .deployment-architecture-board,
+  .erp-maturity-board,
+  .erp-capability-map {
+    min-width: 0;
+  }
+
+  .deployment-score-card,
+  .erp-maturity-score {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .deployment-score-card::after,
+  .erp-maturity-score::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, .2), transparent 38%),
+      radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 12rem);
+    opacity: .62;
+  }
+
+  .deployment-score-card > *,
+  .erp-maturity-score > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .deployment-check-board article,
+  .deployment-token-grid a,
+  .deployment-copy-grid article,
+  .deployment-domain-grid article,
+  .erp-capability-grid article,
+  .erp-topology-list a,
+  .erp-evidence-strip article,
+  .architecture-split-plan article,
+  .architecture-incident-queue a,
+  .erp-maturity-dimensions article {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-muted) 62%, transparent);
+  }
+
+  .deployment-check-board article.ready,
+  .deployment-domain-grid article:not(.attention),
+  .erp-capability-grid article:not(.attention),
+  .erp-evidence-strip article.ready,
+  .erp-maturity-dimensions article.ready {
+    background: color-mix(in srgb, var(--success) 7%, var(--surface-muted));
+  }
+
+  .deployment-check-board article.blocked,
+  .erp-evidence-strip article.blocked,
+  .erp-maturity-dimensions article.blocked {
+    background: color-mix(in srgb, var(--danger) 7%, var(--surface-muted));
+  }
+
+  .deployment-check-board article.attention,
+  .deployment-domain-grid article.attention,
+  .erp-capability-grid article.attention,
+  .erp-maturity-dimensions article.attention {
+    background: color-mix(in srgb, var(--warning) 8%, var(--surface-muted));
+  }
+
+  .deployment-check-actions .p-button {
+    min-height: 32px;
+  }
+
+  .deployment-token-grid a {
+    min-height: 104px;
+  }
+
+  .deployment-token-grid strong,
+  .deployment-copy-grid strong,
+  .deployment-domain-grid strong,
+  .erp-capability-grid strong,
+  .erp-topology-list strong,
+  .erp-evidence-strip strong,
+  .architecture-split-plan strong,
+  .architecture-incident-queue strong {
+    overflow-wrap: anywhere;
+  }
+
+  .deployment-copy-grid code {
+    border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  }
+
+  .deployment-runtime-strip span {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-muted) 62%, transparent);
+  }
+
+  .architecture-score-card {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent-2);
+    border-radius: var(--radius-md);
+  }
+
+  .architecture-score-card > div > span {
+    border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  }
+
+  .erp-maturity-dimensions article i {
+    overflow: hidden;
+  }
+
+  .erp-topology-list a {
+    min-height: 136px;
+  }
+
+  .erp-topology-list b {
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+  }
+
+  @media (max-width: 1180px) {
+    .deployment-readiness-board,
+    .deployment-architecture-board,
+    .erp-maturity-board {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .deployment-token-grid,
+    .deployment-copy-grid,
+    .deployment-domain-grid,
+    .deployment-runtime-strip,
+    .erp-capability-grid,
+    .erp-topology-list,
+    .erp-evidence-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .deployment-check-board article,
+    .deployment-token-grid,
+    .deployment-copy-grid,
+    .deployment-domain-grid,
+    .deployment-runtime-strip,
+    .erp-capability-grid,
+    .erp-topology-list,
+    .erp-evidence-strip {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .deployment-score-card,
+    .erp-maturity-score {
+      padding: var(--space-3);
+    }
+
+    .deployment-score-card > strong,
+    .erp-maturity-score > strong {
+      font-size: clamp(2rem, 14vw, 3.2rem);
+    }
+  }
+}

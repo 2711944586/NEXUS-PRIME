@@ -1,0 +1,314 @@
+@layer app {
+  html,
+  body {
+    min-width: 320px;
+  }
+
+  .atlas-shell {
+    --shell-pad: 14px;
+  }
+
+  .atlas-topbar,
+  .atlas-dock,
+  .module-panel,
+  .search-popover,
+  .quick-create-popover {
+    border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  }
+
+  .atlas-topbar {
+    max-width: calc(100vw - 28px);
+  }
+
+  .atlas-actions {
+    min-width: 0;
+  }
+
+  .atlas-actions .p-button,
+  .icon-action,
+  .create-action,
+  .sync-action,
+  .profile-avatar-button {
+    flex: 0 0 auto;
+    place-content: center;
+  }
+
+  .profile-avatar-button img,
+  .avatar-initials {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+  }
+
+  .profile-avatar-button img {
+    object-fit: cover;
+  }
+
+  .avatar-initials {
+    display: inline-grid;
+    place-items: center;
+    color: var(--accent-contrast);
+    background: color-mix(in srgb, var(--accent) 82%, #10231f);
+    font-size: .72rem;
+    font-weight: 900;
+  }
+
+  .atlas-workbench {
+    align-items: start;
+  }
+
+  .content-stage {
+    display: block;
+  }
+
+  .atlas-panel {
+    scroll-margin-top: calc(var(--topbar-height) + 100px);
+  }
+
+  .atlas-panel-head a,
+  .atlas-panel-head button:not(.p-button) {
+    color: var(--accent);
+    font-weight: 850;
+  }
+
+  .atlas-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    line-height: 1.22;
+    letter-spacing: 0;
+  }
+
+  .atlas-panel-head > div > .atlas-kicker {
+    margin-bottom: 0;
+  }
+
+  .atlas-kicker::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: currentColor;
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 11%, transparent);
+  }
+
+  .atlas-record-row,
+  .business-data-row,
+  .approval-workcard,
+  .procurement-task-card,
+  .shift-action-queue a,
+  .shift-event-timeline a,
+  .erp-action-list a,
+  .erp-readiness-list a,
+  .deployment-check-board article {
+    min-height: 58px;
+  }
+
+  .atlas-record-row em,
+  .business-data-row em,
+  .approval-workcard span,
+  .procurement-task-card p,
+  .shift-action-queue em,
+  .shift-action-queue small,
+  .shift-event-timeline em,
+  .shift-event-timeline small {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .mode-switch,
+  .metric-mode-switch,
+  .shift-lens-switch {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-muted) 66%, transparent);
+  }
+
+  .mode-switch button,
+  .metric-mode-switch button,
+  .shift-lens-switch button {
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--muted-strong);
+    background: transparent;
+    font-weight: 820;
+    cursor: pointer;
+  }
+
+  .mode-switch button.active,
+  .metric-mode-switch button.active,
+  .shift-lens-switch button.active {
+    color: var(--ink-strong);
+    background: var(--surface-strong);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ops-chart-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .32fr);
+    gap: var(--space-3);
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  .ops-chart-large {
+    height: clamp(300px, 38vw, 460px);
+  }
+
+  .ops-chart-insights {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+  }
+
+  .ops-chart-insights button {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    color: var(--ink);
+    text-align: left;
+    background: color-mix(in srgb, var(--surface-muted) 62%, transparent);
+    cursor: pointer;
+  }
+
+  .ops-chart-insights span,
+  .ops-chart-insights em {
+    color: var(--muted);
+    font-size: .74rem;
+    font-style: normal;
+  }
+
+  .ops-chart-insights strong {
+    color: var(--ink-strong);
+    line-height: 1.18;
+  }
+
+  .empty-state i,
+  .dock-empty-state i,
+  .quality-empty i,
+  .shift-calm-state i {
+    color: var(--accent);
+    font-size: 1.35rem;
+  }
+
+  .p-progressbar {
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line) 62%, transparent);
+    overflow: hidden;
+  }
+
+  .p-progressbar-value {
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+
+  .p-tag {
+    min-height: 24px;
+    align-items: center;
+  }
+
+  .p-toast {
+    max-width: min(420px, calc(100vw - 24px));
+  }
+
+  .p-toast-message-content {
+    align-items: flex-start;
+  }
+
+  .p-dialog-mask {
+    backdrop-filter: blur(6px);
+  }
+
+  @media (max-width: 1280px) {
+    .atlas-workbench {
+      margin-top: calc(var(--topbar-height) + 96px);
+    }
+  }
+
+  @media (max-width: 980px) {
+    .ops-chart-split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ops-chart-large {
+      min-height: 300px;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .atlas-topbar {
+      max-width: calc(100vw - 16px);
+    }
+
+    .atlas-workbench {
+      margin-top: 132px;
+    }
+
+    .service-health-chip {
+      border-radius: var(--radius-sm);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .atlas-panel {
+      padding: var(--space-3);
+    }
+
+    .atlas-panel-head,
+    .drawer-head,
+    .module-library-head,
+    .drawer-group-head,
+    .deployment-section-head {
+      display: grid;
+      align-items: start;
+      justify-content: stretch;
+    }
+
+    .atlas-panel-head .p-tag,
+    .deployment-section-head strong {
+      justify-self: start;
+      text-align: left;
+    }
+
+    .atlas-actions-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      width: 100%;
+    }
+
+    .atlas-actions-row .p-button,
+    .atlas-actions-row a[pButton] {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .atlas-pagination {
+      display: grid;
+      justify-content: stretch;
+    }
+
+    .atlas-pagination button,
+    .atlas-pagination label {
+      width: 100%;
+    }
+
+    .ops-chart-large,
+    [echarts],
+    .mini-chart,
+    .hero-mini-chart,
+    .command-big-chart {
+      min-height: 0;
+    }
+  }
+}

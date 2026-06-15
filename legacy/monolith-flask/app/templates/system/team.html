@@ -1,0 +1,997 @@
+{% extends "layouts/base.html" %}
+
+{% block breadcrumb %}系统管理 / 团队管理{% endblock %}
+
+{% block content %}
+<div class="team-page">
+    <!-- 页面标题 -->
+    <div class="page-header glass-panel mb-lg">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-users-cog gradient-icon"></i>
+                <span class="gradient-text">团队管理</span>
+            </h1>
+            <p class="page-subtitle">查看和管理系统用户</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openAddMemberModal()">
+                <i class="fas fa-user-plus"></i> 添加成员
+            </button>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-grid mb-lg">
+        <div class="stat-card glass-panel glow-card">
+            <div class="stat-icon" style="--stat-color: #6366f1;">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ "{:,}".format(stats.total_users) }}</span>
+                <span class="stat-label">总成员数</span>
+            </div>
+            <div class="stat-trend positive">
+                <i class="fas fa-arrow-up"></i> +12%
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #10b981;">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.total_departments }}</span>
+                <span class="stat-label">部门数量</span>
+            </div>
+        </div>
+        <div class="stat-card glass-panel">
+            <div class="stat-icon" style="--stat-color: #fbbf24;">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.active_today }}</span>
+                <span class="stat-label">今日新增</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <!-- 部门分布 -->
+        <div class="glass-panel dept-chart">
+            <div class="panel-header">
+                <h3 class="panel-title">
+                    <i class="fas fa-chart-pie"></i>
+                    部门分布
+                </h3>
+            </div>
+            <div id="deptChart" style="height: 300px;"></div>
+        </div>
+
+        <!-- 最近成员 -->
+        <div class="glass-panel member-list">
+            <div class="panel-header">
+                <h3 class="panel-title">
+                    <i class="fas fa-user-plus"></i>
+                    最近加入
+                </h3>
+                <a href="#" class="view-all">查看全部 →</a>
+            </div>
+            <div class="members">
+                {% for user in recent_users %}
+                <div class="member-item">
+                    <div class="member-avatar">
+                        {% if user.avatar and user.avatar.startswith('http') %}
+                        <img src="{{ user.avatar }}" alt="{{ user.username }}">
+                        {% else %}
+                        <span class="avatar-initials">{{ user.username[0].upper() }}</span>
+                        {% endif %}
+                        <span class="status-dot online"></span>
+                    </div>
+                    <div class="member-info">
+                        <span class="member-name">{{ user.username }}</span>
+                        <span class="member-dept">{{ user.department.name if user.department else 'N/A' }}</span>
+                    </div>
+                    <div class="member-role">
+                        <span class="role-badge {{ user.role.name.lower() if user.role else 'user' }}">
+                            {{ user.role.name if user.role else 'User' }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- 添加成员模态框 (仿照量子仓储调拨样式) -->
+<div id="addMemberModal" class="modal-overlay">
+    <div class="adjust-modal">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h3>添加新成员</h3>
+            <button class="modal-close" onclick="closeAddMemberModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-target">
+            <span class="target-label">操作类型:</span>
+            <span class="target-name">创建系统用户账户</span>
+        </div>
+        
+        <form id="addMemberForm" class="adjust-form" method="POST" action="{{ url_for('system.add_member') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> 用户名</label>
+                <input type="text" name="username" required placeholder="请输入用户名" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-envelope"></i> 邮箱地址</label>
+                <input type="email" name="email" required placeholder="请输入邮箱" class="form-input">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-building"></i> 部门</label>
+                    <select name="department" class="form-input">
+                        <option value="">-- 请选择 --</option>
+                        {% for dept in all_departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-user-tag"></i> 角色</label>
+                    <select name="role" class="form-input">
+                        <option value="member">普通成员</option>
+                        <option value="manager">部门经理</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-note">
+                <i class="fas fa-info-circle"></i>
+                <span>新成员将使用默认密码 <code>nexus123</code>，请提醒用户首次登录后修改。</span>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-check"></i> 创建成员
+                </button>
+                <button type="button" class="cancel-btn" onclick="closeAddMemberModal()">
+                    取消
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.team-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.gradient-icon { color: #6366f1; }
+
+.gradient-text {
+    background: linear-gradient(135deg, #fff, #9ca3af);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    color: #9ca3af;
+    margin: 0.5rem 0 0 2.25rem;
+    font-size: 0.875rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card.glow-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--stat-color)15;
+    color: var(--stat-color);
+}
+
+.stat-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.stat-trend {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+}
+
+.stat-trend.positive {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #fff;
+}
+
+.panel-title i { color: #6366f1; }
+
+.view-all {
+    font-size: 0.8rem;
+    color: #6366f1;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.view-all:hover { color: #a5b4fc; }
+
+/* Member List */
+.members {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.member-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    transform: translateX(4px);
+}
+
+.member-avatar {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(15, 23, 42, 0.8);
+}
+
+.status-dot.online { background: #10b981; }
+.status-dot.offline { background: #6b7280; }
+
+.member-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.member-name {
+    font-weight: 600;
+    color: #fff;
+}
+
+.member-dept {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.role-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.role-badge.admin {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.role-badge.manager {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.role-badge.user {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.mb-lg { margin-bottom: 1.5rem; }
+
+@media (max-width: 1024px) {
+    .content-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
+}
+
+/* ========== 模态框样式 (完全复制量子仓储调拨) ========== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.adjust-modal {
+    position: relative;
+    width: calc(100% - 2rem);
+    max-width: 460px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 100px rgba(99, 102, 241, 0.3), 0 30px 80px rgba(0, 0, 0, 0.6);
+    transform: scale(0.9) translateY(30px);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+}
+
+/* 顶部装饰渐变线 */
+.adjust-modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #6366f1);
+    background-size: 200% 100%;
+    animation: gradientFlow 3s linear infinite;
+    border-radius: 24px 24px 0 0;
+}
+
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.modal-overlay.show .adjust-modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.adjust-modal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.75rem 1.75rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.adjust-modal .modal-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--color-primary, #6366f1), #8b5cf6);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    position: relative;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35);
+}
+
+.adjust-modal .modal-icon::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 19px;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.2; }
+}
+
+.adjust-modal .modal-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, #a5b4fc);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.modal-close {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    color: var(--text-muted, #9ca3af);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.modal-close:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: rgba(239,68,68,0.3);
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.modal-target {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.15rem 1.75rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.06));
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.target-label {
+    font-size: 0.85rem;
+    color: var(--text-muted, #9ca3af);
+}
+
+.target-name {
+    font-weight: 600;
+    color: var(--color-primary, #6366f1);
+    background: linear-gradient(135deg, #a5b4fc, #818cf8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.adjust-form {
+    padding: 1.75rem;
+}
+
+.adjust-form .form-group {
+    margin-bottom: 1.35rem;
+}
+
+.adjust-form .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted, #9ca3af);
+    margin-bottom: 0.6rem;
+}
+
+.adjust-form .form-label i {
+    color: var(--color-primary, #6366f1);
+    font-size: 0.85rem;
+}
+
+.adjust-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.adjust-form .form-input {
+    width: 100%;
+    padding: 0.95rem 1.15rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: var(--text-main, #fff);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.adjust-form .form-input:focus {
+    outline: none;
+    border-color: var(--color-primary, #6366f1);
+    background: rgba(99, 102, 241, 0.05);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.adjust-form .form-input::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+}
+
+.adjust-form select.form-input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239ca3af'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 1.25rem;
+    padding-right: 2.75rem;
+}
+
+.adjust-form select.form-input option {
+    background: #1e293b;
+    color: #fff;
+    padding: 0.5rem;
+}
+
+.form-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 1rem 1.15rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.form-note i {
+    color: #818cf8;
+    margin-top: 0.15rem;
+    font-size: 0.9rem;
+}
+
+.form-note span {
+    font-size: 0.88rem;
+    color: var(--text-muted, #9ca3af);
+    line-height: 1.55;
+}
+
+.form-note code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: #a5b4fc;
+    font-size: 0.8rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.85rem;
+    margin-top: 1.75rem;
+}
+
+.submit-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.95rem;
+    background: linear-gradient(135deg, var(--color-primary, #6366f1), #8b5cf6);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+}
+
+.submit-btn:hover::before {
+    transform: translateX(100%);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+}
+
+.cancel-btn {
+    padding: 0.95rem 1.75rem;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    color: var(--text-muted, #9ca3af);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.cancel-btn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.18);
+    color: var(--text-main, #fff);
+}
+
+/* ========== 日间模式 - 模态框 ========== */
+[data-theme="light"] .modal-overlay {
+    background: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme="light"] .adjust-modal {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 
+        0 0 80px rgba(99, 102, 241, 0.15),
+        0 25px 60px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .adjust-modal .modal-header h3 {
+    background: linear-gradient(135deg, #1e293b, #4f46e5);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .modal-close {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.1);
+    color: #64748b;
+}
+
+[data-theme="light"] .modal-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+[data-theme="light"] .modal-target {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.03));
+}
+
+[data-theme="light"] .target-name {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+[data-theme="light"] .adjust-form .form-label {
+    color: #475569;
+}
+
+[data-theme="light"] .adjust-form .form-input {
+    background: rgba(248, 250, 252, 0.95);
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .adjust-form .form-input:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .adjust-form .form-input::placeholder {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .adjust-form select.form-input option {
+    background: #fff;
+    color: #1e293b;
+}
+
+[data-theme="light"] .form-note {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.03));
+    border-color: rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .form-note span {
+    color: #64748b;
+}
+
+[data-theme="light"] .form-note code {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+[data-theme="light"] .cancel-btn {
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+[data-theme="light"] .cancel-btn:hover {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #1e293b;
+}
+
+/* ========== 日间模式 - 团队页面 ========== */
+[data-theme="light"] .page-title .gradient-text {
+    background: linear-gradient(135deg, #1e293b, #4f46e5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .page-subtitle {
+    color: #64748b;
+}
+
+[data-theme="light"] .stat-value {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .stat-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .panel-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .member-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .member-dept {
+    color: #64748b;
+}
+
+[data-theme="light"] .member-item {
+    border-bottom-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .member-item:hover {
+    background: rgba(99, 102, 241, 0.04);
+}
+
+[data-theme="light"] .btn-outline:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ========== 模态框控制函数 ==========
+const addMemberModal = document.getElementById('addMemberModal');
+
+function openAddMemberModal() {
+    addMemberModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAddMemberModal() {
+    addMemberModal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// 点击遮罩关闭
+addMemberModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAddMemberModal();
+    }
+});
+
+// 按 ESC 键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAddMemberModal();
+    }
+});
+
+// ========== 部门分布图表 ==========
+var chartDom = document.getElementById('deptChart');
+if (chartDom) {
+    var myChart = echarts.init(chartDom, 'dark');
+    
+    var deptData = [
+        {% for name, count in departments %}
+        { name: '{{ name }}', value: {{ count }} },
+        {% endfor %}
+    ];
+    
+    var option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(99, 102, 241, 0.5)',
+            textStyle: { color: '#fff' }
+        },
+        series: [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 10,
+                borderColor: 'rgba(15, 23, 42, 0.6)',
+                borderWidth: 2
+            },
+            label: {
+                show: false
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    color: '#fff'
+                },
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            },
+            data: deptData,
+            color: ['#6366f1', '#10b981', '#fbbf24', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899', '#84cc16', '#a855f7']
+        }]
+    };
+    
+    myChart.setOption(option);
+    window.addEventListener('resize', () => myChart.resize());
+}
+</script>
+{% endblock %}

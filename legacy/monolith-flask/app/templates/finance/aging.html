@@ -1,0 +1,1320 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}账龄分析报表 - NEXUS{% endblock %}
+{% block breadcrumb %}财务管理 / 账龄报表{% endblock %}
+
+{% block content %}
+<div class="aging-page">
+    <!-- 返回导航 -->
+    <div class="back-nav">
+        <a href="{{ url_for('finance.index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回财务中心</span>
+        </a>
+    </div>
+    
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="title-area">
+                <div class="title-icon">
+                    <i class="fas fa-chart-pie"></i>
+                    <div class="icon-pulse"></div>
+                </div>
+                <div>
+                    <h1 class="page-title">账龄分析报表</h1>
+                    <p class="page-subtitle">AGING ANALYSIS REPORT</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <button class="action-btn outline" onclick="exportReport()">
+                <i class="fas fa-download"></i>
+                <span>导出报表</span>
+            </button>
+            <button class="action-btn outline" onclick="printReport()">
+                <i class="fas fa-print"></i>
+                <span>打印</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <form method="GET" class="filter-form" id="filterForm">
+            <div class="searchable-select" id="customerSelect">
+                <input type="text" class="select-input" 
+                       value="{% for c in customers if c.id == current_customer %}{{ c.name }}{% endfor %}"
+                       placeholder="全部客户" autocomplete="off" readonly>
+                <input type="hidden" name="customer_id" value="{{ current_customer or '' }}">
+                <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                <div class="select-dropdown">
+                    <div class="dropdown-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input" placeholder="搜索客户...">
+                    </div>
+                    <ul class="dropdown-list">
+                        <li class="dropdown-item" data-id="" data-value="全部客户">
+                            <i class="fas fa-users" style="margin-right: 0.5rem; opacity: 0.5;"></i>全部客户
+                        </li>
+                        {% for customer in customers %}
+                        <li class="dropdown-item" data-id="{{ customer.id }}" data-value="{{ customer.name }}">
+                            {{ customer.name }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="dropdown-empty">无匹配客户</div>
+                </div>
+            </div>
+        </form>
+        
+        <div class="filter-info">
+            <span class="update-time">
+                <i class="fas fa-clock"></i>
+                数据更新时间: {{ now().strftime('%Y-%m-%d %H:%M') }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- 账龄总览 -->
+    <div class="aging-overview">
+        <div class="overview-header">
+            <h3><i class="fas fa-chart-bar"></i> 账龄分布总览</h3>
+        </div>
+        
+        <!-- 可视化图表区域 -->
+        <div class="chart-container">
+            <div class="donut-chart-wrapper">
+                <div class="donut-chart" id="agingDonutChart">
+                    <svg viewBox="0 0 200 200" class="donut-svg">
+                        {% set total = aging['current']['amount'] + aging['0-30']['amount'] + aging['31-60']['amount'] + aging['61-90']['amount'] + aging['90+']['amount'] %}
+                        {% if total > 0 %}
+                        <!-- 动态生成圆环图 -->
+                        {% set current_pct = aging['current']['amount'] / total * 100 %}
+                        {% set d30_pct = aging['0-30']['amount'] / total * 100 %}
+                        {% set d60_pct = aging['31-60']['amount'] / total * 100 %}
+                        {% set d90_pct = aging['61-90']['amount'] / total * 100 %}
+                        {% set d90plus_pct = aging['90+']['amount'] / total * 100 %}
+                        
+                        <circle class="donut-ring" cx="100" cy="100" r="80"/>
+                        <circle class="donut-segment current" cx="100" cy="100" r="80" 
+                                stroke-dasharray="{{ current_pct * 5.024 }} 502.4"
+                                stroke-dashoffset="0"/>
+                        <circle class="donut-segment low" cx="100" cy="100" r="80"
+                                stroke-dasharray="{{ d30_pct * 5.024 }} 502.4"
+                                stroke-dashoffset="{{ -current_pct * 5.024 }}"/>
+                        <circle class="donut-segment medium" cx="100" cy="100" r="80"
+                                stroke-dasharray="{{ d60_pct * 5.024 }} 502.4"
+                                stroke-dashoffset="{{ -(current_pct + d30_pct) * 5.024 }}"/>
+                        <circle class="donut-segment high" cx="100" cy="100" r="80"
+                                stroke-dasharray="{{ d90_pct * 5.024 }} 502.4"
+                                stroke-dashoffset="{{ -(current_pct + d30_pct + d60_pct) * 5.024 }}"/>
+                        <circle class="donut-segment critical" cx="100" cy="100" r="80"
+                                stroke-dasharray="{{ d90plus_pct * 5.024 }} 502.4"
+                                stroke-dashoffset="{{ -(current_pct + d30_pct + d60_pct + d90_pct) * 5.024 }}"/>
+                        {% endif %}
+                    </svg>
+                    <div class="donut-center">
+                        <span class="center-label">应收总额</span>
+                        <span class="center-value">¥{{ "{:,.0f}".format(total if total else 0) }}</span>
+                    </div>
+                </div>
+                
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot current"></span>
+                        <span class="legend-label">未到期</span>
+                        <span class="legend-value">{{ "{:.1f}".format(current_pct if total > 0 else 0) }}%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot low"></span>
+                        <span class="legend-label">0-30天</span>
+                        <span class="legend-value">{{ "{:.1f}".format(d30_pct if total > 0 else 0) }}%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot medium"></span>
+                        <span class="legend-label">31-60天</span>
+                        <span class="legend-value">{{ "{:.1f}".format(d60_pct if total > 0 else 0) }}%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot high"></span>
+                        <span class="legend-label">61-90天</span>
+                        <span class="legend-value">{{ "{:.1f}".format(d90_pct if total > 0 else 0) }}%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot critical"></span>
+                        <span class="legend-label">90天以上</span>
+                        <span class="legend-value">{{ "{:.1f}".format(d90plus_pct if total > 0 else 0) }}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 条形图 -->
+            <div class="bar-chart-wrapper">
+                <h4><i class="fas fa-chart-bar"></i> 金额分布</h4>
+                <div class="bar-chart">
+                    {% set max_amount = [aging['current']['amount'], aging['0-30']['amount'], aging['31-60']['amount'], aging['61-90']['amount'], aging['90+']['amount']]|max %}
+                    {% if max_amount == 0 %}{% set max_amount = 1 %}{% endif %}
+                    
+                    <div class="bar-item">
+                        <div class="bar-label">未到期</div>
+                        <div class="bar-track">
+                            <div class="bar-fill current" style="width: {{ (aging['current']['amount'] / max_amount * 100)|round(1) }}%;">
+                                <span class="bar-value">¥{{ "{:,.0f}".format(aging['current']['amount']) }}</span>
+                            </div>
+                        </div>
+                        <div class="bar-count">{{ aging['current']['count'] }}笔</div>
+                    </div>
+                    
+                    <div class="bar-item">
+                        <div class="bar-label">0-30天</div>
+                        <div class="bar-track">
+                            <div class="bar-fill low" style="width: {{ (aging['0-30']['amount'] / max_amount * 100)|round(1) }}%;">
+                                <span class="bar-value">¥{{ "{:,.0f}".format(aging['0-30']['amount']) }}</span>
+                            </div>
+                        </div>
+                        <div class="bar-count">{{ aging['0-30']['count'] }}笔</div>
+                    </div>
+                    
+                    <div class="bar-item">
+                        <div class="bar-label">31-60天</div>
+                        <div class="bar-track">
+                            <div class="bar-fill medium" style="width: {{ (aging['31-60']['amount'] / max_amount * 100)|round(1) }}%;">
+                                <span class="bar-value">¥{{ "{:,.0f}".format(aging['31-60']['amount']) }}</span>
+                            </div>
+                        </div>
+                        <div class="bar-count">{{ aging['31-60']['count'] }}笔</div>
+                    </div>
+                    
+                    <div class="bar-item">
+                        <div class="bar-label">61-90天</div>
+                        <div class="bar-track">
+                            <div class="bar-fill high" style="width: {{ (aging['61-90']['amount'] / max_amount * 100)|round(1) }}%;">
+                                <span class="bar-value">¥{{ "{:,.0f}".format(aging['61-90']['amount']) }}</span>
+                            </div>
+                        </div>
+                        <div class="bar-count">{{ aging['61-90']['count'] }}笔</div>
+                    </div>
+                    
+                    <div class="bar-item">
+                        <div class="bar-label">90天+</div>
+                        <div class="bar-track">
+                            <div class="bar-fill critical" style="width: {{ (aging['90+']['amount'] / max_amount * 100)|round(1) }}%;">
+                                <span class="bar-value">¥{{ "{:,.0f}".format(aging['90+']['amount']) }}</span>
+                            </div>
+                        </div>
+                        <div class="bar-count">{{ aging['90+']['count'] }}笔</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 账龄详情卡片 -->
+    <div class="aging-cards">
+        <div class="aging-card current">
+            <div class="card-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="card-content">
+                <span class="card-label">未到期</span>
+                <span class="card-amount">¥{{ "{:,.2f}".format(aging['current']['amount']) }}</span>
+                <span class="card-count">{{ aging['current']['count'] }} 笔订单</span>
+            </div>
+            <div class="card-indicator">
+                <div class="indicator-fill" style="width: {{ (aging['current']['amount'] / total * 100)|round(1) if total > 0 else 0 }}%;"></div>
+            </div>
+        </div>
+        
+        <div class="aging-card low">
+            <div class="card-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="card-content">
+                <span class="card-label">逾期 0-30 天</span>
+                <span class="card-amount">¥{{ "{:,.2f}".format(aging['0-30']['amount']) }}</span>
+                <span class="card-count">{{ aging['0-30']['count'] }} 笔订单</span>
+            </div>
+            <div class="card-indicator">
+                <div class="indicator-fill" style="width: {{ (aging['0-30']['amount'] / total * 100)|round(1) if total > 0 else 0 }}%;"></div>
+            </div>
+        </div>
+        
+        <div class="aging-card medium">
+            <div class="card-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="card-content">
+                <span class="card-label">逾期 31-60 天</span>
+                <span class="card-amount">¥{{ "{:,.2f}".format(aging['31-60']['amount']) }}</span>
+                <span class="card-count">{{ aging['31-60']['count'] }} 笔订单</span>
+            </div>
+            <div class="card-indicator">
+                <div class="indicator-fill" style="width: {{ (aging['31-60']['amount'] / total * 100)|round(1) if total > 0 else 0 }}%;"></div>
+            </div>
+        </div>
+        
+        <div class="aging-card high">
+            <div class="card-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="card-content">
+                <span class="card-label">逾期 61-90 天</span>
+                <span class="card-amount">¥{{ "{:,.2f}".format(aging['61-90']['amount']) }}</span>
+                <span class="card-count">{{ aging['61-90']['count'] }} 笔订单</span>
+            </div>
+            <div class="card-indicator">
+                <div class="indicator-fill" style="width: {{ (aging['61-90']['amount'] / total * 100)|round(1) if total > 0 else 0 }}%;"></div>
+            </div>
+        </div>
+        
+        <div class="aging-card critical">
+            <div class="card-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="card-content">
+                <span class="card-label">逾期 90 天以上</span>
+                <span class="card-amount">¥{{ "{:,.2f}".format(aging['90+']['amount']) }}</span>
+                <span class="card-count">{{ aging['90+']['count'] }} 笔订单</span>
+            </div>
+            <div class="card-indicator">
+                <div class="indicator-fill" style="width: {{ (aging['90+']['amount'] / total * 100)|round(1) if total > 0 else 0 }}%;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 风险提示 -->
+    {% if aging['61-90']['amount'] > 0 or aging['90+']['amount'] > 0 %}
+    <div class="risk-alert">
+        <div class="alert-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="alert-content">
+            <h4>风险提示</h4>
+            <p>当前存在 <strong>¥{{ "{:,.2f}".format(aging['61-90']['amount'] + aging['90+']['amount']) }}</strong> 的高风险逾期账款（逾期超过60天），建议及时跟进催收，避免形成坏账。</p>
+        </div>
+        <a href="{{ url_for('finance.receivables', status='overdue') }}" class="alert-action">
+            <span>查看逾期订单</span>
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- 操作建议 -->
+    <div class="suggestions-card">
+        <div class="suggestions-header">
+            <h3><i class="fas fa-lightbulb"></i> 智能建议</h3>
+        </div>
+        <div class="suggestions-grid">
+            <div class="suggestion-item">
+                <div class="suggestion-icon blue">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="suggestion-content">
+                    <h4>及时跟进</h4>
+                    <p>对于逾期30天以内的账款，建议电话提醒客户及时付款</p>
+                </div>
+            </div>
+            
+            <div class="suggestion-item">
+                <div class="suggestion-icon orange">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div class="suggestion-content">
+                    <h4>发送对账单</h4>
+                    <p>定期向客户发送对账单，确认双方账目一致</p>
+                </div>
+            </div>
+            
+            <div class="suggestion-item">
+                <div class="suggestion-icon red">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="suggestion-content">
+                    <h4>信用控制</h4>
+                    <p>对于长期逾期客户，考虑冻结其信用额度</p>
+                </div>
+            </div>
+            
+            <div class="suggestion-item">
+                <div class="suggestion-icon green">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="suggestion-content">
+                    <h4>趋势分析</h4>
+                    <p>关注账龄结构变化趋势，预防风险累积</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.aging-page {
+    padding: 0 0.5rem;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 返回导航 */
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.title-icon .icon-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 18px;
+    border: 2px solid #06b6d4;
+    opacity: 0.5;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 0.2rem 0 0 0;
+    letter-spacing: 2px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.action-btn.outline {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.action-btn.outline:hover {
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+/* 筛选栏 */
+.filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.form-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 8px;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.form-select:focus {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+    outline: none;
+}
+
+.update-time {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 账龄总览 */
+.aging-overview {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.overview-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-container {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+
+@media (max-width: 1000px) {
+    .chart-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 环形图 */
+.donut-chart-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.donut-chart {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.donut-svg {
+    transform: rotate(-90deg);
+}
+
+.donut-ring {
+    fill: none;
+    stroke: var(--border-color);
+    stroke-width: 20;
+}
+
+.donut-segment {
+    fill: none;
+    stroke-width: 20;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.donut-segment.current { stroke: #10b981; }
+.donut-segment.low { stroke: #3b82f6; }
+.donut-segment.medium { stroke: #f59e0b; }
+.donut-segment.high { stroke: #f97316; }
+.donut-segment.critical { stroke: #ef4444; }
+
+.donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.center-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.center-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-dot.current { background: #10b981; }
+.legend-dot.low { background: #3b82f6; }
+.legend-dot.medium { background: #f59e0b; }
+.legend-dot.high { background: #f97316; }
+.legend-dot.critical { background: #ef4444; }
+
+.legend-label {
+    color: var(--text-muted);
+}
+
+.legend-value {
+    font-weight: 600;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* 条形图 */
+.bar-chart-wrapper h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 1.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bar-item {
+    display: grid;
+    grid-template-columns: 70px 1fr 60px;
+    gap: 1rem;
+    align-items: center;
+}
+
+.bar-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.bar-track {
+    height: 28px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.75rem;
+    transition: width 0.8s ease;
+    min-width: fit-content;
+}
+
+.bar-fill.current { background: linear-gradient(90deg, #10b981, #059669); }
+.bar-fill.low { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.bar-fill.medium { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.bar-fill.high { background: linear-gradient(90deg, #f97316, #ea580c); }
+.bar-fill.critical { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+.bar-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+}
+
+.bar-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* 账龄卡片 */
+.aging-cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .aging-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .aging-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .aging-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+.aging-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.aging-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.aging-card.current { border-top: 3px solid #10b981; }
+.aging-card.low { border-top: 3px solid #3b82f6; }
+.aging-card.medium { border-top: 3px solid #f59e0b; }
+.aging-card.high { border-top: 3px solid #f97316; }
+.aging-card.critical { border-top: 3px solid #ef4444; }
+
+.aging-card .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.aging-card.current .card-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.aging-card.low .card-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.aging-card.medium .card-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.aging-card.high .card-icon { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+.aging-card.critical .card-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+.aging-card .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.aging-card .card-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.aging-card .card-amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.aging-card .card-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.card-indicator {
+    margin-top: 1rem;
+    height: 4px;
+    background: var(--bg-card);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.indicator-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s ease;
+}
+
+.aging-card.current .indicator-fill { background: #10b981; }
+.aging-card.low .indicator-fill { background: #3b82f6; }
+.aging-card.medium .indicator-fill { background: #f59e0b; }
+.aging-card.high .indicator-fill { background: #f97316; }
+.aging-card.critical .indicator-fill { background: #ef4444; }
+
+/* 风险提示 */
+.risk-alert {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05));
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+}
+
+.alert-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(239, 68, 68, 0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #ef4444;
+    flex-shrink: 0;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ef4444;
+    margin: 0 0 0.25rem 0;
+}
+
+.alert-content p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.alert-content strong {
+    color: #ef4444;
+}
+
+.alert-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.25rem;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.alert-action:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* 建议卡片 */
+.suggestions-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.suggestions-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.suggestions-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggestions-header h3 i {
+    color: #f59e0b;
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-color);
+}
+
+@media (max-width: 1000px) {
+    .suggestions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.suggestion-item {
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.suggestion-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.suggestion-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.suggestion-icon.orange { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.suggestion-icon.red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.suggestion-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+.suggestion-content h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 0.35rem 0;
+}
+
+.suggestion-content p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* 动画 */
+@keyframes barGrow {
+    from { width: 0; }
+}
+
+.bar-fill {
+    animation: barGrow 0.8s ease-out;
+}
+
+/* 可搜索下拉框样式 */
+.searchable-select {
+    position: relative;
+    min-width: 200px;
+}
+
+.searchable-select .select-input {
+    width: 100%;
+    padding: 0.6rem 2.5rem 0.6rem 1rem;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.searchable-select .select-input:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+}
+
+.searchable-select .select-arrow {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: transform 0.25s ease;
+}
+
+.searchable-select.open .select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.searchable-select .select-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    min-width: 280px;
+    background: #16162a;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+    overflow: hidden;
+}
+
+.searchable-select.open .select-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-search {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: #1a1a2e;
+}
+
+.dropdown-search i {
+    color: #06b6d4;
+    font-size: 0.9rem;
+}
+
+.dropdown-search .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.dropdown-search .search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(6, 182, 212, 0.3);
+    border-radius: 3px;
+}
+
+.dropdown-item {
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: all 0.15s ease;
+    font-size: 0.9rem;
+}
+
+.dropdown-item:hover,
+.dropdown-item.highlighted {
+    background: rgba(6, 182, 212, 0.1);
+    color: #06b6d4;
+}
+
+.dropdown-item.selected {
+    background: rgba(6, 182, 212, 0.15);
+    color: #06b6d4;
+    font-weight: 500;
+}
+
+.dropdown-item.hidden {
+    display: none;
+}
+
+.dropdown-empty {
+    display: none;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.dropdown-empty.show {
+    display: block;
+}
+
+/* 亮色主题适配 */
+[data-theme="light"] .searchable-select .select-dropdown {
+    background: #ffffff;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .dropdown-search {
+    background: #f8fafc;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function exportReport() {
+    window.location.href = '{{ url_for("finance.aging_report") }}?export=excel';
+}
+
+function printReport() {
+    window.print();
+}
+
+// 可搜索下拉框
+class SearchableSelect {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.input = container.querySelector('.select-input');
+        this.hiddenInput = container.querySelector('input[type="hidden"]');
+        this.arrow = container.querySelector('.select-arrow');
+        this.dropdown = container.querySelector('.select-dropdown');
+        this.searchInput = container.querySelector('.search-input');
+        this.list = container.querySelector('.dropdown-list');
+        this.items = container.querySelectorAll('.dropdown-item');
+        this.emptyMsg = container.querySelector('.dropdown-empty');
+        this.autoSubmit = options.autoSubmit || false;
+        this.form = options.form || null;
+        
+        this.isOpen = false;
+        this.highlightedIndex = -1;
+        
+        this.init();
+    }
+    
+    init() {
+        // 标记当前选中项
+        const currentId = this.hiddenInput.value;
+        this.items.forEach(item => {
+            if (item.dataset.id === currentId) {
+                item.classList.add('selected');
+            }
+        });
+        
+        // 点击输入框打开下拉
+        this.input.addEventListener('click', () => this.toggle());
+        this.arrow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggle();
+        });
+        
+        // 下拉搜索框
+        this.searchInput.addEventListener('input', () => {
+            this.filter(this.searchInput.value);
+        });
+        
+        // 选择项目
+        this.items.forEach((item, index) => {
+            item.addEventListener('click', () => {
+                this.select(item);
+            });
+            item.addEventListener('mouseenter', () => {
+                this.highlightedIndex = index;
+                this.updateHighlight();
+            });
+        });
+        
+        // 键盘导航
+        this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
+        
+        // 点击外部关闭
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        });
+    }
+    
+    toggle() {
+        this.isOpen ? this.close() : this.open();
+    }
+    
+    open() {
+        this.isOpen = true;
+        this.container.classList.add('open');
+        this.searchInput.value = '';
+        this.filter('');
+        this.highlightedIndex = -1;
+        setTimeout(() => this.searchInput.focus(), 50);
+    }
+    
+    close() {
+        this.isOpen = false;
+        this.container.classList.remove('open');
+        this.highlightedIndex = -1;
+    }
+    
+    filter(query) {
+        const q = query.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        this.items.forEach(item => {
+            const text = item.dataset.value.toLowerCase();
+            const match = !q || text.includes(q);
+            item.classList.toggle('hidden', !match);
+            if (match) visibleCount++;
+        });
+        
+        this.emptyMsg.classList.toggle('show', visibleCount === 0);
+    }
+    
+    select(item) {
+        // 更新选中状态
+        this.items.forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+        
+        // 更新值
+        const value = item.dataset.value;
+        const id = item.dataset.id;
+        
+        this.input.value = id ? value : '';
+        this.input.placeholder = id ? '全部客户' : '全部客户';
+        this.hiddenInput.value = id;
+        
+        this.close();
+        
+        // 自动提交表单
+        if (this.autoSubmit && this.form) {
+            this.form.submit();
+        }
+    }
+    
+    handleKeydown(e) {
+        const visibleItems = [...this.items].filter(i => !i.classList.contains('hidden'));
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.highlightedIndex = Math.min(this.highlightedIndex + 1, visibleItems.length - 1);
+                this.updateHighlight(visibleItems);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+                this.updateHighlight(visibleItems);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (this.highlightedIndex >= 0 && visibleItems[this.highlightedIndex]) {
+                    this.select(visibleItems[this.highlightedIndex]);
+                }
+                break;
+            case 'Escape':
+                this.close();
+                break;
+        }
+    }
+    
+    updateHighlight(visibleItems) {
+        if (!visibleItems) {
+            visibleItems = [...this.items].filter(i => !i.classList.contains('hidden'));
+        }
+        this.items.forEach(i => i.classList.remove('highlighted'));
+        if (visibleItems[this.highlightedIndex]) {
+            visibleItems[this.highlightedIndex].classList.add('highlighted');
+            visibleItems[this.highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+}
+
+// 初始化客户选择下拉框
+const customerSelect = document.getElementById('customerSelect');
+const filterForm = document.getElementById('filterForm');
+if (customerSelect) {
+    new SearchableSelect(customerSelect, {
+        autoSubmit: true,
+        form: filterForm
+    });
+}
+
+// 入场动画
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.aging-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.4s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

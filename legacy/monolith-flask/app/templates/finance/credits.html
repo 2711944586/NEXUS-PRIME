@@ -1,0 +1,955 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}客户信用管理 - NEXUS{% endblock %}
+{% block breadcrumb %}财务管理 / 客户信用{% endblock %}
+
+{% block styles %}
+<style>
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+    position: relative;
+}
+
+.title-icon::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 19px;
+    padding: 3px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin: 0;
+    opacity: 0.7;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* 统计卡片 */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.stat-icon.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.stat-icon.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+.stat-icon.orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.stat-icon.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+
+.stat-info h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.25rem 0;
+}
+
+.stat-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* 筛选状态栏 */
+.filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-tab {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.filter-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.filter-tab.active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+    color: #10b981;
+}
+
+/* 搜索框美化 */
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.search-input {
+    width: 220px;
+    height: 40px;
+    padding: 0 2.5rem 0 2.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: all 0.25s ease;
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.search-input:focus {
+    outline: none;
+    width: 280px;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.search-clear {
+    position: absolute;
+    right: 0.75rem;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.search-clear:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* 分页样式 */
+.table-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-top: 1.5rem;
+}
+
+.page-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.page-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    padding: 0 0.5rem;
+}
+
+.page-info .current {
+    font-weight: 700;
+    color: #10b981;
+    font-size: 1.1rem;
+}
+
+.page-info .separator {
+    color: var(--text-muted);
+}
+
+.page-info .total {
+    color: var(--text-muted);
+}
+
+.page-jump {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--border-color);
+}
+
+.jump-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.jump-input {
+    width: 56px;
+    height: 36px;
+    padding: 0 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    text-align: center;
+    outline: none;
+    transition: all 0.2s ease;
+    -moz-appearance: textfield;
+}
+
+.jump-input::-webkit-outer-spin-button,
+.jump-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.jump-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.jump-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.jump-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* 信用卡片列表 */
+.credit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.credit-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.credit-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.credit-card.frozen {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.credit-card.warning {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.credit-header {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.customer-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.customer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.credit-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.credit-status.normal {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.credit-status.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.credit-status.frozen {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.credit-body {
+    padding: 1.5rem;
+}
+
+.credit-amounts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.amount-item {
+    text-align: center;
+}
+
+.amount-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.amount-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.amount-value.success { color: #10b981; }
+.amount-value.danger { color: #ef4444; }
+
+/* 使用率进度条 */
+.usage-bar-wrapper {
+    margin-bottom: 1.25rem;
+}
+
+.usage-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.usage-rate {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.usage-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.usage-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.usage-fill.low { background: linear-gradient(90deg, #10b981, #34d399); }
+.usage-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.usage-fill.high { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+.credit-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 0.65rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.action-btn.primary {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.action-btn.primary:hover {
+    background: rgba(59, 130, 246, 0.25);
+}
+
+.action-btn.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.action-btn.success:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.action-btn.danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+/* 分页 */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.page-link {
+    padding: 0.5rem 0.875rem;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.page-link:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-color: transparent;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--text-muted);
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.empty-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* 模态框样式 */
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    color: var(--text-main);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.form-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 8px;
+}
+
+.form-control:focus {
+    background: var(--bg-surface);
+    border-color: #10b981;
+    color: var(--text-main);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.credit-card {
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.credit-card:nth-child(1) { animation-delay: 0.05s; }
+.credit-card:nth-child(2) { animation-delay: 0.1s; }
+.credit-card:nth-child(3) { animation-delay: 0.15s; }
+.credit-card:nth-child(4) { animation-delay: 0.2s; }
+.credit-card:nth-child(5) { animation-delay: 0.25s; }
+.credit-card:nth-child(6) { animation-delay: 0.3s; }
+
+@media (max-width: 768px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .credit-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-bar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="warehouse-panel">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="title-area">
+            <div class="title-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <div>
+                <h1 class="page-title">客户信用管理</h1>
+                <p class="page-subtitle">CUSTOMER CREDIT MANAGEMENT</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('finance.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 返回
+            </a>
+        </div>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ credits.total if credits else 0 }}</h3>
+                <p>客户总数</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-info">
+                <h3>¥{{ "{:,.0f}".format(total_limit|default(0)) }}</h3>
+                <p>总信用额度</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ warning_count|default(0) }}</h3>
+                <p>额度预警</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="fas fa-lock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ frozen_count|default(0) }}</h3>
+                <p>已冻结</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 筛选状态栏 -->
+    <div class="filter-bar">
+        <div class="filter-tabs">
+            <a href="{{ url_for('finance.credits') }}" class="filter-tab {{ 'active' if not current_filter }}">全部</a>
+            <a href="{{ url_for('finance.credits', filter='normal') }}" class="filter-tab {{ 'active' if current_filter == 'normal' }}">
+                <i class="fas fa-check-circle"></i> 正常
+            </a>
+            <a href="{{ url_for('finance.credits', filter='warning') }}" class="filter-tab {{ 'active' if current_filter == 'warning' }}">
+                <i class="fas fa-exclamation-circle"></i> 预警
+            </a>
+            <a href="{{ url_for('finance.credits', filter='frozen') }}" class="filter-tab {{ 'active' if current_filter == 'frozen' }}">
+                <i class="fas fa-ban"></i> 冻结
+            </a>
+        </div>
+        <div class="search-wrapper">
+            <div class="search-icon"><i class="fas fa-search"></i></div>
+            <input type="text" class="search-input" placeholder="搜索客户名称..." id="searchInput">
+            <button type="button" class="search-clear" id="searchClear" style="display: none;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 信用卡片列表 -->
+    {% if credits.items %}
+    <div class="credit-grid">
+        {% for credit in credits.items %}
+        <div class="credit-card {{ 'frozen' if credit.is_frozen else 'warning' if credit.is_warning else '' }}">
+            <div class="credit-header">
+                <div class="customer-info">
+                    <div class="customer-avatar">
+                        {{ credit.customer.name[0] if credit.customer else '?' }}
+                    </div>
+                    <h4 class="customer-name">{{ credit.customer.name if credit.customer else '-' }}</h4>
+                </div>
+                <span class="credit-status {{ 'frozen' if credit.is_frozen else 'warning' if credit.is_warning else 'normal' }}">
+                    {% if credit.is_frozen %}
+                    <i class="fas fa-lock"></i> 已冻结
+                    {% elif credit.is_warning %}
+                    <i class="fas fa-exclamation-triangle"></i> 预警
+                    {% else %}
+                    <i class="fas fa-check-circle"></i> 正常
+                    {% endif %}
+                </span>
+            </div>
+            <div class="credit-body">
+                <div class="credit-amounts">
+                    <div class="amount-item">
+                        <div class="amount-label">信用额度</div>
+                        <div class="amount-value">¥{{ "{:,.0f}".format(credit.credit_limit) }}</div>
+                    </div>
+                    <div class="amount-item">
+                        <div class="amount-label">已用额度</div>
+                        <div class="amount-value">¥{{ "{:,.0f}".format(credit.used_credit) }}</div>
+                    </div>
+                    <div class="amount-item">
+                        <div class="amount-label">可用额度</div>
+                        <div class="amount-value {{ 'success' if credit.available_credit > credit.credit_limit * 0.3 else 'danger' }}">
+                            ¥{{ "{:,.0f}".format(credit.available_credit) }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="usage-bar-wrapper">
+                    <div class="usage-label">
+                        <span>额度使用率</span>
+                        <span class="usage-rate">{{ "%.1f"|format(credit.usage_rate) }}%</span>
+                    </div>
+                    <div class="usage-bar">
+                        <div class="usage-fill {{ 'high' if credit.usage_rate > 90 else 'medium' if credit.usage_rate > 70 else 'low' }}" 
+                             style="width: {{ credit.usage_rate }}%;"></div>
+                    </div>
+                </div>
+                
+                <div class="credit-actions">
+                    <a href="{{ url_for('finance.credit_setting', customer_id=credit.customer_id) }}" class="action-btn primary">
+                        <i class="fas fa-cog"></i> 设置
+                    </a>
+                    {% if credit.is_frozen %}
+                    <form action="{{ url_for('finance.unfreeze_credit', customer_id=credit.customer_id) }}" method="POST" style="flex: 1;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="action-btn success" style="width: 100%;">
+                            <i class="fas fa-unlock"></i> 解冻
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{{ url_for('finance.freeze_credit', customer_id=credit.customer_id) }}" class="action-btn danger">
+                        <i class="fas fa-lock"></i> 冻结
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-credit-card"></i>
+        </div>
+        <h3 class="empty-title">暂无信用记录</h3>
+        <p class="empty-desc">客户信用额度设置后将在此显示</p>
+    </div>
+    {% endif %}
+    
+    <!-- 分页 -->
+    {% if credits and credits.pages > 1 %}
+    <div class="table-pagination">
+        {% if credits.has_prev %}
+        <a href="{{ url_for('finance.credits', page=credits.prev_num, filter=current_filter) }}" class="page-btn">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled"><i class="fas fa-chevron-left"></i></span>
+        {% endif %}
+        
+        <div class="page-info">
+            <span class="current">{{ credits.page }}</span>
+            <span class="separator">/</span>
+            <span class="total">{{ credits.pages }}</span>
+        </div>
+        
+        <div class="page-jump">
+            <span class="jump-label">跳转</span>
+            <input type="number" class="jump-input" id="pageJumpInput" 
+                   min="1" max="{{ credits.pages }}" 
+                   placeholder="{{ credits.page }}">
+            <button type="button" class="jump-btn" id="pageJumpBtn">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+        
+        {% if credits.has_next %}
+        <a href="{{ url_for('finance.credits', page=credits.next_num, filter=current_filter) }}" class="page-btn">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled"><i class="fas fa-chevron-right"></i></span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 搜索功能
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+
+searchInput.addEventListener('input', function(e) {
+    const search = e.target.value.toLowerCase();
+    searchClear.style.display = search ? 'flex' : 'none';
+    
+    document.querySelectorAll('.credit-card').forEach(card => {
+        const name = card.querySelector('.customer-name').textContent.toLowerCase();
+        card.style.display = name.includes(search) ? '' : 'none';
+    });
+});
+
+searchClear.addEventListener('click', function() {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    document.querySelectorAll('.credit-card').forEach(card => {
+        card.style.display = '';
+    });
+    searchInput.focus();
+});
+
+// 页码跳转功能
+const pageJumpInput = document.getElementById('pageJumpInput');
+const pageJumpBtn = document.getElementById('pageJumpBtn');
+
+if (pageJumpBtn) {
+    pageJumpBtn.addEventListener('click', function() {
+        jumpToPage();
+    });
+    
+    pageJumpInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            jumpToPage();
+        }
+    });
+}
+
+function jumpToPage() {
+    const page = parseInt(pageJumpInput.value);
+    const max = parseInt(pageJumpInput.getAttribute('max'));
+    
+    if (page && page >= 1 && page <= max) {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('page', page);
+        window.location.href = currentUrl.toString();
+    } else {
+        pageJumpInput.style.borderColor = '#ef4444';
+        pageJumpInput.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.15)';
+        setTimeout(() => {
+            pageJumpInput.style.borderColor = '';
+            pageJumpInput.style.boxShadow = '';
+        }, 1000);
+    }
+}
+</script>
+{% endblock %}

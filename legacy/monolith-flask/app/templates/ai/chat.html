@@ -1,0 +1,1619 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}NEXUS AI 智能助手{% endblock %}
+{% block breadcrumb %}AI 智能助手{% endblock %}
+
+{% block styles %}
+<style>
+/* ============================================
+   NEXUS AI 智能助手
+   ============================================ */
+
+.ai-chat-container {
+    height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0;
+    position: relative;
+}
+
+/* 动态背景 */
+.ai-chat-container::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 15% 25%, rgba(99, 102, 241, 0.12), transparent 35%),
+        radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.1), transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.06), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: glowPulse 8s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* 页面头部 */
+.ai-page-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.75rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85));
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 60px rgba(99, 102, 241, 0.1);
+    overflow: hidden;
+}
+
+.ai-page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.6), transparent);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+/* AI Logo 动画 */
+.ai-logo {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.logo-core {
+    position: absolute;
+    inset: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease-in-out infinite;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+    z-index: 3;
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.logo-orbit {
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-top-color: rgba(99, 102, 241, 0.6);
+    border-right-color: rgba(139, 92, 246, 0.4);
+    border-radius: 50%;
+    animation: orbit-spin 4s linear infinite;
+}
+
+.logo-orbit::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.8);
+}
+
+.orbit-2 {
+    inset: -8px;
+    animation-duration: 6s;
+    animation-direction: reverse;
+    border-top-color: rgba(6, 182, 212, 0.5);
+}
+
+@keyframes orbit-spin {
+    to { transform: rotate(360deg); }
+}
+
+.header-info h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #22d3ee 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.header-info p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.35rem 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: #10b981;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse-glow 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.9); }
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.action-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.action-btn i { position: relative; z-index: 1; }
+
+.action-btn:hover {
+    border-color: var(--color-primary);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+
+.action-btn:hover::before { opacity: 1; }
+
+/* API 警告横幅 */
+.api-warning-banner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 14px;
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.api-warning-banner.info {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.api-warning-banner.warning {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.08));
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.api-warning-banner > i { font-size: 1.5rem; }
+.api-warning-banner.info > i { color: #06b6d4; }
+.api-warning-banner.warning > i { color: #fbbf24; }
+
+.warning-content strong {
+    color: var(--text-main);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.warning-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.warning-content a {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+/* 聊天布局 */
+.chat-layout {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1rem;
+    min-height: 0;
+}
+
+/* 会话面板 */
+.sessions-panel {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.panel-header span {
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.panel-header span i { color: var(--color-primary); }
+
+.new-chat-btn {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.new-chat-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+}
+
+.sessions-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+}
+
+.session-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+    border: 1px solid transparent;
+}
+
+.session-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.2);
+    transform: translateX(5px);
+}
+
+.session-item.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+    border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.session-item i { color: var(--color-primary); }
+
+.session-info { flex: 1; min-width: 0; }
+
+.session-name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.session-delete {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+}
+
+.session-item:hover .session-delete {
+    opacity: 1;
+}
+
+.session-delete:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* 快捷功能 */
+.quick-features {
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(0deg, rgba(99, 102, 241, 0.05), transparent);
+}
+
+.feature-title {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), transparent);
+}
+
+.feature-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+}
+
+.feature-btn:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    transform: translateX(5px);
+}
+
+.feature-btn i { width: 20px; text-align: center; color: var(--color-primary); }
+
+/* 主聊天区 */
+.chat-main {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.8));
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.chat-main::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.5), rgba(6, 182, 212, 0.5), transparent);
+}
+
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    scroll-behavior: smooth;
+}
+
+.messages-container::-webkit-scrollbar { width: 6px; }
+.messages-container::-webkit-scrollbar-track { background: transparent; }
+.messages-container::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 3px;
+}
+
+/* 欢迎界面 */
+.welcome-screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.welcome-logo {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    margin-bottom: 2.5rem;
+}
+
+.logo-sphere {
+    position: absolute;
+    inset: 25px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+    background-size: 200% 200%;
+    animation: sphereGlow 4s ease-in-out infinite;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+    z-index: 2;
+    box-shadow: 0 0 50px rgba(99, 102, 241, 0.5), inset 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes sphereGlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.logo-rings { position: absolute; inset: 0; }
+
+.ring {
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    border-radius: 50%;
+    animation: ring-pulse 3s ease-in-out infinite;
+}
+
+.ring-2 { inset: -15px; animation-delay: 0.4s; border-color: rgba(139, 92, 246, 0.25); }
+.ring-3 { inset: -30px; animation-delay: 0.8s; border-color: rgba(6, 182, 212, 0.2); }
+
+@keyframes ring-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.welcome-screen h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 1rem;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #22d3ee 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-screen > p {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    max-width: 500px;
+    margin-bottom: 3rem;
+    line-height: 1.7;
+}
+
+.suggestion-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 580px;
+}
+
+.suggestion-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+}
+
+.suggestion-card:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+}
+
+.suggestion-card i {
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.suggestion-card span {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+/* 消息样式 */
+.message {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    animation: messageSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes messageSlide {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-user { flex-direction: row-reverse; }
+
+.msg-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.message-ai .msg-avatar {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.message-user .msg-avatar {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+    color: var(--text-main);
+    font-weight: 600;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.msg-content {
+    max-width: 70%;
+    padding: 1.25rem 1.5rem;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    position: relative;
+}
+
+.message-ai .msg-content {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(22, 33, 52, 0.9));
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-top-left-radius: 4px;
+    color: var(--text-main);
+    backdrop-filter: blur(10px);
+}
+
+.message-user .msg-content {
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    color: white;
+    border-top-right-radius: 4px;
+    border: none;
+}
+
+.msg-content pre {
+    background: rgba(0, 0, 0, 0.35);
+    padding: 1rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.msg-content code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+.msg-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.6rem;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.message-user .msg-time {
+    justify-content: flex-end;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* 打字指示器 */
+.typing-indicator { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+
+.typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1.25rem 1.75rem;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    border-top-left-radius: 6px;
+}
+
+.typing-dot {
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%;
+    animation: typingBounce 1.4s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+}
+
+/* 输入区域 */
+.input-container {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1.75rem;
+    background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.6) 30%);
+}
+
+.input-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.input-wrapper textarea {
+    width: 100%;
+    min-height: 56px;
+    max-height: 160px;
+    padding: 1rem 1.25rem;
+    padding-right: 140px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 16px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.input-wrapper textarea:focus {
+    border-color: var(--color-primary);
+    background: rgba(30, 41, 59, 0.8);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-wrapper textarea::placeholder { color: var(--text-muted); }
+
+.input-tools {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.context-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.4rem 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.context-toggle:hover { background: rgba(99, 102, 241, 0.2); }
+
+.context-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+}
+
+.toggle-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.send-btn {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.send-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.send-btn i { position: relative; z-index: 1; }
+
+.send-btn:hover:not(:disabled) {
+    transform: scale(1.08);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+}
+
+.send-btn:hover:not(:disabled)::before { opacity: 1; }
+
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 响应式 */
+@media (max-width: 1024px) {
+    .chat-layout { grid-template-columns: 1fr; }
+    .sessions-panel { display: none; }
+}
+
+@media (max-width: 640px) {
+    .suggestion-cards { grid-template-columns: 1fr; }
+    .msg-content { max-width: 85%; }
+    .ai-page-header { flex-direction: column; gap: 1rem; text-align: center; }
+    .header-left { flex-direction: column; }
+}
+
+/* 亮色主题 */
+[data-theme="light"] .ai-chat-container::before {
+    background: radial-gradient(circle at 15% 25%, rgba(99, 102, 241, 0.08), transparent 35%);
+}
+
+[data-theme="light"] .ai-page-header,
+[data-theme="light"] .sessions-panel,
+[data-theme="light"] .chat-main {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="light"] .message-ai .msg-content {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.98));
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    color: #1e293b;
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="light"] .message-user .msg-content {
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    border: none;
+}
+
+[data-theme="light"] .msg-content pre {
+    background: rgba(30, 41, 59, 0.08);
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="light"] .input-container {
+    background: linear-gradient(180deg, transparent, rgba(248, 250, 252, 0.8) 30%);
+}
+
+[data-theme="light"] .input-wrapper textarea {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: #1e293b;
+}
+
+[data-theme="light"] .input-wrapper textarea:focus {
+    border-color: var(--color-primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .input-wrapper textarea::placeholder {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .context-toggle {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .toggle-label {
+    color: #475569;
+}
+
+[data-theme="light"] .suggestion-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+[data-theme="light"] .suggestion-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    background: #fff;
+}
+
+[data-theme="light"] .suggestion-card .sug-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .suggestion-card .sug-desc {
+    color: #64748b;
+}
+
+/* 亮色主题 - 头部区域 */
+[data-theme="light"] .ai-page-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ai-page-header::before {
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4), transparent);
+}
+
+[data-theme="light"] .header-info h1 {
+    background: linear-gradient(135deg, #1e293b 0%, #6366f1 50%, #06b6d4 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+}
+
+[data-theme="light"] .header-info p {
+    color: #64748b;
+}
+
+[data-theme="light"] .status-indicator {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="light"] .action-btn {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.15);
+    color: #64748b;
+}
+
+[data-theme="light"] .action-btn:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #6366f1;
+}
+
+/* 亮色主题 - 会话面板 */
+[data-theme="light"] .sessions-panel {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .session-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .session-item:hover,
+[data-theme="light"] .session-item.active {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="light"] .session-title {
+    color: #1e293b;
+}
+
+[data-theme="light"] .session-time {
+    color: #94a3b8;
+}
+
+/* 亮色主题 - 聊天主区域 */
+[data-theme="light"] .chat-main {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .welcome-section h2 {
+    color: #1e293b;
+}
+
+[data-theme="light"] .welcome-section p {
+    color: #64748b;
+}
+
+/* 亮色主题 - 警告提示 */
+[data-theme="light"] .fallback-notice,
+[data-theme="light"] .no-key-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+[data-theme="light"] .fallback-notice p,
+[data-theme="light"] .no-key-warning p {
+    color: #92400e;
+}
+
+[data-theme="light"] .fallback-notice a,
+[data-theme="light"] .no-key-warning a {
+    color: #d97706;
+}
+
+/* 亮色主题 - 发送按钮 */
+[data-theme="light"] .send-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+[data-theme="light"] .send-btn:hover {
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* 亮色主题 - 欢迎屏幕 */
+[data-theme="light"] .welcome-screen h2 {
+    background: linear-gradient(135deg, #1e293b 0%, #6366f1 50%, #06b6d4 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .welcome-screen > p {
+    color: #64748b;
+}
+
+[data-theme="light"] .typing-dots {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.98));
+    border: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+/* 亮色主题 - 新对话/会话面板 */
+[data-theme="light"] .panel-header {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), transparent);
+    border-bottom-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .panel-header span {
+    color: #1e293b;
+}
+
+[data-theme="light"] .session-name {
+    color: #1e293b;
+}
+
+[data-theme="light"] .new-chat-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+[data-theme="light"] .quick-features {
+    background: linear-gradient(0deg, rgba(99, 102, 241, 0.04), transparent);
+    border-top-color: rgba(99, 102, 241, 0.08);
+}
+
+[data-theme="light"] .feature-title {
+    color: #64748b;
+}
+
+[data-theme="light"] .feature-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(99, 102, 241, 0.12);
+    color: #475569;
+}
+
+[data-theme="light"] .feature-btn:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.25);
+    color: #6366f1;
+}
+
+/* 亮色主题 - API 警告横幅 */
+[data-theme="light"] .api-warning-banner.info {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(99, 102, 241, 0.05));
+    border-color: rgba(6, 182, 212, 0.2);
+}
+
+[data-theme="light"] .api-warning-banner.warning {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(245, 158, 11, 0.05));
+    border-color: rgba(251, 191, 36, 0.2);
+}
+
+[data-theme="light"] .warning-content strong {
+    color: #1e293b;
+}
+
+[data-theme="light"] .warning-content p {
+    color: #64748b;
+}
+
+/* 亮色主题 - Logo图标 (增强可见性) */
+[data-theme="light"] .ai-logo {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06));
+    border-radius: 50%;
+}
+
+[data-theme="light"] .logo-core {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #0891b2);
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .logo-orbit {
+    border-top-color: rgba(79, 70, 229, 0.7);
+    border-right-color: rgba(124, 58, 237, 0.5);
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+}
+
+[data-theme="light"] .logo-orbit.orbit-2 {
+    border-top-color: rgba(8, 145, 178, 0.6);
+    border-right-color: rgba(6, 182, 212, 0.4);
+}
+
+[data-theme="light"] .logo-orbit::before {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 0 15px rgba(79, 70, 229, 0.8);
+}
+
+/* 亮色主题 - 欢迎Logo球体 (增强可见性) */
+[data-theme="light"] .welcome-logo {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+[data-theme="light"] .logo-sphere {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #0891b2 100%);
+    box-shadow: 0 8px 40px rgba(79, 70, 229, 0.45), inset 0 0 25px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .ring {
+    border-color: rgba(79, 70, 229, 0.35);
+}
+
+[data-theme="light"] .ring-2 {
+    border-color: rgba(124, 58, 237, 0.28);
+}
+
+[data-theme="light"] .ring-3 {
+    border-color: rgba(8, 145, 178, 0.22);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-chat-container">
+    <!-- 页面头部 -->
+    <div class="ai-page-header">
+        <div class="header-left">
+            <div class="ai-logo">
+                <div class="logo-core"><i class="fas fa-brain"></i></div>
+                <div class="logo-orbit"></div>
+                <div class="logo-orbit orbit-2"></div>
+            </div>
+            <div class="header-info">
+                <h1>NEXUS AI</h1>
+                <p>
+                    <span class="status-indicator">
+                        <span class="status-dot"></span>在线
+                    </span>
+                    DeepSeek 模型驱动
+                </p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="action-btn" onclick="clearChat()" title="清空对话"><i class="fas fa-trash-alt"></i></button>
+            <button class="action-btn" onclick="exportChat()" title="导出对话"><i class="fas fa-download"></i></button>
+            <a href="{{ url_for('system.ai_settings') }}" class="action-btn" title="AI 设置"><i class="fas fa-cog"></i></a>
+        </div>
+    </div>
+
+    {% if show_fallback_mode %}
+    <div class="api-warning-banner info">
+        <i class="fas fa-info-circle"></i>
+        <div class="warning-content">
+            <strong>🤖 本地回退模式已启用</strong>
+            <p>系统正在使用本地回退逻辑。如需更强大的 AI 能力，请前往 <a href="{{ url_for('system.ai_settings') }}">AI 设置</a> 配置 DeepSeek API Key。</p>
+        </div>
+    </div>
+    {% elif not has_real_key %}
+    <div class="api-warning-banner warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="warning-content">
+            <strong>⚠️ API Key 未配置</strong>
+            <p>请前往 <a href="{{ url_for('system.ai_settings') }}">AI 设置</a> 配置您的 DeepSeek API Key 以启用完整 AI 功能</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="chat-layout">
+        <!-- 左侧会话列表 -->
+        <div class="sessions-panel">
+            <div class="panel-header">
+                <span><i class="fas fa-comments"></i> 会话历史</span>
+                <button class="new-chat-btn" onclick="newChat()" title="新建对话"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="sessions-list" id="sessionList">
+                <div class="session-item active">
+                    <i class="fas fa-message"></i>
+                    <div class="session-info">
+                        <span class="session-name">新对话</span>
+                        <span class="session-time">刚刚</span>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-features">
+                <div class="feature-title">⚡ 快捷功能</div>
+                <button class="feature-btn" onclick="sendQuickMessage('分析本月销售数据并给出优化建议')">
+                    <i class="fas fa-chart-line"></i><span>销售分析</span>
+                </button>
+                <button class="feature-btn" onclick="sendQuickMessage('检查库存预警商品并建议补货方案')">
+                    <i class="fas fa-boxes"></i><span>库存检查</span>
+                </button>
+                <button class="feature-btn" onclick="sendQuickMessage('生成本周工作总结报告')">
+                    <i class="fas fa-file-alt"></i><span>工作总结</span>
+                </button>
+                <button class="feature-btn" onclick="sendQuickMessage('分析客户购买行为和偏好')">
+                    <i class="fas fa-users"></i><span>客户分析</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 主聊天区域 -->
+        <div class="chat-main">
+            <div class="messages-container" id="chatMessages">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-logo">
+                        <div class="logo-sphere"><i class="fas fa-robot"></i></div>
+                        <div class="logo-rings">
+                            <div class="ring ring-1"></div>
+                            <div class="ring ring-2"></div>
+                            <div class="ring ring-3"></div>
+                        </div>
+                    </div>
+                    <h2>您好，我是 NEXUS AI</h2>
+                    <p>您的智能企业助手，随时为您提供数据分析、报告生成、策略建议等服务</p>
+                    <div class="suggestion-cards">
+                        <div class="suggestion-card" onclick="sendQuickMessage('帮我分析今日的销售数据趋势')">
+                            <i class="fas fa-chart-pie"></i><span>分析销售数据</span>
+                        </div>
+                        <div class="suggestion-card" onclick="sendQuickMessage('生成一份库存盘点报告')">
+                            <i class="fas fa-warehouse"></i><span>库存盘点报告</span>
+                        </div>
+                        <div class="suggestion-card" onclick="sendQuickMessage('如何提升客户留存率？')">
+                            <i class="fas fa-lightbulb"></i><span>获取策略建议</span>
+                        </div>
+                        <div class="suggestion-card" onclick="sendQuickMessage('帮我写一封客户感谢邮件')">
+                            <i class="fas fa-envelope"></i><span>撰写商务邮件</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="输入您的问题... (Enter 发送，Shift+Enter 换行)" rows="1"></textarea>
+                    <div class="input-tools">
+                        <label class="context-toggle">
+                            <input type="checkbox" id="contextMode" checked>
+                            <span class="toggle-label">保持上下文</span>
+                        </label>
+                    </div>
+                </div>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const welcomeScreen = document.getElementById('welcomeScreen');
+const sessionList = document.getElementById('sessionList');
+
+let isProcessing = false;
+let messageHistory = [];
+let currentSessionId = null;
+let sessions = [];
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    loadSessions();
+    
+    // 页面离开时保存当前会话
+    window.addEventListener('beforeunload', function() {
+        if (currentSessionId) {
+            localStorage.setItem('nexus_ai_last_session', currentSessionId);
+        }
+    });
+    
+    // 恢复上次会话
+    const lastSessionId = localStorage.getItem('nexus_ai_last_session');
+    if (lastSessionId) {
+        setTimeout(() => loadSession(lastSessionId), 500);
+    }
+});
+
+messageInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+});
+
+messageInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// 加载会话列表
+async function loadSessions() {
+    try {
+        const response = await fetch('/ai/api/sessions');
+        const data = await response.json();
+        if (data.success) {
+            sessions = data.sessions;
+            renderSessionList();
+        }
+    } catch (error) {
+        console.error('加载会话列表失败:', error);
+    }
+}
+
+// 渲染会话列表
+function renderSessionList() {
+    sessionList.innerHTML = '';
+    
+    // 添加"新对话"项
+    const newChatItem = document.createElement('div');
+    newChatItem.className = `session-item ${!currentSessionId ? 'active' : ''}`;
+    newChatItem.onclick = () => newChat();
+    newChatItem.innerHTML = `
+        <i class="fas fa-plus-circle"></i>
+        <div class="session-info">
+            <span class="session-name">新对话</span>
+            <span class="session-time">开始新话题</span>
+        </div>
+    `;
+    sessionList.appendChild(newChatItem);
+    
+    // 添加历史会话
+    sessions.forEach(session => {
+        const item = document.createElement('div');
+        item.className = `session-item ${session.id === currentSessionId ? 'active' : ''}`;
+        item.onclick = () => loadSession(session.id);
+        
+        const time = formatSessionTime(session.lastMessageAt || session.createdAt);
+        item.innerHTML = `
+            <i class="fas fa-message"></i>
+            <div class="session-info">
+                <span class="session-name">${escapeHtml(session.title)}</span>
+                <span class="session-time">${time}</span>
+            </div>
+            <button class="session-delete" onclick="event.stopPropagation(); deleteSession(${session.id})" title="删除会话">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        sessionList.appendChild(item);
+    });
+}
+
+// 格式化会话时间
+function formatSessionTime(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+    return date.toLocaleDateString('zh-CN');
+}
+
+// 创建新会话
+async function createSession(firstMessage) {
+    try {
+        const response = await fetch('/ai/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ first_message: firstMessage })
+        });
+        const data = await response.json();
+        if (data.success) {
+            currentSessionId = data.session.id;
+            await loadSessions();
+            return data.session.id;
+        }
+    } catch (error) {
+        console.error('创建会话失败:', error);
+    }
+    return null;
+}
+
+// 加载会话
+async function loadSession(sessionId) {
+    try {
+        const response = await fetch(`/ai/api/sessions/${sessionId}`);
+        const data = await response.json();
+        if (data.success) {
+            currentSessionId = sessionId;
+            messageHistory = [];
+            
+            // 隐藏欢迎屏幕
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            
+            // 清空并重新渲染消息
+            chatMessages.innerHTML = '';
+            
+            data.session.messages.forEach(msg => {
+                addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai', false, new Date(msg.createdAt));
+                messageHistory.push({ role: msg.role, content: msg.content });
+            });
+            
+            renderSessionList();
+            localStorage.setItem('nexus_ai_last_session', sessionId);
+        }
+    } catch (error) {
+        console.error('加载会话失败:', error);
+    }
+}
+
+// 删除会话
+async function deleteSession(sessionId) {
+    if (!confirm('确定要删除这个会话吗？')) return;
+    
+    try {
+        const response = await fetch(`/ai/api/sessions/${sessionId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        if (data.success) {
+            if (currentSessionId === sessionId) {
+                newChat();
+            }
+            await loadSessions();
+        }
+    } catch (error) {
+        console.error('删除会话失败:', error);
+    }
+}
+
+// 发送消息
+async function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message || isProcessing) return;
+    
+    if (welcomeScreen) welcomeScreen.style.display = 'none';
+    
+    addMessage(message, 'user');
+    messageInput.value = '';
+    messageInput.style.height = 'auto';
+    
+    isProcessing = true;
+    sendBtn.disabled = true;
+    const typingIndicator = showTypingIndicator();
+    
+    try {
+        const response = await fetch('{{ url_for("ai.api_chat") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                sessionId: currentSessionId,
+                context: document.getElementById('contextMode').checked ? messageHistory : []
+            })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', response.status, errorText);
+            typingIndicator.remove();
+            addMessage(`请求失败 (${response.status}): ${errorText || '未知错误'}`, 'ai', true);
+            isProcessing = false;
+            sendBtn.disabled = false;
+            return;
+        }
+        
+        const data = await response.json();
+        typingIndicator.remove();
+        
+        if (data.success) {
+            addMessage(data.content, 'ai');
+            messageHistory.push({ role: 'user', content: message });
+            messageHistory.push({ role: 'assistant', content: data.content });
+            
+            // 更新会话ID（如果是新创建的）
+            if (data.sessionId) {
+                currentSessionId = data.sessionId;
+                await loadSessions();
+            }
+        } else {
+            addMessage('抱歉，发生了错误：' + (data.error || '未知错误'), 'ai', true);
+        }
+    } catch (error) {
+        typingIndicator.remove();
+        console.error('Fetch Error:', error);
+        addMessage('网络连接错误，请稍后重试。错误: ' + error.message, 'ai', true);
+    }
+    
+    isProcessing = false;
+    sendBtn.disabled = false;
+}
+
+function addMessage(content, type, isError = false, timestamp = null) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message message-${type}`;
+    
+    const avatar = type === 'ai' 
+        ? '<i class="fas fa-robot"></i>'
+        : '{{ current_user.username[:1].upper() if current_user.is_authenticated else "U" }}';
+    
+    const time = (timestamp || new Date()).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    
+    let formattedContent = content
+        .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    
+    messageDiv.innerHTML = `
+        <div class="msg-avatar">${avatar}</div>
+        <div class="msg-content" ${isError ? 'style="border-color: rgba(239, 68, 68, 0.5);"' : ''}>
+            ${formattedContent}
+            <div class="msg-time"><i class="far fa-clock"></i> ${time}</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'typing-indicator';
+    indicator.innerHTML = `
+        <div class="msg-avatar" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="typing-dots">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    `;
+    chatMessages.appendChild(indicator);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return indicator;
+}
+
+function sendQuickMessage(message) {
+    messageInput.value = message;
+    sendMessage();
+}
+
+function newChat() {
+    currentSessionId = null;
+    messageHistory = [];
+    chatMessages.innerHTML = '';
+    localStorage.removeItem('nexus_ai_last_session');
+    
+    if (welcomeScreen) {
+        chatMessages.appendChild(welcomeScreen);
+        welcomeScreen.style.display = 'flex';
+    }
+    
+    renderSessionList();
+}
+
+function clearChat() {
+    if (confirm('确定要清空当前对话吗？')) {
+        if (currentSessionId) {
+            deleteSession(currentSessionId);
+        } else {
+            newChat();
+        }
+    }
+}
+
+function exportChat() {
+    if (messageHistory.length === 0) {
+        alert('没有可导出的对话内容');
+        return;
+    }
+    
+    let content = '# NEXUS AI 对话记录\n\n> 导出时间：' + new Date().toLocaleString('zh-CN') + '\n\n---\n\n';
+    messageHistory.forEach(msg => {
+        const role = msg.role === 'user' ? '👤 用户' : '🤖 AI';
+        content += `## ${role}\n\n${msg.content}\n\n---\n\n`;
+    });
+    
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `nexus-ai-chat-${new Date().toISOString().slice(0,10)}.md`;
+    a.click();
+}
+
+// 工具函数：转义HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

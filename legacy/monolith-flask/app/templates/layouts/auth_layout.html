@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}身份验证{% endblock %} - NEXUS PRIME</title>
+    
+    <!-- 在渲染前恢复用户主题设置 -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('nexus-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- 引用主系统的 CSS 变量 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: var(--bg-body);
+            color: var(--text-main);
+        }
+        
+        /* 粒子背景容器 - 与主系统一致 */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        [data-theme="light"] #particles-js {
+            opacity: 0.5;
+        }
+        
+        /* 全局光晕层 - 与主系统一致 */
+        .global-glow-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 100% 80% at 15% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 80% 60% at 85% 90%, rgba(139, 92, 246, 0.06) 0%, transparent 45%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .global-glow-layer::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 5%;
+            left: 0%;
+            animation: gentleFloat1 30s ease-in-out infinite;
+            filter: blur(60px);
+        }
+
+        .global-glow-layer::after {
+            content: '';
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: 10%;
+            right: 5%;
+            animation: gentleFloat2 25s ease-in-out infinite;
+            filter: blur(50px);
+        }
+
+        @keyframes gentleFloat1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 20px); }
+        }
+
+        @keyframes gentleFloat2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-25px, -15px); }
+        }
+        
+        [data-theme="light"] .global-glow-layer {
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.02) 0%, transparent 60%);
+        }
+        
+        /* ========== 主容器 ========== */
+        .auth-wrapper {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        /* ========== 认证卡片 ========== */
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+        }
+        
+        /* 卡片光效 */
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, var(--color-primary), #a855f7, #06b6d4, var(--color-primary));
+            background-size: 300% 300%;
+            border-radius: 26px;
+            opacity: 0.5;
+            filter: blur(15px);
+            animation: cardGlow 6s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes cardGlow {
+            0%, 100% { 
+                background-position: 0% 50%;
+                opacity: 0.3;
+            }
+            50% { 
+                background-position: 100% 50%;
+                opacity: 0.5;
+            }
+        }
+        
+        .auth-card-inner {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            animation: cardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* 顶部装饰线 */
+        .auth-card-inner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: linear-gradient(90deg, 
+                transparent,
+                var(--color-primary), 
+                #a855f7,
+                #06b6d4,
+                transparent);
+            border-radius: 0 0 3px 3px;
+        }
+        
+        /* ========== Logo 区域 ========== */
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            margin-bottom: 1.25rem;
+            position: relative;
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+        
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--color-primary), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo-ring {
+            position: absolute;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            animation: ringRotate linear infinite;
+        }
+        
+        .logo-ring-1 {
+            inset: -8px;
+            border-top-color: rgba(99, 102, 241, 0.6);
+            border-right-color: rgba(168, 85, 247, 0.3);
+            animation-duration: 8s;
+        }
+        
+        .logo-ring-2 {
+            inset: -16px;
+            border-bottom-color: rgba(6, 182, 212, 0.5);
+            border-left-color: rgba(16, 185, 129, 0.3);
+            animation-duration: 12s;
+            animation-direction: reverse;
+        }
+        
+        @keyframes ringRotate {
+            to { transform: rotate(360deg); }
+        }
+        
+        .logo-pulse {
+            position: absolute;
+            inset: -4px;
+            border: 2px solid var(--color-primary);
+            border-radius: 24px;
+            animation: pulse 2.5s ease-out infinite;
+            opacity: 0;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        
+        .auth-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-main), #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .auth-subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            color: #06b6d4;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+        
+        .auth-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        /* ========== 表单样式 ========== */
+        .auth-form {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+            animation: formSlide 0.5s ease forwards;
+            opacity: 0;
+        }
+        
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.15s; }
+        .form-group:nth-child(3) { animation-delay: 0.2s; }
+        .form-group:nth-child(4) { animation-delay: 0.25s; }
+        .form-group:nth-child(5) { animation-delay: 0.3s; }
+        .form-group:nth-child(6) { animation-delay: 0.35s; }
+        
+        @keyframes formSlide {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-label i {
+            color: var(--color-primary);
+            font-size: 0.75rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            padding-right: 3rem;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-dim);
+            opacity: 0.6;
+        }
+        
+        .form-control:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-glow);
+        }
+        
+        .input-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus + .input-icon {
+            color: var(--color-primary);
+            opacity: 1;
+        }
+        
+        .form-error {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            color: var(--color-danger);
+            margin-top: 0.5rem;
+        }
+        
+        /* ========== 表单选项 ========== */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .checkbox-wrapper input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--color-primary);
+            cursor: pointer;
+        }
+        
+        .checkbox-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .forgot-link {
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .forgot-link:hover {
+            color: #a855f7;
+        }
+        
+        /* ========== 提交按钮 ========== */
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--color-primary), #a855f7);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -5px var(--color-primary-glow);
+        }
+        
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+        
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+        
+        /* ========== 分割线 ========== */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+        }
+        
+        .divider-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* ========== 底部链接 ========== */
+        .auth-footer {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .auth-footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .auth-footer a:hover {
+            color: #a855f7;
+        }
+        
+        /* ========== Flash 消息 ========== */
+        .flash-messages {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .flash-message {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-elevated);
+            border: var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            animation: flashSlide 0.4s ease;
+            box-shadow: var(--shadow-md);
+        }
+        
+        @keyframes flashSlide {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .flash-message.success { border-left: 3px solid var(--color-success); }
+        .flash-message.danger, .flash-message.error { border-left: 3px solid var(--color-danger); }
+        .flash-message.warning { border-left: 3px solid var(--color-warning); }
+        .flash-message.info { border-left: 3px solid var(--color-info); }
+        
+        .flash-message i { font-size: 1.1rem; }
+        .flash-message.success i { color: var(--color-success); }
+        .flash-message.danger i, .flash-message.error i { color: var(--color-danger); }
+        .flash-message.warning i { color: var(--color-warning); }
+        .flash-message.info i { color: var(--color-info); }
+        
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- 粒子背景 - 与主系统一致 -->
+    <div id="particles-js"></div>
+    
+    <!-- 全局光晕层 - 与主系统一致 -->
+    <div class="global-glow-layer"></div>
+    
+    <!-- Flash 消息 -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {% if category == 'success' %}
+                    <i class="fas fa-check-circle"></i>
+                    {% elif category in ['danger', 'error'] %}
+                    <i class="fas fa-exclamation-circle"></i>
+                    {% elif category == 'warning' %}
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% else %}
+                    <i class="fas fa-info-circle"></i>
+                    {% endif %}
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <!-- 主内容 -->
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-card-inner">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 粒子效果脚本 - 与主系统一致 -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        particlesJS.load('particles-js', "{{ url_for('static', filename='js/particles.json') }}");
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <script>
+        // 自动隐藏 flash 消息
+        setTimeout(() => {
+            document.querySelectorAll('.flash-message').forEach(msg => {
+                msg.style.transition = 'all 0.5s ease';
+                msg.style.opacity = '0';
+                msg.style.transform = 'translateX(50px)';
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1042 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}新建订单 - NEXUS{% endblock %}
+{% block breadcrumb %}商业订单 / 新建订单{% endblock %}
+
+{% block styles %}
+<style>
+.create-order-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.back-nav {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+}
+
+.back-link:hover {
+    color: var(--color-primary);
+}
+
+.order-form {
+    background: var(--bg-surface);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    overflow: visible;
+}
+
+.form-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.04));
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.header-text p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.form-section {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    overflow: visible;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+}
+
+.section-title.no-margin {
+    margin-bottom: 0;
+}
+
+.section-title i {
+    color: var(--color-primary);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    overflow: visible;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow: visible;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.form-label i {
+    color: var(--color-primary);
+    font-size: 0.8rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: var(--input-bg, #ffffff);
+    border: 1px solid var(--input-border, rgba(0,0,0,0.1));
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* 原生select统一样式 */
+select.form-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+/* select包装器 - 添加自定义箭头 */
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.select-wrapper .select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-primary);
+    pointer-events: none;
+    font-size: 0.85rem;
+}
+
+.add-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-item-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.item-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 44px;
+    gap: 1rem;
+    align-items: end;
+    padding: 1rem;
+    background: var(--bg-elevated, #f8fafc);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.item-product,
+.item-quantity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.item-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.item-row .form-input {
+    background: #ffffff;
+    border-color: var(--input-border);
+}
+
+.remove-item-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.1);
+    border: none;
+    border-radius: 10px;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-item-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    background: rgba(0,0,0,0.02);
+}
+
+.cancel-btn,
+.submit-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.cancel-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.cancel-btn:hover {
+    background: var(--bg-elevated);
+    color: var(--text-main);
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    border: none;
+    color: white;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* 暗色主题适配 */
+[data-theme="dark"] .form-header {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.08));
+}
+
+[data-theme="dark"] .form-input {
+    background: rgba(0,0,0,0.2);
+    border-color: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .item-row {
+    background: rgba(0,0,0,0.15);
+    border-color: rgba(255,255,255,0.05);
+}
+
+[data-theme="dark"] .item-row .form-input {
+    background: rgba(0,0,0,0.25);
+}
+
+[data-theme="dark"] .form-actions {
+    background: rgba(0,0,0,0.15);
+}
+
+/* ===== 可搜索下拉框样式 ===== */
+.searchable-select {
+    position: relative;
+    width: 100%;
+}
+
+.searchable-select .select-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    padding-right: 2.5rem;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    background: var(--input-bg, #ffffff);
+    border: 1px solid var(--input-border, rgba(0,0,0,0.1));
+    border-radius: 10px;
+    transition: all 0.25s ease;
+    box-sizing: border-box;
+}
+
+.searchable-select .select-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.searchable-select .select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: transform 0.25s ease;
+    z-index: 2;
+}
+
+.searchable-select.open .select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.searchable-select .select-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s ease;
+    overflow: hidden;
+}
+
+/* 商品下拉框 - 与输入框同宽 */
+.product-select .select-dropdown {
+    width: 100%;
+}
+
+.searchable-select.open .select-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-search {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: #f8fafc;
+}
+
+.dropdown-search i {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.dropdown-search .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.dropdown-search .search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+}
+
+.dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: all 0.15s ease;
+    font-size: 0.9rem;
+}
+
+.dropdown-item:hover,
+.dropdown-item.highlighted {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+}
+
+.dropdown-item.hidden {
+    display: none;
+}
+
+.dropdown-item .product-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 1rem;
+}
+
+.dropdown-item .item-price {
+    flex-shrink: 0;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.dropdown-empty {
+    display: none;
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.dropdown-empty.show {
+    display: block;
+}
+
+.combo-hint {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    opacity: 0.7;
+}
+
+/* 客户选择器布局优化 */
+.customer-select-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.customer-select-wrapper .combo-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0;
+}
+
+.customer-select-wrapper .combo-hint i {
+    font-size: 0.65rem;
+}
+
+/* 只读输入框样式（商品选择） */
+.select-input[readonly] {
+    cursor: pointer;
+    background: var(--input-bg, #ffffff) !important;
+}
+
+.select-input[readonly]:focus {
+    cursor: pointer;
+}
+
+/* 暗色主题下拉框样式 */
+[data-theme="dark"] .searchable-select .select-input {
+    background: rgba(0,0,0,0.2);
+    border-color: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .searchable-select .select-dropdown {
+    background: #1e1e2e;
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .dropdown-search {
+    background: #252538;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item.highlighted {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+    .form-header,
+    .form-section,
+    .form-actions {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .item-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .remove-item-btn {
+        width: 100%;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .cancel-btn,
+    .submit-btn {
+        justify-content: center;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-order-page">
+    <!-- 返回按钮 -->
+    <div class="back-nav">
+        <a href="{{ url_for('sales.kanban') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回订单看板</span>
+        </a>
+    </div>
+
+    <form method="POST" action="{{ url_for('sales.create') }}" class="order-form">
+        {{ form.hidden_tag() }}
+        
+        <!-- 页面头部 -->
+        <div class="form-header">
+            <div class="header-icon">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div class="header-text">
+                <h1>创建新订单</h1>
+                <p>CREATE NEW ORDER</p>
+            </div>
+        </div>
+
+        <!-- 基础信息 -->
+        <div class="form-section">
+            <div class="section-title">
+                <i class="fas fa-info-circle"></i>
+                <span>基础信息</span>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user-tie"></i> 选择客户
+                    </label>
+                    <div class="customer-select-wrapper">
+                        <div class="searchable-select" id="customerSelect">
+                            <input type="text" name="customer_name" class="select-input" 
+                                   placeholder="输入客户名称或从列表选择" autocomplete="off">
+                            <input type="hidden" name="customer_id" id="customer_id_hidden">
+                            <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                            <div class="select-dropdown">
+                                <div class="dropdown-search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" class="search-input" placeholder="搜索客户...">
+                                </div>
+                                <ul class="dropdown-list">
+                                    {% for c_id, c_name in form.customer_id.choices %}
+                                    <li class="dropdown-item" data-id="{{ c_id }}" data-value="{{ c_name }}">
+                                        <span>{{ c_name }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="dropdown-empty">无匹配客户，可直接输入新客户名称</div>
+                            </div>
+                        </div>
+                        <span class="combo-hint"><i class="fas fa-info-circle"></i> 可直接输入新客户名称，或点击下拉箭头选择已有客户</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-flag"></i> 初始状态
+                    </label>
+                    <div class="select-wrapper">
+                        {{ form.status(class="form-input") }}
+                        <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 商品明细 -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-title no-margin">
+                    <i class="fas fa-boxes"></i>
+                    <span>商品明细</span>
+                </div>
+                <button type="button" class="add-item-btn" onclick="addItemRow()">
+                    <i class="fas fa-plus"></i>
+                    <span>添加商品</span>
+                </button>
+            </div>
+            
+            <div class="items-list" id="itemsList">
+                <div class="item-row">
+                    <div class="item-product">
+                        <label class="item-label">商品</label>
+                        <div class="searchable-select product-select">
+                            <input type="text" class="select-input product-name-input" 
+                                   placeholder="输入商品名或从列表选择" autocomplete="off">
+                            <input type="hidden" name="product_ids[]" class="product-id-hidden">
+                            <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                            <div class="select-dropdown">
+                                <div class="dropdown-search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" class="search-input" placeholder="搜索商品...">
+                                </div>
+                                <ul class="dropdown-list">
+                                    {% for p in products %}
+                                    <li class="dropdown-item" data-id="{{ p.id }}" data-value="{{ p.name }}" data-price="{{ p.price }}">
+                                        <span class="product-name">{{ p.name }}</span>
+                                        <span class="item-price">¥{{ "%.2f"|format(p.price) }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="dropdown-empty">无匹配商品，可直接输入新商品名称</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-quantity">
+                        <label class="item-label">数量</label>
+                        <input type="number" name="quantities[]" class="form-input" value="1" min="1">
+                    </div>
+                    <button type="button" class="remove-item-btn" onclick="removeRow(this)" title="删除">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提交区域 -->
+        <div class="form-actions">
+            <a href="{{ url_for('sales.kanban') }}" class="cancel-btn">
+                <i class="fas fa-times"></i>
+                <span>取消</span>
+            </a>
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-check"></i>
+                <span>确认创建</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 产品数据存储
+const productsData = [
+    {% for p in products %}
+    { id: {{ p.id }}, name: "{{ p.name }}", price: {{ p.price }} },
+    {% endfor %}
+];
+
+// 可搜索下拉框类
+class SearchableSelect {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.input = container.querySelector('.select-input');
+        this.hiddenInput = container.querySelector('input[type="hidden"]');
+        this.arrow = container.querySelector('.select-arrow');
+        this.dropdown = container.querySelector('.select-dropdown');
+        this.searchInput = container.querySelector('.search-input');
+        this.itemsList = container.querySelector('.dropdown-list');
+        this.emptyMsg = container.querySelector('.dropdown-empty');
+        this.items = container.querySelectorAll('.dropdown-item');
+        this.highlightedIndex = -1;
+        
+        // 选项：是否允许自由输入（客户可以，商品不行）
+        this.allowFreeInput = options.allowFreeInput !== false && !this.input.hasAttribute('readonly');
+        
+        this.init();
+    }
+    
+    init() {
+        // 点击箭头打开/关闭下拉
+        this.arrow.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggle();
+        });
+        
+        // 点击输入框
+        this.input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.open();
+        });
+        
+        // 输入框获得焦点时打开下拉（仅当允许自由输入时）
+        if (this.allowFreeInput) {
+            this.input.addEventListener('focus', () => {
+                // 不自动打开，让用户点击箭头选择
+            });
+            
+            // 输入框内容变化时过滤
+            this.input.addEventListener('input', () => {
+                // 清除之前选中的ID（用户正在输入新内容）
+                if (this.hiddenInput) {
+                    this.hiddenInput.value = '';
+                }
+                // 如果正在输入，过滤下拉列表
+                if (this.container.classList.contains('open')) {
+                    this.filter(this.input.value);
+                }
+            });
+        }
+        
+        // 搜索框过滤
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', () => {
+                this.filter(this.searchInput.value);
+            });
+            this.searchInput.addEventListener('click', (e) => e.stopPropagation());
+        }
+        
+        // 键盘导航
+        this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+        if (this.searchInput) {
+            this.searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
+        }
+        
+        // 点击选项
+        this.items.forEach((item, index) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectItem(item);
+            });
+            item.addEventListener('mouseenter', () => {
+                this.highlightedIndex = index;
+                this.updateHighlight();
+            });
+        });
+        
+        // 点击外部关闭
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        });
+    }
+    
+    toggle() {
+        if (this.container.classList.contains('open')) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+    
+    open() {
+        // 关闭其他打开的下拉框
+        document.querySelectorAll('.searchable-select.open').forEach(el => {
+            if (el !== this.container) {
+                el.classList.remove('open');
+            }
+        });
+        
+        this.container.classList.add('open');
+        if (this.searchInput) {
+            this.searchInput.value = '';
+            setTimeout(() => this.searchInput.focus(), 50);
+        }
+        this.filter('');
+        this.highlightedIndex = -1;
+    }
+    
+    close() {
+        this.container.classList.remove('open');
+        this.highlightedIndex = -1;
+    }
+    
+    filter(query) {
+        const q = query.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        this.items.forEach(item => {
+            const text = item.getAttribute('data-value').toLowerCase();
+            const match = !q || text.includes(q);
+            item.classList.toggle('hidden', !match);
+            if (match) visibleCount++;
+        });
+        
+        // 显示/隐藏空提示
+        if (this.emptyMsg) {
+            this.emptyMsg.classList.toggle('show', visibleCount === 0);
+        }
+    }
+    
+    selectItem(item) {
+        const value = item.getAttribute('data-value');
+        const id = item.getAttribute('data-id');
+        
+        this.input.value = value;
+        if (this.hiddenInput) {
+            this.hiddenInput.value = id;
+        }
+        
+        this.close();
+        this.input.focus();
+    }
+    
+    handleKeydown(e) {
+        if (!this.container.classList.contains('open')) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                e.preventDefault();
+                this.open();
+            }
+            return;
+        }
+        
+        const visibleItems = [...this.items].filter(item => !item.classList.contains('hidden'));
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.highlightedIndex = Math.min(this.highlightedIndex + 1, visibleItems.length - 1);
+                this.updateHighlight();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+                this.updateHighlight();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (this.highlightedIndex >= 0 && visibleItems[this.highlightedIndex]) {
+                    this.selectItem(visibleItems[this.highlightedIndex]);
+                }
+                break;
+            case 'Escape':
+                this.close();
+                break;
+            case 'Tab':
+                this.close();
+                break;
+        }
+    }
+    
+    updateHighlight() {
+        const visibleItems = [...this.items].filter(item => !item.classList.contains('hidden'));
+        this.items.forEach(item => item.classList.remove('highlighted'));
+        if (this.highlightedIndex >= 0 && visibleItems[this.highlightedIndex]) {
+            visibleItems[this.highlightedIndex].classList.add('highlighted');
+            visibleItems[this.highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+}
+
+// 初始化页面上现有的可搜索下拉框
+function initSearchableSelects() {
+    document.querySelectorAll('.searchable-select').forEach(el => {
+        if (!el._searchableSelect) {
+            el._searchableSelect = new SearchableSelect(el);
+        }
+    });
+}
+
+// 生成商品下拉列表HTML
+function generateProductDropdownHTML() {
+    let html = `
+        <div class="dropdown-search">
+            <i class="fas fa-search"></i>
+            <input type="text" class="search-input" placeholder="搜索商品...">
+        </div>
+        <ul class="dropdown-list">`;
+    
+    productsData.forEach(p => {
+        html += `
+            <li class="dropdown-item" data-id="${p.id}" data-value="${p.name}" data-price="${p.price}">
+                <span class="product-name">${p.name}</span>
+                <span class="item-price">¥${p.price.toFixed(2)}</span>
+            </li>`;
+    });
+    
+    html += `
+        </ul>
+        <div class="dropdown-empty">无匹配商品，可直接输入新商品名称</div>`;
+    
+    return html;
+}
+
+// 添加商品行
+function addItemRow() {
+    const list = document.getElementById('itemsList');
+    
+    // 创建新行
+    const newRow = document.createElement('div');
+    newRow.className = 'item-row';
+    newRow.innerHTML = `
+        <div class="item-product">
+            <label class="item-label">商品</label>
+            <div class="searchable-select product-select">
+                <input type="text" class="select-input product-name-input" 
+                       placeholder="输入商品名或从列表选择" autocomplete="off">
+                <input type="hidden" name="product_ids[]" class="product-id-hidden">
+                <span class="select-arrow"><i class="fas fa-chevron-down"></i></span>
+                <div class="select-dropdown">
+                    ${generateProductDropdownHTML()}
+                </div>
+            </div>
+        </div>
+        <div class="item-quantity">
+            <label class="item-label">数量</label>
+            <input type="number" name="quantities[]" class="form-input" value="1" min="1">
+        </div>
+        <button type="button" class="remove-item-btn" onclick="removeRow(this)" title="删除">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    `;
+    
+    list.appendChild(newRow);
+    
+    // 初始化新行的可搜索下拉框
+    const newSelect = newRow.querySelector('.searchable-select');
+    newSelect._searchableSelect = new SearchableSelect(newSelect);
+}
+
+// 删除商品行
+function removeRow(btn) {
+    const list = document.getElementById('itemsList');
+    const rows = list.querySelectorAll('.item-row');
+    
+    if (rows.length > 1) {
+        btn.closest('.item-row').remove();
+    } else {
+        // 抖动提示
+        const row = btn.closest('.item-row');
+        row.style.animation = 'shake 0.3s ease';
+        setTimeout(() => {
+            row.style.animation = '';
+        }, 300);
+    }
+}
+
+// 表单提交前验证
+document.querySelector('.order-form').addEventListener('submit', function(e) {
+    // 检查客户
+    const customerName = document.querySelector('input[name="customer_name"]').value.trim();
+    if (!customerName) {
+        e.preventDefault();
+        alert('请输入或选择客户');
+        return false;
+    }
+    
+    // 检查是否至少有一个有效的商品选择
+    const productHiddenInputs = document.querySelectorAll('.product-id-hidden');
+    let hasValidProduct = false;
+    
+    productHiddenInputs.forEach(input => {
+        if (input.value) {
+            hasValidProduct = true;
+        }
+    });
+    
+    if (!hasValidProduct) {
+        e.preventDefault();
+        alert('请至少选择一个商品');
+        return false;
+    }
+});
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', initSearchableSelects);
+</script>
+{% endblock %}

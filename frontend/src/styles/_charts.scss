@@ -1,0 +1,135 @@
+@layer app {
+  [echarts],
+  .atlas-chart,
+  .mini-chart,
+  .hero-mini-chart,
+  .command-big-chart,
+  .ops-chart-large,
+  .report-chart,
+  .ai-chart,
+  .contract-chart,
+  .customer-chart,
+  .supplier-chart,
+  .stocktake-chart,
+  .flow-main-chart,
+  .quality-chart,
+  .security-chart,
+  .credit-chart,
+  .service-chart,
+  .replenishment-chart,
+  .budget-chart,
+  .capacity-chart,
+  .quality-inspection-chart {
+    display: block;
+    min-width: 0;
+    height: clamp(260px, 34vw, 380px);
+    min-height: 0;
+    max-height: 420px;
+    width: 100%;
+  }
+
+  .mini-chart {
+    height: 280px;
+    max-height: 320px;
+  }
+
+  .hero-mini-chart {
+    height: 190px;
+    max-height: 220px;
+  }
+
+  .command-big-chart,
+  .ops-chart-large,
+  .flow-main-chart {
+    height: clamp(300px, 38vw, 460px);
+    max-height: 460px;
+  }
+
+  .report-chart,
+  .ai-chart,
+  .quality-chart,
+  .security-chart,
+  .service-chart,
+  .budget-chart,
+  .capacity-chart,
+  .quality-inspection-chart {
+    height: clamp(260px, 30vw, 360px);
+    max-height: 380px;
+  }
+
+  .chart-tabs,
+  .flow-chart-tabs,
+  .command-chart-tabs,
+  .quality-inspection-chart-tabs,
+  .shift-lens-switch,
+  .mode-switch {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-muted) 74%, transparent);
+  }
+
+  .chart-tabs button,
+  .flow-chart-tabs button,
+  .command-chart-tabs button,
+  .quality-inspection-chart-tabs button,
+  .shift-lens-switch button,
+  .mode-switch button {
+    min-height: 30px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--muted-strong);
+    background: transparent;
+    font-weight: 820;
+    cursor: pointer;
+  }
+
+  .chart-tabs button.active,
+  .flow-chart-tabs button.active,
+  .command-chart-tabs button.active,
+  .quality-inspection-chart-tabs button.active,
+  .shift-lens-switch button.active,
+  .mode-switch button.active {
+    color: var(--accent-contrast);
+    background: color-mix(in srgb, var(--accent) 86%, #172033);
+  }
+
+  @media (max-width: 720px) {
+    [echarts],
+    .atlas-chart,
+    .mini-chart,
+    .report-chart,
+    .ai-chart,
+    .contract-chart,
+    .customer-chart,
+    .supplier-chart,
+    .stocktake-chart,
+    .quality-chart,
+    .security-chart,
+    .credit-chart,
+    .service-chart,
+    .replenishment-chart,
+    .budget-chart,
+    .capacity-chart,
+    .quality-inspection-chart {
+      height: 220px;
+      max-height: 220px;
+    }
+
+    .hero-mini-chart {
+      height: 180px;
+      max-height: 180px;
+    }
+
+    .command-big-chart,
+    .ops-chart-large,
+    .flow-main-chart {
+      height: 260px;
+      max-height: 260px;
+    }
+  }
+}
