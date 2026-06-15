@@ -2263,6 +2263,7 @@
   .policy-documents {
     display: grid;
     gap: .85rem;
+    padding-bottom: min(42vh, 360px);
   }
 
   .policy-document {
@@ -3147,10 +3148,675 @@
     }
   }
 
+  .entry-process-line {
+    position: relative;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) minmax(80px, .34fr);
+    gap: .72rem;
+    align-items: center;
+    min-width: 0;
+    min-height: 64px;
+    overflow: hidden;
+    padding: .62rem .8rem .62rem .62rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    background: var(--entry-surface-soft);
+    cursor: default;
+    transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), background 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard);
+    will-change: transform;
+  }
+
+  .entry-process-line::after {
+    content: "";
+    justify-self: stretch;
+    align-self: center;
+    height: 1px;
+    min-width: 72px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--entry-accent) 54%, transparent), color-mix(in srgb, var(--entry-warm) 28%, transparent), transparent);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--entry-accent) 18%, transparent);
+    transform-origin: left;
+    animation: entry-flow-draw 1200ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+
+  .entry-process-line:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--entry-accent) 32%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 8%, var(--entry-surface-soft));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--entry-accent) 10%, transparent);
+  }
+
+  .brand-mark {
+    place-items: center;
+    justify-items: center;
+    align-items: center;
+    padding: 0;
+    line-height: 1;
+    text-align: center;
+    font-size: .78rem;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .brand-mark::first-letter {
+    margin-left: 0;
+  }
+
+  .login-brand-hero .brand-mark,
+  .brand-lockup .brand-mark,
+  .policy-topbar .brand-mark {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    font-size: .72rem;
+  }
+
+  .nexus-login-redesign .login-brand-hero {
+    align-items: center;
+    min-height: 56px;
+    padding: .45rem .58rem;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption {
+    bottom: clamp(5.85rem, 8vw, 6.9rem);
+    width: min(640px, 58%);
+    overflow: visible;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption > span {
+    margin-bottom: .45rem;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title {
+    display: grid;
+    gap: .035em;
+    max-width: none;
+    overflow: visible;
+    color: #fff;
+    font-size: clamp(2.85rem, 5.4vw, 5.9rem);
+    line-height: .9;
+    letter-spacing: 0;
+    text-wrap: balance;
+    animation: none;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title > span {
+    display: block;
+    width: max-content;
+    max-width: min(10ch, 100%);
+    overflow: visible;
+    white-space: nowrap;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: 0;
+    text-transform: none;
+    background-image:
+      linear-gradient(180deg, #ffffff 0%, #e8fff9 48%, color-mix(in srgb, #fff 72%, var(--entry-accent)) 100%),
+      linear-gradient(100deg, transparent 0 34%, rgba(255, 255, 255, .94) 48%, transparent 63% 100%);
+    background-size: 100% 180%, 220% 100%;
+    background-position: 50% 0%, -150% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 20px 46px rgba(0, 0, 0, .45));
+    animation: auth-title-line-rise 880ms cubic-bezier(.16, 1, .3, 1) both, auth-title-line-sheen 5200ms ease-in-out 1200ms infinite;
+  }
+
+  html.light-luxury .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title > span {
+    background-image:
+      linear-gradient(180deg, #ffffff 0%, #f1fff9 46%, color-mix(in srgb, #dff8f0 82%, var(--entry-accent)) 100%),
+      linear-gradient(100deg, transparent 0 34%, rgba(255, 255, 255, .98) 48%, transparent 63% 100%);
+    text-shadow:
+      0 2px 0 rgba(0, 0, 0, .24),
+      0 18px 42px rgba(0, 0, 0, .52);
+    filter: drop-shadow(0 22px 48px rgba(0, 0, 0, .5));
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title > span::before {
+    content: none;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title > span:nth-child(2) {
+    animation-delay: 120ms, 1320ms;
+  }
+
+  .auth-stage-title::after {
+    content: "";
+    width: min(280px, 72%);
+    height: 2px;
+    margin-top: .18em;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--entry-accent) 88%, #fff), color-mix(in srgb, var(--entry-warm) 72%, #fff), transparent);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--entry-accent) 42%, transparent);
+    transform-origin: left;
+    animation: auth-title-rule 860ms cubic-bezier(.16, 1, .3, 1) 260ms both;
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption:has(.auth-stage-title) {
+    padding: .65rem .85rem .75rem;
+    border-radius: var(--entry-radius);
+    background: linear-gradient(90deg, rgba(0, 0, 0, .34), rgba(0, 0, 0, .08) 76%, transparent);
+  }
+
+  .nexus-login-redesign .auth-visual-core {
+    grid-template-columns: 124px minmax(0, 1fr);
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .nexus-login-redesign .auth-orbit {
+    width: 112px;
+    overflow: visible;
+    border-color: color-mix(in srgb, var(--entry-accent) 36%, transparent);
+    animation: auth-orbit-float 5200ms ease-in-out infinite;
+  }
+
+  .nexus-login-redesign .auth-orbit::before {
+    inset: 16px;
+    border: 0;
+    border-radius: 0;
+    background:
+      linear-gradient(150deg, transparent 49.4%, color-mix(in srgb, var(--entry-accent) 42%, transparent) 50%, transparent 50.8%) 50% 8px / 78px 72px no-repeat,
+      linear-gradient(30deg, transparent 49.4%, color-mix(in srgb, var(--entry-warm) 36%, transparent) 50%, transparent 50.8%) 50% 8px / 78px 72px no-repeat,
+      linear-gradient(90deg, transparent 0 14%, color-mix(in srgb, var(--entry-accent) 34%, transparent) 14% 86%, transparent 86%) 50% 76px / 82px 1px no-repeat;
+    animation: auth-triangle-glow 4600ms ease-in-out infinite;
+  }
+
+  .nexus-login-redesign .auth-orbit::after {
+    inset: -7px;
+    border-left-color: color-mix(in srgb, var(--entry-warm) 20%, transparent);
+    border-bottom-color: transparent;
+  }
+
+  .nexus-login-redesign .orbit-node {
+    left: 50%;
+    top: 50%;
+    width: 30px;
+    height: 30px;
+    transform: translate(-50%, -50%) translate(var(--node-x), var(--node-y));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--entry-canvas) 40%, transparent), 0 0 24px color-mix(in srgb, var(--entry-accent) 20%, transparent);
+    animation: auth-node-pulse 3600ms ease-in-out infinite;
+  }
+
+  .nexus-login-redesign .node-user {
+    --node-x: 0px;
+    --node-y: -42px;
+  }
+
+  .nexus-login-redesign .node-role {
+    --node-x: 38px;
+    --node-y: 24px;
+    animation-delay: 160ms;
+  }
+
+  .nexus-login-redesign .node-audit {
+    --node-x: -38px;
+    --node-y: 24px;
+    animation-delay: 320ms;
+  }
+
+  .nexus-login-redesign .login-capabilities {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .42rem;
+  }
+
+  .nexus-login-redesign .login-capabilities div {
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    min-height: 46px;
+    padding: .52rem .56rem;
+    gap: .42rem;
+    text-align: left;
+  }
+
+  .nexus-login-redesign .login-capabilities i {
+    width: 24px;
+    height: 24px;
+    border: 1px solid color-mix(in srgb, var(--entry-accent) 34%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--entry-accent) 10%, transparent);
+    font-size: .8rem;
+  }
+
+  .nexus-login-redesign .login-capabilities strong {
+    overflow: hidden;
+    font-size: .78rem;
+    line-height: 1.14;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nexus-login-redesign .login-capabilities span {
+    display: none;
+  }
+
+  .nexus-login-redesign .login-footnote {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) repeat(3, auto);
+    align-items: center;
+    gap: .4rem;
+    padding: .42rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    background: color-mix(in srgb, var(--entry-canvas) 18%, transparent);
+  }
+
+  .nexus-login-redesign .login-footnote > span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--entry-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nexus-login-redesign .login-footnote button {
+    min-width: 78px;
+    min-height: 32px;
+    padding: .38rem .55rem;
+    font-size: .72rem;
+    font-weight: 820;
+    white-space: nowrap;
+  }
+
+  .nexus-login-redesign .login-footnote button:hover {
+    border-color: color-mix(in srgb, var(--entry-accent) 34%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 9%, var(--entry-surface-soft));
+  }
+
+  .nexus-login-redesign .register-consent {
+    gap: .58rem;
+    padding: .72rem;
+  }
+
+  .nexus-login-redesign .register-consent-head {
+    grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .nexus-login-redesign .register-consent-head nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .34rem;
+  }
+
+  .nexus-login-redesign .register-consent-head button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    min-width: 0;
+    padding: .36rem .42rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    color: var(--entry-muted);
+    background: color-mix(in srgb, var(--entry-canvas) 22%, transparent);
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 820;
+    line-height: 1.1;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .nexus-login-redesign .register-consent-head button:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--entry-accent) 36%, transparent);
+    color: var(--entry-ink);
+    background: color-mix(in srgb, var(--entry-accent) 9%, var(--entry-surface-soft));
+  }
+
+  .nexus-login-redesign .register-consent > label {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: .55rem;
+    align-items: center;
+    min-height: 26px;
+    font-size: .8rem;
+  }
+
+  .nexus-login-redesign .register-consent input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    justify-self: center;
+    align-self: center;
+    accent-color: var(--entry-accent);
+  }
+
+  .policy-screen {
+    scroll-padding-top: 6.8rem;
+  }
+
+  .policy-hero {
+    grid-template-columns: minmax(0, .86fr) minmax(340px, .64fr);
+    gap: clamp(.85rem, 1.6vw, 1.2rem);
+    min-height: clamp(440px, 50vw, 590px);
+    padding: clamp(.9rem, 1.8vw, 1.3rem);
+  }
+
+  .policy-hero-copy {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1.2rem, 4vw, 3.1rem);
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius-lg);
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--entry-accent) 10%, transparent), transparent 44%),
+      color-mix(in srgb, var(--entry-canvas) 16%, transparent);
+  }
+
+  .policy-hero-copy::after {
+    content: "";
+    position: absolute;
+    left: clamp(1.2rem, 4vw, 3.1rem);
+    right: clamp(1.2rem, 4vw, 3.1rem);
+    bottom: clamp(1.2rem, 4vw, 3.1rem);
+    height: 1px;
+    background: linear-gradient(90deg, var(--entry-accent), color-mix(in srgb, var(--entry-warm) 60%, transparent), transparent);
+    transform-origin: left;
+    animation: auth-title-rule 920ms cubic-bezier(.16, 1, .3, 1) 260ms both;
+  }
+
+  .policy-hero h1 {
+    display: grid;
+    gap: .02em;
+    width: min(7ch, 100%);
+    overflow: visible;
+    color: var(--entry-ink);
+    font-size: clamp(3.6rem, 7.3vw, 7.8rem);
+    line-height: .86;
+    letter-spacing: 0;
+    text-wrap: balance;
+    background-image: none;
+    animation: none;
+  }
+
+  .policy-hero h1 span {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    background-image:
+      var(--entry-title-fill),
+      linear-gradient(105deg, transparent 0 34%, color-mix(in srgb, #fff 78%, var(--entry-accent)) 48%, transparent 60% 100%);
+    background-size: 100% 180%, 230% 100%;
+    background-position: 50% 0%, -170% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: auth-title-line-rise 860ms cubic-bezier(.16, 1, .3, 1) both, entry-title-sheen 5600ms ease-in-out 1200ms infinite;
+  }
+
+  .policy-hero h1 span:nth-child(2) {
+    animation-delay: 110ms, 1310ms;
+  }
+
+  .policy-index {
+    gap: .5rem;
+  }
+
+  .policy-index button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: .55rem;
+    align-items: center;
+    min-height: 54px;
+    padding: .58rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    color: var(--entry-ink);
+    background: var(--entry-surface-soft);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 180ms var(--ease-standard), border-color 180ms var(--ease-standard), background 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard);
+  }
+
+  .policy-index button:hover,
+  .policy-index button.active {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--entry-accent) 38%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 9%, var(--entry-surface-soft));
+    box-shadow: inset 3px 0 0 var(--entry-accent);
+  }
+
+  .policy-index button span,
+  .policy-document header > span {
+    color: var(--entry-warm);
+    font-family: var(--font-mono);
+    font-size: .74rem;
+    font-weight: 900;
+  }
+
+  .policy-index button strong {
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+  }
+
+  .policy-document {
+    overflow: hidden;
+    scroll-margin-top: 7rem;
+  }
+
+  .policy-document header {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: .35rem .72rem;
+    align-items: start;
+    padding-bottom: .72rem;
+    border-bottom: 1px solid var(--entry-line-soft);
+  }
+
+  .policy-document header > span {
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid color-mix(in srgb, var(--entry-warm) 30%, transparent);
+    border-radius: var(--entry-radius);
+    background: color-mix(in srgb, var(--entry-warm) 10%, transparent);
+  }
+
+  .policy-document h2,
+  .policy-document p {
+    grid-column: 2;
+  }
+
+  .policy-document h2 {
+    font-size: clamp(1.65rem, 2.7vw, 2.65rem);
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+
+  .policy-document ul {
+    gap: .62rem;
+  }
+
+  .policy-document li {
+    padding: .72rem .82rem .72rem 2.15rem;
+    border: 1px solid var(--entry-line-soft);
+    border-radius: var(--entry-radius);
+    background: color-mix(in srgb, var(--entry-canvas) 14%, transparent);
+  }
+
+  .policy-document li::before {
+    left: .82rem;
+    top: 1.18rem;
+    width: .5rem;
+    height: .5rem;
+  }
+
+  @media (max-width: 1120px) {
+    .policy-hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-index {
+      position: relative;
+      top: auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .entry-process-line {
+      grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .entry-process-line::after {
+      display: none;
+    }
+
+    .nexus-login-redesign .login-footnote {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nexus-login-redesign .login-footnote > span,
+    .nexus-login-redesign .login-footnote button {
+      width: 100%;
+      white-space: normal;
+    }
+
+    .nexus-login-redesign .login-capabilities {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nexus-login-redesign .login-capabilities strong {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    .nexus-login-redesign .register-consent-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nexus-login-redesign .register-consent-head nav {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nexus-login-redesign .register-consent-head button {
+      padding-inline: .25rem;
+      font-size: .68rem;
+    }
+
+    .policy-hero {
+      min-height: auto;
+      padding: .72rem;
+    }
+
+    .policy-hero-copy {
+      padding: 1rem;
+    }
+
+    .policy-hero-copy::after {
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+    }
+
+    .policy-hero h1 {
+      font-size: clamp(3.1rem, 18vw, 4.85rem);
+    }
+
+    .policy-index {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-document header {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-document h2,
+    .policy-document p {
+      grid-column: auto;
+    }
+  }
+
+  @keyframes entry-flow-draw {
+    from {
+      opacity: 0;
+      transform: scaleX(.08);
+    }
+
+    to {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes auth-title-line-rise {
+    from {
+      opacity: 0;
+      transform: translateY(.34em) scale(.98);
+      filter: blur(12px);
+    }
+
+    62% {
+      opacity: 1;
+      transform: translateY(-.025em) scale(1.006);
+      filter: blur(0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes auth-title-line-sheen {
+    0%,
+    34%,
+    100% {
+      background-position: 50% 0%, -150% 50%;
+    }
+
+    48%,
+    58% {
+      background-position: 50% 100%, 150% 50%;
+    }
+  }
+
+  @keyframes auth-title-rule {
+    from {
+      opacity: 0;
+      transform: scaleX(.08);
+    }
+
+    to {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes auth-triangle-glow {
+    0%,
+    100% {
+      opacity: .56;
+      filter: drop-shadow(0 0 0 color-mix(in srgb, var(--entry-accent) 0%, transparent));
+    }
+
+    50% {
+      opacity: 1;
+      filter: drop-shadow(0 0 12px color-mix(in srgb, var(--entry-accent) 28%, transparent));
+    }
+  }
+
+  @keyframes auth-node-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--entry-canvas) 40%, transparent), 0 0 18px color-mix(in srgb, var(--entry-accent) 18%, transparent);
+    }
+
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--entry-accent) 9%, transparent), 0 0 28px color-mix(in srgb, var(--entry-accent) 30%, transparent);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .entry-title span,
     .entry-title::before,
     .entry-title::after,
+    .entry-process-line,
+    .entry-process-line::after,
     .entry-photo-runway img,
     .nexus-login-redesign .login-panel,
     .nexus-login-redesign .login-identity-panel,
@@ -3158,15 +3824,21 @@
     .nexus-login-redesign .login-photo-card img,
     .nexus-login-redesign .login-photo-card figcaption strong,
     .nexus-login-redesign .login-photo-card figcaption span,
+    .auth-stage-title span,
+    .auth-stage-title::after,
     .nexus-login-redesign .brand-lockup h1,
     .nexus-login-redesign .auth-orbit,
+    .nexus-login-redesign .auth-orbit::before,
     .nexus-login-redesign .auth-orbit::after,
+    .nexus-login-redesign .orbit-node,
     .policy-topbar,
     .policy-hero,
     .policy-layout,
     .policy-photo-card,
     .policy-photo-card img,
-    .policy-hero h1 {
+    .policy-hero h1,
+    .policy-hero h1 span,
+    .policy-hero-copy::after {
       animation: none !important;
       transition: none !important;
     }

@@ -101,13 +101,13 @@ import { ThemeService } from '../core/theme.service';
 
           <div class="entry-process-lines" id="entry-system" aria-label="关键流程">
             @for (step of flowSteps; track step.title) {
-              <a [routerLink]="step.path">
+              <div class="entry-process-line" role="presentation">
                 <i [class]="step.icon"></i>
                 <span>
                   <strong>{{ step.title }}</strong>
                   <em>{{ step.body }}</em>
                 </span>
-              </a>
+              </div>
             }
           </div>
 
@@ -146,9 +146,9 @@ import { ThemeService } from '../core/theme.service';
 export class EntryPage {
   protected readonly theme = inject(ThemeService);
   protected readonly flowSteps = [
-    { title: '经营总览', body: '指标、任务与风险进入同一屏', path: '/app/overview', icon: 'pi pi-chart-line' },
-    { title: '流程协作', body: '采购、销售、库存形成闭环', path: '/app/tasks', icon: 'pi pi-sitemap' },
-    { title: '权限审计', body: '角色边界与操作记录可追踪', path: '/app/system/audit', icon: 'pi pi-shield' }
+    { title: '经营总览', body: '指标、任务与风险进入同一屏', icon: 'pi pi-chart-line' },
+    { title: '流程协作', body: '采购、销售、库存形成闭环', icon: 'pi pi-sitemap' },
+    { title: '权限审计', body: '角色边界与操作记录可追踪', icon: 'pi pi-shield' }
   ];
   protected readonly proofs = [
     { label: '业务模块', value: '18' },

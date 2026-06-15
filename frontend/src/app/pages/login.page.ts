@@ -53,7 +53,11 @@ interface CaptchaChallenge {
               <img [src]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'" alt="制造与仓配现场" />
               <figcaption>
                 <span>{{ authMode() === 'register' ? 'Register' : 'Secure console' }}</span>
-                <strong>{{ authMode() === 'register' ? '创建普通成员账号' : '进入经营工作台' }}</strong>
+                <strong class="auth-stage-title" [attr.aria-label]="authMode() === 'register' ? '创建普通成员账号' : '进入经营工作台'">
+                  @for (line of stageTitleLines(); track line) {
+                    <span>{{ line }}</span>
+                  }
+                </strong>
               </figcaption>
             </figure>
 
@@ -289,9 +293,9 @@ interface CaptchaChallenge {
                   <div class="register-consent-head">
                     <strong>许可确认</strong>
                     <nav aria-label="注册许可">
-                      <a routerLink="/auth/register-policy" fragment="terms">服务许可</a>
-                      <a routerLink="/auth/register-policy" fragment="privacy">隐私说明</a>
-                      <a routerLink="/auth/register-policy" fragment="data_scope">数据范围</a>
+                      <button type="button" (click)="openPolicy('terms')">服务许可</button>
+                      <button type="button" (click)="openPolicy('privacy')">隐私说明</button>
+                      <button type="button" (click)="openPolicy('data_scope')">数据范围</button>
                     </nav>
                   </div>
                   <label>
@@ -589,6 +593,14 @@ export class LoginPage implements OnInit {
         { label: '权限', value: 84 },
         { label: '审计', value: 97 }
       ];
+  }
+
+  stageTitleLines(): string[] {
+    return this.authMode() === 'register' ? ['创建普通', '成员账号'] : ['进入经营', '工作台'];
+  }
+
+  openPolicy(fragment: 'terms' | 'privacy' | 'data_scope'): void {
+    this.router.navigate(['/auth/register-policy'], { fragment });
   }
 
   private loadRegisterPolicy(): void {
