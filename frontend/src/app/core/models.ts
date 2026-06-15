@@ -54,6 +54,7 @@ export interface RegisterPayload {
   full_name?: string;
   phone?: string;
   position?: string;
+  department_name?: string;
   accepted_terms: boolean;
   accepted_privacy: boolean;
   accepted_data_scope: boolean;

@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import random
+import re
 import uuid
 from datetime import datetime, date
 from html import escape
@@ -100,6 +101,9 @@ def current_payload():
 CAPTCHA_TTL_SECONDS = 5 * 60
 CAPTCHA_TERMS_VERSION = '2026.06'
 CAPTCHA_CHALLENGE_TYPES = ('sum', 'difference', 'phrase')
+EMAIL_PATTERN = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+USERNAME_PATTERN = re.compile(r'^[A-Za-z0-9._-]{3,32}$')
+PHONE_PATTERN = re.compile(r'^[0-9+\-\s()]{6,24}$')
 
 
 def captcha_secret():
@@ -215,6 +219,46 @@ def validate_register_gate(payload):
     if not answer or not nonce or not expected_hash or not hmac.compare_digest(captcha_answer_hash(answer, nonce), expected_hash):
         return '验证码识别失败，请重新输入'
     return None
+
+
+def normalize_register_payload(payload):
+    email = str(payload.get('email') or '').strip().lower()
+    username = str(payload.get('username') or '').strip()
+    full_name = str(payload.get('full_name') or '').strip()
+    position = str(payload.get('position') or '').strip()
+    department_name = str(payload.get('department_name') or '').strip()
+    phone = str(payload.get('phone') or '').strip()
+    password = str(payload.get('password') or '')
+    return {
+        'email': email,
+        'username': username,
+        'full_name': full_name,
+        'position': position,
+        'department_name': department_name,
+        'phone': phone,
+        'password': password,
+    }
+
+
+def validate_register_profile(payload):
+    values = normalize_register_payload(payload)
+    errors = {}
+    if not values['full_name'] or len(values['full_name']) < 2:
+        errors['full_name'] = '请输入至少 2 个字符的姓名或岗位昵称'
+    if not USERNAME_PATTERN.match(values['username']):
+        errors['username'] = '用户名需为 3-32 位字母、数字、点、下划线或短横线'
+    if not EMAIL_PATTERN.match(values['email']):
+        errors['email'] = '请输入有效邮箱地址'
+    password = values['password']
+    if len(password) < 8 or not re.search(r'[A-Za-z]', password) or not re.search(r'\d', password):
+        errors['password'] = '密码至少 8 位，并同时包含字母和数字'
+    if not values['position'] or len(values['position']) < 2:
+        errors['position'] = '请输入岗位或业务角色'
+    if not values['department_name'] or len(values['department_name']) < 2:
+        errors['department_name'] = '请输入所属部门'
+    if values['phone'] and not PHONE_PATTERN.match(values['phone']):
+        errors['phone'] = '手机号格式不符合要求'
+    return values, errors
 
 
 def is_admin_user(user):
@@ -810,24 +854,28 @@ def api_login():
 @api_bp.post('/auth/register')
 def api_register():
     payload = current_payload()
-    username = (payload.get('username') or '').strip()
-    email = (payload.get('email') or '').strip()
-    password = payload.get('password') or ''
     gate_error = validate_register_gate(payload)
     if gate_error:
         return api_error(gate_error, status=400, error='register_gate_failed')
-    if not username or not email or len(password) < 6:
-        return api_error('用户名、邮箱和至少6位密码为必填项', status=400)
+    values, field_errors = validate_register_profile(payload)
+    if field_errors:
+        return api_error('注册资料不完整或格式不符合要求', status=400, error='register_validation_failed', fields=field_errors)
+    username = values['username']
+    email = values['email']
+    password = values['password']
     if User.query.filter_by(email=email).first():
-        return api_error('邮箱已被注册', status=400, error='email_exists')
+        return api_error('邮箱已被注册', status=400, error='email_exists', fields={'email': '邮箱已被注册'})
+    if User.query.filter(func.lower(User.username) == username.lower()).first():
+        return api_error('用户名已被占用', status=400, error='username_exists', fields={'username': '用户名已被占用'})
     role = Role.query.filter_by(name='User').first()
     user = User(
         username=username,
         email=email,
         role=role,
-        full_name=(payload.get('full_name') or username).strip(),
-        phone=(payload.get('phone') or '').strip() or None,
-        position=(payload.get('position') or '业务协同成员').strip(),
+        full_name=values['full_name'],
+        phone=values['phone'] or None,
+        department_name=values['department_name'],
+        position=values['position'],
         bio=(payload.get('bio') or '').strip() or None,
         preferences={'theme': payload.get('theme') if payload.get('theme') in ('dark-cockpit', 'light-luxury') else 'dark-cockpit'},
     )
@@ -851,7 +899,7 @@ def api_register_policy():
         'terms_version': CAPTCHA_TERMS_VERSION,
         'permissions': [
             '普通账号默认进入成员角色，无法访问用户管理、审计删除和全局权限配置。',
-            '注册资料会用于身份识别、业务审计和消息通知，头像与联系方式可在个人工作台修改。',
+            '注册资料需包含姓名、用户名、邮箱、部门、岗位和符合强度要求的密码。',
             '关键写入动作会保留审计记录；管理员可根据岗位调整采购、销售、文件和报表权限。',
         ],
         'documents': [
@@ -861,7 +909,8 @@ def api_register_policy():
                 'summary': '账号仅用于本系统制造仓配、采购、销售、财务与分析演示业务。',
                 'items': [
                     '注册后系统创建普通成员账号，不自动授予系统管理、审计删除、全局权限配置等高风险能力。',
-                    '用户应使用真实邮箱、姓名或岗位昵称；管理员可根据岗位补充分组、角色和业务权限。',
+                    '用户应使用真实邮箱、姓名或岗位昵称、所属部门和业务岗位；管理员可根据岗位补充分组、角色和业务权限。',
+                    '用户名需为 3-32 位字母、数字、点、下划线或短横线；密码至少 8 位，并同时包含字母和数字。',
                     '禁止上传恶意脚本、伪装可执行文件或与业务无关的大文件；文件中心会记录上传人、时间和类型。',
                     '采购审批、盘点调整、信用冻结、文件删除等关键动作会进入审计日志，便于课程演示和责任追踪。',
                 ],
@@ -871,7 +920,7 @@ def api_register_policy():
                 'title': '隐私与身份资料说明',
                 'summary': '系统保存最少必要的身份资料，用于登录、通知、头像和审计归属。',
                 'items': [
-                    '注册资料包括邮箱、用户名、姓名或岗位昵称、手机号、岗位和偏好设置。',
+                    '注册资料包括邮箱、用户名、姓名或岗位昵称、手机号、部门、岗位和偏好设置。',
                     '头像文件存放在专用头像目录或生产持久化存储，不与业务附件混放。',
                     '系统不会在前端保存数据库连接串、部署 Token、Supabase secret、Cloudinary secret 或 AI API Key。',
                     '管理员可以查看业务审计与账号状态，但普通成员无法访问用户管理和全局安全配置。',
@@ -1524,4 +1573,3 @@ def api_accept_replenishment(suggestion_id):
     AuditService.record('inventory', 'accept_replenishment', current_api_user(), {'suggestion_id': suggestion_id, 'purchase_order_id': result.id})
     db.session.commit()
     return api_success({'purchase_order': serialize_model(result, purchase_extra)}, '已接受建议并创建采购单')
-

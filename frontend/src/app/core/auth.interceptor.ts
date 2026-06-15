@@ -29,9 +29,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status >= 400 && !(error.status === 401 && isSessionProbe) && !isLoginRequest) {
         messages.add({ severity: error.status >= 500 ? 'error' : 'warn', summary: '操作未完成', detail: apiMessage });
       }
-      const normalized = new Error(apiMessage) as Error & { status?: number; code?: string };
+      const normalized = new Error(apiMessage) as Error & { status?: number; code?: string; fields?: Record<string, string> };
       normalized.status = error.status;
       normalized.code = error.error?.error;
+      normalized.fields = error.error?.fields;
       return throwError(() => normalized);
     })
   );

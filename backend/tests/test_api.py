@@ -442,9 +442,10 @@ def test_register_requires_captcha_and_terms(client, monkeypatch):
     created = client.post('/api/v1/auth/register', json={
         'username': 'new_member',
         'email': 'new-member@nexus.com',
-        'password': 'member123',
+        'password': 'member123A',
         'full_name': '新成员',
         'position': '仓配运营专员',
+        'department_name': '供应链运营部',
         'accepted_terms': True,
         'accepted_privacy': True,
         'accepted_data_scope': True,
@@ -455,7 +456,70 @@ def test_register_requires_captcha_and_terms(client, monkeypatch):
     assert created.status_code == 201
     assert 'token' not in created.json['data']
     assert created.json['data']['user']['email'] == 'new-member@nexus.com'
-    assert User.query.filter_by(email='new-member@nexus.com').first().is_admin is False
+    assert 'nexus_access_token' in created.headers.get('Set-Cookie', '')
+    assert created.json['data']['csrf_token']
+    created_user = User.query.filter_by(email='new-member@nexus.com').first()
+    assert created_user.is_admin is False
+    assert created_user.department_name == '供应链运营部'
+
+
+def test_register_validates_profile_and_uniqueness(client, monkeypatch):
+    monkeypatch.setattr('app.api.routes.random.choice', lambda seq: 'sum')
+    monkeypatch.setattr('app.api.routes.random.randint', lambda a, b: 12 if a == 12 else 4)
+    captcha = client.get('/api/v1/auth/captcha').json['data']
+
+    invalid = client.post('/api/v1/auth/register', json={
+        'username': 'x',
+        'email': 'bad-email',
+        'password': 'short',
+        'full_name': 'A',
+        'position': '',
+        'department_name': '',
+        'accepted_terms': True,
+        'accepted_privacy': True,
+        'accepted_data_scope': True,
+        'terms_version': captcha['terms_version'],
+        'captcha_token': captcha['token'],
+        'captcha_answer': '16',
+    })
+    assert invalid.status_code == 400
+    assert invalid.json['error'] == 'register_validation_failed'
+    assert {'username', 'email', 'password', 'position', 'department_name'} <= set(invalid.json['fields'])
+
+    duplicate_email = client.post('/api/v1/auth/register', json={
+        'username': 'valid.member',
+        'email': 'member@nexus.com',
+        'password': 'member123A',
+        'full_name': '重复邮箱成员',
+        'position': '计划专员',
+        'department_name': '供应链运营部',
+        'accepted_terms': True,
+        'accepted_privacy': True,
+        'accepted_data_scope': True,
+        'terms_version': captcha['terms_version'],
+        'captcha_token': captcha['token'],
+        'captcha_answer': '16',
+    })
+    assert duplicate_email.status_code == 400
+    assert duplicate_email.json['error'] == 'email_exists'
+
+    captcha = client.get('/api/v1/auth/captcha').json['data']
+    duplicate_username = client.post('/api/v1/auth/register', json={
+        'username': 'member',
+        'email': 'another-member@nexus.com',
+        'password': 'member123A',
+        'full_name': '重复用户名成员',
+        'position': '计划专员',
+        'department_name': '供应链运营部',
+        'accepted_terms': True,
+        'accepted_privacy': True,
+        'accepted_data_scope': True,
+        'terms_version': captcha['terms_version'],
+        'captcha_token': captcha['token'],
+        'captcha_answer': '16',
+    })
+    assert duplicate_username.status_code == 400
+    assert duplicate_username.json['error'] == 'username_exists'
 
 
 def test_sales_purchase_export_and_upload(app, client):

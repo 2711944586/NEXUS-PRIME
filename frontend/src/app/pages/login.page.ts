@@ -142,15 +142,33 @@ interface CaptchaChallenge {
             } @else {
               <div class="register-mini-note" aria-label="注册准入说明">
                 <i class="pi pi-user-plus"></i>
-                <span>普通成员账号会经过邮箱唯一性、验证码识别、许可确认与审计记录四步准入。</span>
+                <span>普通成员账号会经过资料校验、邮箱唯一性、验证码识别、许可确认与审计记录五步准入。</span>
               </div>
 
               <div class="register-assurance-strip" aria-label="注册流程">
-                <span><i class="pi pi-envelope"></i> 邮箱唯一</span>
-                <span><i class="pi pi-eye"></i> 验证码识别</span>
-                <span><i class="pi pi-file-check"></i> 许可留痕</span>
+                @for (step of registerSteps; track step.label) {
+                  <span><i [class]="step.icon"></i>{{ step.label }}</span>
+                }
               </div>
             }
+
+            <section class="auth-visual-core" aria-label="访问准入图">
+              <div class="auth-orbit" aria-hidden="true">
+                <span class="orbit-node node-user"><i class="pi pi-user"></i></span>
+                <span class="orbit-node node-role"><i class="pi pi-key"></i></span>
+                <span class="orbit-node node-audit"><i class="pi pi-history"></i></span>
+                <strong>NX</strong>
+              </div>
+              <div class="auth-signal-chart" aria-label="认证链路状态">
+                @for (metric of visualMetrics(); track metric.label) {
+                  <span [style.--bar]="metric.value + '%'">
+                    <em>{{ metric.label }}</em>
+                    <i></i>
+                    <strong>{{ metric.value }}%</strong>
+                  </span>
+                }
+              </div>
+            </section>
 
             <form id="login-form" [formGroup]="form" (ngSubmit)="submit()" class="login-form" novalidate>
               @if (csrfReady() === false) {
@@ -178,7 +196,7 @@ interface CaptchaChallenge {
                     [class.ng-invalid]="fieldInvalid('full_name')"
                   />
                   @if (fieldInvalid('full_name')) {
-                    <small>请输入姓名或岗位昵称。</small>
+                    <small>{{ fieldMessage('full_name', '请输入姓名或岗位昵称。') }}</small>
                   }
                 </label>
 
@@ -192,7 +210,7 @@ interface CaptchaChallenge {
                     [class.ng-invalid]="fieldInvalid('username')"
                   />
                   @if (fieldInvalid('username')) {
-                    <small>用户名至少 2 位。</small>
+                    <small>{{ fieldMessage('username', '用户名需为 3-32 位字母、数字、点、下划线或短横线。') }}</small>
                   }
                 </label>
 
@@ -206,7 +224,21 @@ interface CaptchaChallenge {
                     [class.ng-invalid]="fieldInvalid('position')"
                   />
                   @if (fieldInvalid('position')) {
-                    <small>请输入岗位或业务角色。</small>
+                    <small>{{ fieldMessage('position', '请输入岗位或业务角色。') }}</small>
+                  }
+                </label>
+
+                <label class="login-field">
+                  <span>部门</span>
+                  <input
+                    pInputText
+                    formControlName="department_name"
+                    autocomplete="organization"
+                    placeholder="例如：供应链运营部"
+                    [class.ng-invalid]="fieldInvalid('department_name')"
+                  />
+                  @if (fieldInvalid('department_name')) {
+                    <small>{{ fieldMessage('department_name', '请输入所属部门。') }}</small>
                   }
                 </label>
 
@@ -232,7 +264,7 @@ interface CaptchaChallenge {
                   [class.ng-invalid]="fieldInvalid('email')"
                 />
                 @if (fieldInvalid('email')) {
-                  <small>请输入有效邮箱地址。</small>
+                  <small>{{ fieldMessage('email', '请输入有效邮箱地址。') }}</small>
                 }
               </label>
 
@@ -247,9 +279,26 @@ interface CaptchaChallenge {
                   [class.ng-invalid]="fieldInvalid('password')"
                 />
                 @if (fieldInvalid('password')) {
-                  <small>密码至少 6 位。</small>
+                  <small>{{ fieldMessage('password', authMode() === 'register' ? '密码至少 8 位，并包含字母和数字。' : '请输入账号密码。') }}</small>
                 }
               </label>
+
+              @if (authMode() === 'register') {
+                <label class="login-field">
+                  <span>确认密码</span>
+                  <input
+                    pInputText
+                    type="password"
+                    formControlName="confirm_password"
+                    autocomplete="new-password"
+                    placeholder="再次输入密码"
+                    [class.ng-invalid]="fieldInvalid('confirm_password')"
+                  />
+                  @if (fieldInvalid('confirm_password')) {
+                    <small>{{ fieldMessage('confirm_password', '两次密码需要保持一致。') }}</small>
+                  }
+                </label>
+              }
 
               @if (authMode() === 'register') {
                 <section class="register-verification" aria-label="注册验证码">
@@ -272,7 +321,7 @@ interface CaptchaChallenge {
                       [class.ng-invalid]="fieldInvalid('captcha_answer')"
                     />
                     @if (fieldInvalid('captcha_answer')) {
-                      <small>请输入验证码结果。</small>
+                      <small>{{ fieldMessage('captcha_answer', '请输入验证码结果。') }}</small>
                     }
                   </label>
                   <button type="button" class="captcha-refresh" (click)="loadCaptcha()" [disabled]="captchaLoading()">
@@ -381,13 +430,22 @@ export class LoginPage implements OnInit {
     { step: '02', title: '权限落位', body: '管理员拥有系统权限，成员按岗位授权' },
     { step: '03', title: '审计闭环', body: '注册、登录和关键写入均留痕' }
   ];
+  protected readonly registerSteps = [
+    { icon: 'pi pi-id-card', label: '资料完整' },
+    { icon: 'pi pi-envelope', label: '邮箱唯一' },
+    { icon: 'pi pi-eye', label: '验证码识别' },
+    { icon: 'pi pi-file-check', label: '许可确认' },
+    { icon: 'pi pi-history', label: '审计留痕' }
+  ];
   protected readonly form = this.fb.nonNullable.group({
     full_name: [''],
     username: [''],
     position: [''],
+    department_name: [''],
     phone: [''],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
+    confirm_password: [''],
     captcha_answer: [''],
     accepted_terms: [false],
     accepted_privacy: [false],
@@ -419,9 +477,14 @@ export class LoginPage implements OnInit {
     if (this.submitDisabled()) {
       return;
     }
+    const raw = this.form.getRawValue();
+    if (this.authMode() === 'register' && raw.password !== raw.confirm_password) {
+      this.form.controls.confirm_password.setErrors({ mismatch: true });
+      this.errorMessage.set('两次输入的密码不一致，请重新确认。');
+      return;
+    }
     this.loading.set(true);
     this.startLoginWatchdog();
-    const raw = this.form.getRawValue();
     const request$ = this.authMode() === 'login'
       ? this.auth.login({ email: raw.email, password: raw.password })
       : this.auth.register({
@@ -431,6 +494,7 @@ export class LoginPage implements OnInit {
         password: raw.password,
         phone: raw.phone,
         position: raw.position || '业务协同成员',
+        department_name: raw.department_name,
         accepted_terms: raw.accepted_terms,
         accepted_privacy: raw.accepted_privacy,
         accepted_data_scope: raw.accepted_data_scope,
@@ -449,6 +513,7 @@ export class LoginPage implements OnInit {
       },
       error: error => {
         this.finishLoginRequest();
+        this.applyFieldErrors(error);
         this.errorMessage.set(this.loginErrorText(error));
         if (this.authMode() === 'register') {
           this.loadCaptcha();
@@ -471,8 +536,11 @@ export class LoginPage implements OnInit {
     this.errorMessage.set('');
     if (mode === 'register') {
       this.form.controls.full_name.addValidators([Validators.required, Validators.minLength(2)]);
-      this.form.controls.username.addValidators([Validators.required, Validators.minLength(2)]);
+      this.form.controls.username.addValidators([Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9._-]+$/)]);
       this.form.controls.position.addValidators([Validators.required, Validators.minLength(2)]);
+      this.form.controls.department_name.addValidators([Validators.required, Validators.minLength(2)]);
+      this.form.controls.password.setValidators([Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/)]);
+      this.form.controls.confirm_password.addValidators([Validators.required]);
       this.form.controls.captcha_answer.addValidators([Validators.required, Validators.minLength(1)]);
       this.form.controls.accepted_terms.addValidators([Validators.requiredTrue]);
       this.form.controls.accepted_privacy.addValidators([Validators.requiredTrue]);
@@ -480,9 +548,11 @@ export class LoginPage implements OnInit {
       this.form.patchValue({
         email: '',
         password: '',
+        confirm_password: '',
         username: '',
         full_name: '',
         position: '业务协同成员',
+        department_name: '供应链运营部',
         phone: '',
         captcha_answer: '',
         accepted_terms: false,
@@ -494,6 +564,9 @@ export class LoginPage implements OnInit {
       this.form.controls.full_name.clearValidators();
       this.form.controls.username.clearValidators();
       this.form.controls.position.clearValidators();
+      this.form.controls.department_name.clearValidators();
+      this.form.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
+      this.form.controls.confirm_password.clearValidators();
       this.form.controls.captcha_answer.clearValidators();
       this.form.controls.accepted_terms.clearValidators();
       this.form.controls.accepted_privacy.clearValidators();
@@ -506,15 +579,23 @@ export class LoginPage implements OnInit {
     this.form.controls.full_name.updateValueAndValidity();
     this.form.controls.username.updateValueAndValidity();
     this.form.controls.position.updateValueAndValidity();
+    this.form.controls.department_name.updateValueAndValidity();
+    this.form.controls.password.updateValueAndValidity();
+    this.form.controls.confirm_password.updateValueAndValidity();
     this.form.controls.captcha_answer.updateValueAndValidity();
     this.form.controls.accepted_terms.updateValueAndValidity();
     this.form.controls.accepted_privacy.updateValueAndValidity();
     this.form.controls.accepted_data_scope.updateValueAndValidity();
   }
 
-  fieldInvalid(name: 'email' | 'password' | 'full_name' | 'username' | 'position' | 'captcha_answer'): boolean {
+  fieldInvalid(name: 'email' | 'password' | 'confirm_password' | 'full_name' | 'username' | 'position' | 'department_name' | 'captcha_answer'): boolean {
     const control = this.form.controls[name];
     return control.invalid && (control.dirty || control.touched);
+  }
+
+  fieldMessage(name: 'email' | 'password' | 'confirm_password' | 'full_name' | 'username' | 'position' | 'department_name' | 'captcha_answer', fallback: string): string {
+    const serverMessage = this.form.controls[name].errors?.['server'];
+    return typeof serverMessage === 'string' ? serverMessage : fallback;
   }
 
   submitDisabled(): boolean {
@@ -600,6 +681,20 @@ export class LoginPage implements OnInit {
       ];
   }
 
+  visualMetrics(): Array<{ label: string; value: number }> {
+    return this.authMode() === 'register'
+      ? [
+        { label: '资料', value: 88 },
+        { label: '校验', value: 76 },
+        { label: '许可', value: 94 }
+      ]
+      : [
+        { label: '会话', value: 92 },
+        { label: '权限', value: 84 },
+        { label: '审计', value: 97 }
+      ];
+  }
+
   private loadRegisterPolicy(): void {
     this.api.get<RegisterPolicy>('auth/register-policy').pipe(
       catchError(() => of(null))
@@ -621,6 +716,20 @@ export class LoginPage implements OnInit {
       return '暂时无法连接安全会话服务，请稍后重试或联系系统管理员。';
     }
     return error instanceof Error ? error.message : '登录失败，请稍后重试。';
+  }
+
+  private applyFieldErrors(error: unknown): void {
+    if (typeof error !== 'object' || error === null || !('fields' in error)) {
+      return;
+    }
+    const fields = (error as { fields?: Record<string, string> }).fields ?? {};
+    Object.keys(fields).forEach(key => {
+      if (key in this.form.controls) {
+        const control = this.form.controls[key as keyof typeof this.form.controls];
+        control.setErrors({ server: fields[key] });
+        control.markAsTouched();
+      }
+    });
   }
 
   private startLoginWatchdog(): void {
