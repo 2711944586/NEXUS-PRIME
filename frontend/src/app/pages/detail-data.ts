@@ -47,7 +47,7 @@ export const DETAIL_CONFIGS: Record<DetailKey, DetailPageConfig> = {
       { label: '仓配流向', value: '按仓库、库区、库位定位库存', meta: '/app/inventory/stock', tone: 'info' }
     ],
     actions: [
-      { label: '生成补货建议', icon: 'pi-bolt', kind: 'generate-replenishment', endpoint: 'replenishment-suggestions/generate', method: 'POST', confirm: '根据当前库存水位重新生成补货建议？' }
+      { label: '生成补货建议', icon: 'pi-bolt', kind: 'generate-replenishment', endpoint: 'inventory/replenishment-suggestions/generate-job', method: 'POST', confirm: '根据当前库存水位后台生成补货建议？' }
     ]
   },
   stock: {
@@ -106,7 +106,7 @@ export const DETAIL_CONFIGS: Record<DetailKey, DetailPageConfig> = {
     ],
     actions: [
       { label: '接受并转采购', icon: 'pi-shopping-cart', kind: 'accept-replenishment', endpoint: 'replenishment-suggestions/:id/accept', method: 'POST', confirm: '接受该补货建议并创建采购单？' },
-      { label: '重新生成建议', icon: 'pi-bolt', kind: 'generate-replenishment', endpoint: 'replenishment-suggestions/generate', method: 'POST', confirm: '重新扫描低库存并生成建议？' }
+      { label: '重新生成建议', icon: 'pi-bolt', kind: 'generate-replenishment', endpoint: 'inventory/replenishment-suggestions/generate-job', method: 'POST', confirm: '后台重新扫描低库存并生成建议？' }
     ]
   },
   purchaseOrders: {

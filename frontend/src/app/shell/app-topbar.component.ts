@@ -88,11 +88,12 @@ const ICONS = [
         <strong>{{ activeDock.label }}</strong>
       </div>
 
-      <div class="atlas-search">
+      <div class="atlas-search" role="search">
         <svg lucideSearch size="17" strokeWidth="2.2"></svg>
         <input
           pInputText
           [ngModel]="searchQuery"
+          aria-label="搜索物料、订单、客户和报表"
           placeholder="搜索物料、订单、客户、报表"
           (focus)="searchFocus.emit()"
           (ngModelChange)="searchQueryChange.emit($event)"
@@ -102,9 +103,12 @@ const ICONS = [
           <div class="search-popover atlas-search-popover">
             @for (item of searchResults; track item.path) {
               <a [routerLink]="item.path" (click)="searchClear.emit()">
-                <span>{{ item.type }}</span>
-                <strong>{{ item.label }}</strong>
-                <em>{{ item.description }}</em>
+                <span class="search-result-type">{{ item.type }}</span>
+                <span class="search-result-copy">
+                  <strong>{{ item.label }}</strong>
+                  <em>{{ item.description }}</em>
+                </span>
+                <svg lucideChevronRight size="15" strokeWidth="2.3"></svg>
               </a>
             }
           </div>
@@ -181,7 +185,12 @@ const ICONS = [
           }
         </button>
         <a pButton class="icon-action" [text]="true" [rounded]="true" routerLink="/app/notifications" aria-label="通知中心" pTooltip="通知中心">
-          <span class="toolbar-icon"><svg lucideBell size="18" strokeWidth="2.2"></svg></span>
+          <span class="toolbar-icon toolbar-icon-badge">
+            <svg lucideBell size="18" strokeWidth="2.2"></svg>
+            @if (notificationCount > 0) {
+              <span class="toolbar-badge" aria-label="{{ notificationCount }} 条未读通知">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
+            }
+          </span>
         </a>
         <a pButton [text]="true" [rounded]="true" routerLink="/app/profile" class="profile-avatar-button icon-action" aria-label="个人工作台" pTooltip="个人工作台">
           @if (auth.currentUser$ | async; as user) {
@@ -233,6 +242,8 @@ export class AppTopbarComponent {
   @Input() todayText = '';
   @Input() brokenAvatarUrl = '';
   @Input({ required: true }) initials!: (user: Pick<User, 'full_name' | 'username' | 'email'>) => string;
+
+  @Input() notificationCount = 0;
 
   @Output() searchFocus = new EventEmitter<void>();
   @Output() searchQueryChange = new EventEmitter<string>();

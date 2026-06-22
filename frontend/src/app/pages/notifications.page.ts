@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
@@ -14,10 +14,14 @@ import { catchError, finalize, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { DataRecord } from '../core/models';
+import { NotificationStreamSnapshot, streamNotifications } from '../core/notification-stream';
 import { chartLegend, dateText, emptyPageResult, statusSeverity, textOf } from './page-utils';
+
+const NOTIFICATION_STREAM_RECONNECT_MS = 3000;
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule],
   template: `
     <section class="ops-atlas-page notification-center-page">
@@ -214,7 +218,7 @@ import { chartLegend, dateText, emptyPageResult, statusSeverity, textOf } from '
     </section>
   `
 })
-export class NotificationsPage implements OnInit {
+export class NotificationsPage implements OnInit, OnDestroy {
   protected readonly Math = Math;
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
@@ -229,6 +233,9 @@ export class NotificationsPage implements OnInit {
   protected readonly page = signal(1);
   protected pageInput = '1';
   protected query = '';
+  private notificationStreamAbort?: AbortController;
+  private notificationStreamReconnectTimer?: ReturnType<typeof setTimeout>;
+  private notificationStreamDestroyed = false;
   protected readonly filters = [
     { key: 'unread', label: '未读任务', description: '需要处理或确认' },
     { key: 'stock', label: '库存预警', description: '安全库存与补货' },
@@ -302,7 +309,17 @@ export class NotificationsPage implements OnInit {
   }));
 
   ngOnInit(): void {
+    this.notificationStreamDestroyed = false;
     this.load();
+    this.startNotificationStream();
+  }
+
+  ngOnDestroy(): void {
+    this.notificationStreamDestroyed = true;
+    if (this.notificationStreamReconnectTimer) {
+      clearTimeout(this.notificationStreamReconnectTimer);
+    }
+    this.notificationStreamAbort?.abort();
   }
 
   load(): void {
@@ -315,8 +332,7 @@ export class NotificationsPage implements OnInit {
       }),
       finalize(() => this.loading.set(false))
     ).subscribe(result => {
-      this.notifications.set(result.items);
-      this.setPage(1);
+      this.applyNotificationSnapshot({ items: result.items, unread: result.items.filter(item => item['is_read'] !== true).length });
     });
   }
 
@@ -365,6 +381,70 @@ export class NotificationsPage implements OnInit {
       this.notifications.set(this.notifications().map(row => this.numericId(row) === id ? { ...row, ...result, is_read: true } : row));
       this.messages.add({ severity: 'success', summary: '任务已处理', detail: '通知状态和审计日志已更新。' });
     });
+  }
+
+  private startNotificationStream(): void {
+    if (this.notificationStreamDestroyed || typeof AbortController === 'undefined') {
+      return;
+    }
+    if (this.notificationStreamAbort && !this.notificationStreamAbort.signal.aborted) {
+      return;
+    }
+    if (this.notificationStreamReconnectTimer) {
+      clearTimeout(this.notificationStreamReconnectTimer);
+      this.notificationStreamReconnectTimer = undefined;
+    }
+    const controller = new AbortController();
+    this.notificationStreamAbort = controller;
+    streamNotifications(
+      {
+        onSnapshot: snapshot => this.applyNotificationSnapshot(snapshot)
+      },
+      { signal: controller.signal }
+    ).then(() => {
+      if (this.notificationStreamAbort === controller) {
+        this.notificationStreamAbort = undefined;
+      }
+      this.scheduleNotificationStreamReconnect();
+    }).catch(error => {
+      if (controller.signal.aborted) {
+        return;
+      }
+      if (this.notificationStreamAbort === controller) {
+        this.notificationStreamAbort = undefined;
+      }
+      console.warn('Notification stream unavailable, keeping list fallback.', error);
+      this.scheduleNotificationStreamReconnect();
+    });
+  }
+
+  private scheduleNotificationStreamReconnect(): void {
+    if (this.notificationStreamDestroyed) {
+      return;
+    }
+    if (this.notificationStreamReconnectTimer) {
+      clearTimeout(this.notificationStreamReconnectTimer);
+    }
+    this.notificationStreamReconnectTimer = setTimeout(() => this.startNotificationStream(), NOTIFICATION_STREAM_RECONNECT_MS);
+  }
+
+  private applyNotificationSnapshot(snapshot: NotificationStreamSnapshot): void {
+    this.notifications.set(this.dedupeNotifications(snapshot.items));
+    this.setPage(this.currentPage());
+  }
+
+  private dedupeNotifications(items: DataRecord[]): DataRecord[] {
+    const seen = new Set<string>();
+    const unique: DataRecord[] = [];
+    for (const item of items) {
+      const key = String(item.id ?? `${item['title'] ?? ''}:${item['created_at'] ?? unique.length}`);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      unique.push(item);
+    }
+    return unique;
   }
 
   filterCount(key: string): number {

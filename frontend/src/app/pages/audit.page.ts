@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
@@ -16,6 +16,7 @@ import { dateText, emptyPageResult, statusSeverity, textOf } from './page-utils'
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, SkeletonModule, TagModule],
   template: `
     <section class="ops-atlas-page audit-console-page">

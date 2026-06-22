@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { injectQuery } from '@tanstack/angular-query-experimental';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -11,11 +12,14 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
+import { catchError, finalize, of, switchMap } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
+import { ProcurementService } from '../core/procurement.service';
 import { DataRecord, ProcurementControlPayload, ProcurementControlQueueItem } from '../core/models';
-import { chartLegend, compactMoneyText, dateText, emptyPageResult, moneyText, numberOf, percentNumber, recordTitle, statusLabel, statusSeverity, textOf } from './page-utils';
+import { replenishmentJobStatus, ReplenishmentJobService } from '../core/replenishment-job.service';
+import { WorkflowStepperComponent, WorkflowStepperStep } from '../motion';
+import { chartLegend, compactMoneyText, dateText, moneyText, numberOf, percentNumber, recordTitle, statusLabel, statusSeverity, textOf } from './page-utils';
 
 const EMPTY_PROCUREMENT_CONTROL: ProcurementControlPayload = {
   generated_at: '',
@@ -51,7 +55,8 @@ const EMPTY_PROCUREMENT_CONTROL: ProcurementControlPayload = {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule, TooltipModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule, TooltipModule, WorkflowStepperComponent],
   template: `
     <section class="ops-atlas-page procurement-atlas">
       <header class="atlas-split-hero procurement-atlas-hero">
@@ -68,7 +73,7 @@ const EMPTY_PROCUREMENT_CONTROL: ProcurementControlPayload = {
               <i class="pi pi-inbox"></i>
               推进收货
             </button>
-            <button pButton type="button" severity="secondary" (click)="acceptSuggestion()" aria-label="补货转采购">
+            <button pButton type="button" severity="secondary" (click)="acceptSuggestion()" [loading]="replenishmentConverting()" [disabled]="replenishmentConverting()" aria-label="补货转采购">
               <i class="pi pi-bolt"></i>
               补货转采购
             </button>
@@ -147,15 +152,11 @@ const EMPTY_PROCUREMENT_CONTROL: ProcurementControlPayload = {
               <h2>从补货到绩效回写</h2>
             </div>
           </div>
-          <ol class="procurement-flow-rail">
-            @for (step of control().purchase_flow; track step.step) {
-              <li>
-                <span>{{ $index + 1 }}</span>
-                <strong>{{ step.step }}</strong>
-                <p>{{ step.detail }}</p>
-              </li>
-            }
-          </ol>
+          <nexus-workflow-stepper
+            [steps]="purchaseWorkflowSteps()"
+            [activeIndex]="activePurchaseWorkflowIndex()"
+            ariaLabel="采购补货审批流程"
+          ></nexus-workflow-stepper>
         </aside>
       </section>
 
@@ -360,7 +361,7 @@ const EMPTY_PROCUREMENT_CONTROL: ProcurementControlPayload = {
           </div>
           <div class="atlas-filter">
             <i class="pi pi-search"></i>
-            <input pInputText [(ngModel)]="query" placeholder="搜索采购单、供应商、收货仓" />
+            <input pInputText [ngModel]="query()" (ngModelChange)="onQueryChange($event)" placeholder="搜索采购单、供应商、收货仓" />
           </div>
           <button type="button" [class.active]="statusFilter() === ''" (click)="statusFilter.set('')">全部状态</button>
         </div>
@@ -409,28 +410,40 @@ const EMPTY_PROCUREMENT_CONTROL: ProcurementControlPayload = {
 })
 export class ProcurementPage implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly procurement = inject(ProcurementService);
+  private readonly replenishmentJobs = inject(ReplenishmentJobService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
 
-  protected readonly rows = signal<DataRecord[]>([]);
   protected readonly control = signal<ProcurementControlPayload>(EMPTY_PROCUREMENT_CONTROL);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
+  protected readonly controlLoading = signal(false);
+  protected readonly replenishmentConverting = signal(false);
   protected readonly statusFilter = signal('');
   protected readonly chartMode = signal<'stage' | 'amount' | 'supplier'>('stage');
   protected readonly creatingTaskId = signal<string | null>(null);
   protected readonly pageSize = signal(12);
   protected readonly page = signal(1);
+  protected readonly query = signal('');
   protected pageInput = '1';
-  protected query = '';
   protected readonly procurementChartModes = [
     { key: 'stage' as const, label: '阶段', icon: 'pi-chart-bar' },
     { key: 'amount' as const, label: '金额', icon: 'pi-wallet' },
     { key: 'supplier' as const, label: '供应商', icon: 'pi-sitemap' }
   ];
+  protected readonly ordersQuery = injectQuery(() => this.procurement.ordersQuery({
+    page: 1,
+    page_size: 100,
+    q: this.query().trim()
+  }));
+  protected readonly rows = computed(() => this.ordersQuery.data()?.items ?? []);
+  protected readonly loading = computed(() => this.ordersQuery.isPending() || this.ordersQuery.isFetching() || this.controlLoading());
+  protected readonly error = computed(() => {
+    const error = this.ordersQuery.error();
+    return error ? error.message || '无法读取采购数据。' : '';
+  });
 
   protected readonly visibleOrders = computed(() => {
-    const q = this.query.trim().toLowerCase();
+    const q = this.query().trim().toLowerCase();
     const status = this.statusFilter();
     return this.rows().filter(row => {
       const rowStatus = String(row['status'] ?? '');
@@ -464,6 +477,42 @@ export class ProcurementPage implements OnInit {
   protected readonly serviceBoundaries = computed(() => this.control().service_boundaries);
   protected readonly deploymentChecks = computed(() => this.control().deployment_checks);
   protected readonly replenishmentCandidates = computed(() => this.control().replenishment_candidates.slice(0, 6));
+  protected readonly purchaseWorkflowSteps = computed<WorkflowStepperStep[]>(() => {
+    const source = this.control().purchase_flow.length
+      ? this.control().purchase_flow
+      : [
+        { step: '需求来源', detail: '低库存、补货建议和销售履约压力进入采购需求池。' },
+        { step: '审批承诺', detail: '采购负责人按金额、供应商风险、预算暴露和到货窗口推进审批。' },
+        { step: '到货与质检', detail: '收货入库前核对采购明细、来料检验、库位和批次证据。' },
+        { step: '预算与绩效回写', detail: '采购承诺、收货结果和供应商表现回写成本、质量和报表。' }
+      ];
+    const active = this.activePurchaseWorkflowIndex();
+
+    return source.map((step, index) => ({
+      label: step.step,
+      detail: step.detail,
+      meta: this.purchaseWorkflowMeta(index),
+      tone: this.purchaseWorkflowTone(index),
+      state: index < active ? 'complete' : index === active ? 'active' : 'pending',
+      path: this.purchaseWorkflowPath(index, step.step)
+    }));
+  });
+  protected readonly activePurchaseWorkflowIndex = computed(() => {
+    const summary = this.controlSummary();
+    if (summary.replenishment_pending > 0 && summary.pending_approvals === 0) {
+      return 0;
+    }
+    if (summary.pending_approvals > 0) {
+      return 1;
+    }
+    if (summary.receiving_due > 0 || this.receivingOrders().length > 0) {
+      return 2;
+    }
+    if (summary.supplier_risk > 0 || this.supplierRiskCards().length > 0) {
+      return 3;
+    }
+    return Math.min(4, Math.max(0, this.control().purchase_flow.length - 1));
+  });
   protected readonly procurementChartTitle = computed(() => {
     if (this.chartMode() === 'amount') {
       return '采购金额与收货进度';
@@ -501,32 +550,18 @@ export class ProcurementPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
+    this.loadControl();
   }
 
   load(): void {
-    this.loading.set(true);
-    this.error.set('');
-    forkJoin({
-      orders: this.api.list<DataRecord>('purchase-orders', { page: 1, page_size: 100, q: this.query, status: this.statusFilter() }).pipe(
-        catchError(error => {
-          this.error.set(error?.message || '无法读取采购数据。');
-          return of(emptyPageResult<DataRecord>());
-        })
-      ),
-      control: this.api.get<ProcurementControlPayload>('operations/procurement-control').pipe(
-        catchError(error => {
-          this.messages.add({ severity: 'warn', summary: '采购控制台未加载', detail: error?.message || '请稍后重试。' });
-          return of(EMPTY_PROCUREMENT_CONTROL);
-        })
-      )
-    }).pipe(
-      finalize(() => this.loading.set(false))
-    ).subscribe(({ orders, control }) => {
-      this.rows.set(orders.items);
-      this.control.set(control);
-      this.setPage(1);
-    });
+    this.ordersQuery.refetch();
+    this.loadControl();
+    this.setPage(1);
+  }
+
+  onQueryChange(value: string): void {
+    this.query.set(value);
+    this.setPage(1);
   }
 
   setPage(page: number): void {
@@ -537,6 +572,19 @@ export class ProcurementPage implements OnInit {
 
   jumpPage(): void {
     this.setPage(Number(this.pageInput) || 1);
+  }
+
+  private loadControl(): void {
+    this.controlLoading.set(true);
+    this.api.get<ProcurementControlPayload>('operations/procurement-control').pipe(
+      catchError(error => {
+        this.messages.add({ severity: 'warn', summary: '采购控制台未加载', detail: error?.message || '请稍后重试。' });
+        return of(EMPTY_PROCUREMENT_CONTROL);
+      }),
+      finalize(() => this.controlLoading.set(false))
+    ).subscribe(control => {
+      this.control.set(control);
+    });
   }
 
   approveNext(): void {
@@ -582,9 +630,24 @@ export class ProcurementPage implements OnInit {
       acceptLabel: '执行',
       rejectLabel: '取消',
       accept: () => {
-        this.api.post('replenishment-suggestions/generate', {}).pipe(
-          switchMap(() => this.api.list<DataRecord>('replenishment-suggestions', { page: 1, page_size: 20, status: 'pending' })),
+        this.replenishmentConverting.set(true);
+        this.replenishmentJobs.runGenerationToFinal().pipe(
+          switchMap(event => {
+            const status = replenishmentJobStatus(event.result);
+            if (event.timedOut) {
+              this.messages.add({ severity: 'info', summary: '补货任务仍在运行', detail: '后台仍在生成补货建议，请稍后再转采购。' });
+              return of(null);
+            }
+            if (status !== 'success') {
+              this.messages.add({ severity: 'warn', summary: '补货建议未刷新', detail: event.result.job?.error_message || '后台补货任务未完成。' });
+              return of(null);
+            }
+            return this.api.list<DataRecord>('replenishment-suggestions', { page: 1, page_size: 20, status: 'pending' });
+          }),
           switchMap(result => {
+            if (!result) {
+              return of(null);
+            }
             const suggestion = result.items[0];
             if (!suggestion?.id) {
               this.messages.add({ severity: 'info', summary: '补货建议', detail: '当前没有待转采购的补货建议。' });
@@ -595,7 +658,8 @@ export class ProcurementPage implements OnInit {
           catchError(error => {
             this.messages.add({ severity: 'warn', summary: '转采购未完成', detail: error?.message || '补货建议未能转采购。' });
             return of(null);
-          })
+          }),
+          finalize(() => this.replenishmentConverting.set(false))
         ).subscribe(result => {
           if (result) {
             this.messages.add({ severity: 'success', summary: '采购单已创建', detail: '补货建议已写入采购链路。' });
@@ -689,6 +753,44 @@ export class ProcurementPage implements OnInit {
 
   protected percent(value: unknown): number {
     return percentNumber(value);
+  }
+
+  private purchaseWorkflowMeta(index: number): string {
+    const summary = this.controlSummary();
+    const values = [
+      `${summary.replenishment_pending} 条建议`,
+      `${summary.pending_approvals} 单审批`,
+      `${summary.receiving_due} 个窗口`,
+      `${summary.supplier_risk} 个风险`,
+      this.compactMoney(summary.budget_exposure)
+    ];
+    return values[index] ?? summary.primary_owner;
+  }
+
+  private purchaseWorkflowTone(index: number): WorkflowStepperStep['tone'] {
+    const summary = this.controlSummary();
+    if ((index === 1 && summary.pending_approvals > 0) || (index === 2 && summary.receiving_due > 0)) {
+      return summary.p0 > 0 ? 'danger' : 'warning';
+    }
+    if (index === 3 && summary.supplier_risk > 0) {
+      return 'warning';
+    }
+    return index < this.activePurchaseWorkflowIndex() ? 'success' : index === this.activePurchaseWorkflowIndex() ? 'info' : 'default';
+  }
+
+  private purchaseWorkflowPath(index: number, label: string): string {
+    const text = label.toLowerCase();
+    if (text.includes('需求') || text.includes('建议') || text.includes('replenishment')) {
+      return '/app/inventory/replenishment';
+    }
+    if (text.includes('质检') || text.includes('quality')) {
+      return '/app/quality';
+    }
+    if (text.includes('供应商') || text.includes('绩效') || text.includes('supplier')) {
+      return '/app/suppliers/performance';
+    }
+    const paths = ['/app/inventory/replenishment', '/app/procurement/orders', '/app/quality', '/app/suppliers/performance', '/app/reports'];
+    return paths[index] ?? '/app/procurement/orders';
   }
 
   private stageChart(): EChartsCoreOption {

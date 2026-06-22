@@ -89,7 +89,7 @@ class ReplenishmentSuggestion(BaseModel):
     suggested_qty = db.Column(db.Integer)
     
     # 预测依据
-    avg_daily_sales = db.Column(db.Float)  # 日均销量
+    avg_daily_sales = db.Column(db.Numeric(12, 4))  # 日均销量
     lead_time_days = db.Column(db.Integer, default=7)  # 采购周期
     safety_stock = db.Column(db.Integer)  # 安全库存
     

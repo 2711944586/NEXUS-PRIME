@@ -4,6 +4,7 @@ import sqlite3
 import json
 import zipfile
 from datetime import datetime, timedelta
+from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
 
 import click
@@ -23,6 +24,7 @@ from app.models.stock import InventoryLog, Stock, Warehouse
 from app.models.stocktake import StockTake, StockTakeHistory, StockTakeItem
 from app.models.sys import AiChatMessage, AiChatSession, AuditLog
 from app.models.trade import Order, OrderItem
+from app.platform.events import event_dispatcher
 from app.utils.time import utcnow
 
 
@@ -308,6 +310,55 @@ def audit_enterprise_data(strict):
 
     if strict and failed:
         raise click.ClickException('数据覆盖不足：' + '、'.join(failed))
+
+
+@click.command('events-dispatch')
+@click.option('--limit', default=100, show_default=True, help='本次最多消费的 pending domain events 数量')
+@with_appcontext
+def events_dispatch(limit):
+    """Dispatch pending domain events from the database outbox."""
+    summary = event_dispatcher.dispatch_pending(limit=max(int(limit or 1), 1))
+    click.echo(
+        'domain events dispatched: '
+        f"processed={summary['processed']} "
+        f"published={summary['published']} "
+        f"failed={summary['failed']}"
+    )
+
+
+@click.command('events-retry-failed')
+@click.option('--limit', default=100, show_default=True, help='本次最多重新入队的 failed domain events 数量')
+@click.option('--event-type', default=None, help='仅重新入队指定事件类型')
+@with_appcontext
+def events_retry_failed(limit, event_type):
+    """Move failed domain events back to pending for a later dispatch."""
+    summary = event_dispatcher.retry_failed(limit=max(int(limit or 1), 1), event_type=event_type)
+    click.echo(
+        'domain events retried: '
+        f"retried={summary['retried']}"
+    )
+
+
+@click.command('events-worker')
+@click.option('--loglevel', default='info', show_default=True, help='Celery worker 日志级别')
+@click.option('--queues', default='events,reports,ai,celery', show_default=True, help='Celery worker 消费队列')
+def events_worker(loglevel, queues):
+    """Start a Celery worker for domain event and background jobs."""
+    from app.platform.jobs.worker import main
+
+    return main(['worker', f'--loglevel={loglevel}', '-Q', queues])
+
+
+@click.command('openapi-export')
+@click.option('--output', default=None, help='OpenAPI JSON 输出路径；默认写入 backend/openapi.json')
+@with_appcontext
+def openapi_export(output):
+    """Export the runtime OpenAPI contract."""
+    from app.platform.openapi import write_openapi_schema
+
+    target = Path(output) if output else Path(current_app.root_path).parent / 'openapi.json'
+    target = write_openapi_schema(current_app, target)
+    click.echo(f'OpenAPI schema exported to {target}')
 
 
 @click.command('forge')

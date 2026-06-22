@@ -1,0 +1,1 @@
+"""Integration model placeholder."""

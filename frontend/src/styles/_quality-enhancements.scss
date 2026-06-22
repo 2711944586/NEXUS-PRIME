@@ -1,0 +1,203 @@
+/*
+ * 全方位质感升级 - 去AI感，增真实感
+ * 亮色 + 暗色双主题
+ */
+
+@layer app {
+  /* === 顶层排版精细化 === */
+  body {
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    font-variant-numeric: oldstyle-nums;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: .01em;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -.02em;
+    text-wrap: balance;
+  }
+
+  strong, b, [class*="value"], [class*="metric"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* === 真实阴影系统 === */
+  :root {
+    --lift-sm: 0 1px 2px rgba(15, 23, 42, .04), 0 2px 4px rgba(15, 23, 42, .04), inset 0 1px 0 rgba(255, 255, 255, .7);
+    --lift-md: 0 2px 4px rgba(15, 23, 42, .04), 0 4px 8px rgba(15, 23, 42, .06), 0 8px 16px rgba(15, 23, 42, .04), inset 0 1px 0 rgba(255, 255, 255, .7);
+    --lift-lg: 0 4px 8px rgba(15, 23, 42, .05), 0 8px 16px rgba(15, 23, 42, .06), 0 16px 32px rgba(15, 23, 42, .05), inset 0 1px 0 rgba(255, 255, 255, .6);
+    --press: 0 1px 2px rgba(15, 23, 42, .08), inset 0 2px 4px rgba(15, 23, 42, .06), inset 0 1px 0 rgba(0, 0, 0, .06);
+  }
+
+  html.dark-cockpit {
+    --lift-sm: 0 1px 2px rgba(0, 0, 0, .2), 0 2px 4px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255, 255, 255, .04);
+    --lift-md: 0 2px 4px rgba(0, 0, 0, .2), 0 4px 8px rgba(0, 0, 0, .25), 0 8px 16px rgba(0, 0, 0, .15), inset 0 1px 0 rgba(255, 255, 255, .04);
+    --lift-lg: 0 4px 8px rgba(0, 0, 0, .25), 0 8px 16px rgba(0, 0, 0, .3), 0 16px 32px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255, 255, 255, .03);
+    --press: 0 1px 2px rgba(0, 0, 0, .4), inset 0 2px 4px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(0, 0, 0, .1);
+  }
+
+  /* === 卡片面板 === */
+  .atlas-panel {
+    box-shadow: var(--lift-sm);
+    transition:
+      box-shadow var(--motion-med) var(--ease-decelerate),
+      transform var(--motion-med) var(--ease-emphasis),
+      border-color var(--motion-fast) var(--ease-standard);
+  }
+
+  .atlas-panel:hover {
+    box-shadow: var(--lift-md);
+    transform: translateY(-2px);
+  }
+
+  .atlas-panel::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .14), transparent);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  html.dark-cockpit .atlas-panel::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .06), transparent);
+  }
+
+  /* === 按钮物理质感 === */
+  .p-button {
+    box-shadow: var(--lift-sm);
+    transition:
+      box-shadow var(--motion-fast) var(--ease-decelerate),
+      transform var(--motion-fast) var(--ease-spring),
+      background var(--motion-fast) var(--ease-standard),
+      border-color var(--motion-fast) var(--ease-standard);
+  }
+
+  .p-button:not(:disabled):hover {
+    box-shadow: var(--lift-md);
+    transform: translateY(-1px);
+  }
+
+  .p-button:not(:disabled):active {
+    box-shadow: var(--press);
+    transform: translateY(1px) scale(.98);
+  }
+
+  .p-button:not(.p-button-outlined):not(.p-button-text)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, .18), transparent);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  /* === 输入框内凹质感 === */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  .p-inputtext {
+    background: color-mix(in srgb, var(--surface-inset) 60%, transparent);
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, .06), inset 0 1px 0 rgba(0, 0, 0, .04);
+    transition:
+      border-color var(--motion-fast) var(--ease-standard),
+      box-shadow var(--motion-fast) var(--ease-standard),
+      background var(--motion-fast) var(--ease-standard);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  textarea:focus,
+  .p-inputtext:focus {
+    background: var(--surface-raised);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent),
+      inset 0 1px 2px rgba(15, 23, 42, .04);
+  }
+
+  html.dark-cockpit input:not([type="checkbox"]):not([type="radio"]),
+  html.dark-cockpit textarea,
+  html.dark-cockpit .p-inputtext {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(0, 0, 0, .1);
+  }
+
+  html.dark-cockpit input:not([type="checkbox"]):not([type="radio"]):focus,
+  html.dark-cockpit textarea:focus,
+  html.dark-cockpit .p-inputtext:focus {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent),
+      inset 0 1px 2px rgba(0, 0, 0, .1);
+  }
+
+  /* === 图标强制居中 === */
+  .pi {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+  }
+
+  i.pi {
+    display: flex !important;
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  /* === 滚动条 === */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; border-radius: 999px; margin: 4px; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted) 30%, transparent);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted) 50%, transparent);
+    background-clip: padding-box;
+  }
+
+  /* === 焦点状态 === */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  /* === 文本选中 === */
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--ink-strong);
+  }
+
+  /* === 页面入场动画 === */
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .atlas-stage > * { animation: page-in var(--motion-slow) var(--ease-decelerate) both; }
+  .atlas-stage > *:nth-child(2) { animation-delay: 40ms; }
+  .atlas-stage > *:nth-child(3) { animation-delay: 80ms; }
+  .atlas-stage > *:nth-child(4) { animation-delay: 120ms; }
+  .atlas-stage > *:nth-child(5) { animation-delay: 160ms; }
+
+  /* === 禁用状态 === */
+  :disabled,
+  [aria-disabled="true"] {
+    opacity: .45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* 暗色模式 - OLED 级黑 */
+  html.dark-cockpit body {
+    background-color: #0c0f17;
+  }
+}

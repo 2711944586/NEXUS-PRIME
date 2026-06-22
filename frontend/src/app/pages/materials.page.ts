@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { injectQuery } from '@tanstack/angular-query-experimental';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -14,8 +15,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { catchError, finalize, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
+import { InventoryService } from '../core/inventory.service';
+import { ListWorkbenchStore } from '../core/list-workbench.store';
 import { DataRecord } from '../core/models';
-import { chartLegend, compactMoneyText, compactNumberText, compactPieSeries, emptyPageResult, moneyText, numberOf, percentNumber, recordTitle, statusSeverity, textOf } from './page-utils';
+import { replenishmentCreatedCount, replenishmentJobStatus, ReplenishmentJobService } from '../core/replenishment-job.service';
+import { chartLegend, compactMoneyText, compactNumberText, compactPieSeries, moneyText, numberOf, percentNumber, recordTitle, statusSeverity, textOf } from './page-utils';
 
 interface MaterialFamily {
   name: string;
@@ -25,7 +29,9 @@ interface MaterialFamily {
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule, TooltipModule],
+  providers: [ListWorkbenchStore],
   template: `
     <section class="ops-atlas-page material-atlas">
       <header class="atlas-split-hero material-atlas-hero">
@@ -34,7 +40,7 @@ interface MaterialFamily {
           <h1>物料库存图谱</h1>
           <p>产品、供应商、安全库存和补货建议在同一张作业图里联动。</p>
           <div class="atlas-actions-row">
-            <button pButton type="button" (click)="generateReplenishment()" aria-label="生成补货建议">
+            <button pButton type="button" (click)="generateReplenishment()" [loading]="replenishmentGenerating()" [disabled]="replenishmentGenerating()" aria-label="生成补货建议">
               <i class="pi pi-bolt"></i>
               生成补货
             </button>
@@ -75,7 +81,7 @@ interface MaterialFamily {
             </div>
             <div class="metric-mode-switch" aria-label="物料图表模式">
               @for (mode of chartModes; track mode.key) {
-                <button type="button" [class.active]="chartMode() === mode.key" (click)="chartMode.set(mode.key)">
+                <button type="button" [class.active]="chartMode() === mode.key" (click)="setChartMode(mode.key)">
                   <i class="pi" [class]="mode.icon"></i>
                   {{ mode.label }}
                 </button>
@@ -106,7 +112,7 @@ interface MaterialFamily {
             </div>
             <div class="atlas-filter">
               <i class="pi pi-search"></i>
-              <input pInputText [ngModel]="query" (ngModelChange)="onQueryChange($event)" placeholder="搜索 SKU、物料、供应商" />
+              <input pInputText [ngModel]="query()" (ngModelChange)="onQueryChange($event)" placeholder="搜索 SKU、物料、供应商" />
             </div>
           </div>
 
@@ -207,27 +213,39 @@ interface MaterialFamily {
     </section>
   `
 })
-export class MaterialsPage implements OnInit {
+export class MaterialsPage {
   private readonly api = inject(ApiService);
+  private readonly inventory = inject(InventoryService);
+  private readonly replenishmentJobs = inject(ReplenishmentJobService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
+  protected readonly listState = inject(ListWorkbenchStore);
 
-  protected readonly rows = signal<DataRecord[]>([]);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
-  protected readonly categoryFilter = signal('');
-  protected readonly pageSize = signal(12);
-  protected readonly page = signal(1);
-  protected readonly chartMode = signal<'category' | 'risk'>('category');
+  protected readonly replenishmentGenerating = signal(false);
+  protected readonly categoryFilter = this.listState.categoryFilter;
+  protected readonly pageSize = this.listState.pageSize;
+  protected readonly page = this.listState.page;
+  protected readonly chartMode = computed<'category' | 'risk'>(() => this.listState.chartMode() === 'risk' ? 'risk' : 'category');
+  protected readonly query = this.listState.query;
   protected pageInput = '1';
-  protected query = '';
   protected readonly chartModes = [
     { key: 'category' as const, label: '分类库存', icon: 'pi-chart-bar' },
     { key: 'risk' as const, label: '低水位', icon: 'pi-exclamation-triangle' }
   ];
+  protected readonly productsQuery = injectQuery(() => this.inventory.productsQuery({
+    page: 1,
+    page_size: 120,
+    q: this.query().trim()
+  }));
+  protected readonly rows = computed(() => this.productsQuery.data()?.items ?? []);
+  protected readonly loading = computed(() => this.productsQuery.isPending() || this.productsQuery.isFetching());
+  protected readonly error = computed(() => {
+    const error = this.productsQuery.error();
+    return error ? error.message || '无法读取物料数据。' : '';
+  });
 
   protected readonly filteredRows = computed(() => {
-    const q = this.query.trim().toLowerCase();
+    const q = this.query().trim().toLowerCase();
     const category = this.categoryFilter();
     return this.rows().filter(row => {
       const matchesCategory = !category || textOf(row, 'category_name') === category;
@@ -258,43 +276,36 @@ export class MaterialsPage implements OnInit {
   });
   protected readonly activeMaterialChart = computed<EChartsCoreOption>(() => this.chartMode() === 'risk' ? this.riskChart() : this.categoryChart());
 
-  ngOnInit(): void {
-    this.load();
-  }
-
   load(): void {
-    this.loading.set(true);
-    this.error.set('');
-    this.api.list<DataRecord>('products', { page: 1, page_size: 120, q: this.query }).pipe(
-      catchError(error => {
-        this.error.set(error?.message || '无法读取物料数据。');
-        return of(emptyPageResult<DataRecord>());
-      }),
-      finalize(() => this.loading.set(false))
-    ).subscribe(result => {
-      this.rows.set(result.items);
-      this.setPage(1);
-    });
+    this.productsQuery.refetch();
   }
 
   setCategory(category: string): void {
-    this.categoryFilter.set(category);
-    this.setPage(1);
+    this.listState.setCategoryFilter(category);
+    this.syncPageInput();
   }
 
   onQueryChange(value: string): void {
-    this.query = value;
-    this.setPage(1);
+    this.listState.setQuery(value);
+    this.syncPageInput();
+  }
+
+  setChartMode(mode: 'category' | 'risk'): void {
+    this.listState.setChartMode(mode);
   }
 
   setPage(page: number): void {
     const next = Math.min(Math.max(1, Math.trunc(page || 1)), this.totalPages());
-    this.page.set(next);
+    this.listState.setPage(next);
     this.pageInput = String(next);
   }
 
   jumpPage(): void {
     this.setPage(Number(this.pageInput) || 1);
+  }
+
+  private syncPageInput(): void {
+    this.pageInput = String(this.currentPage());
   }
 
   generateReplenishment(): void {
@@ -304,14 +315,27 @@ export class MaterialsPage implements OnInit {
       acceptLabel: '生成',
       rejectLabel: '取消',
       accept: () => {
-        this.api.post<{ created: number }>('replenishment-suggestions/generate', {}).pipe(
+        this.replenishmentGenerating.set(true);
+        this.replenishmentJobs.runGenerationToFinal().pipe(
           catchError(error => {
             this.messages.add({ severity: 'warn', summary: '生成未完成', detail: error?.message || '后端拒绝生成补货建议。' });
             return of(null);
-          })
-        ).subscribe(result => {
-          if (result) {
-            this.messages.add({ severity: 'success', summary: '补货建议已生成', detail: `新增或更新 ${result.created} 条补货建议。` });
+          }),
+          finalize(() => this.replenishmentGenerating.set(false))
+        ).subscribe(event => {
+          if (!event) {
+            return;
+          }
+          const status = replenishmentJobStatus(event.result);
+          if (event.timedOut) {
+            this.messages.add({ severity: 'info', summary: '补货任务仍在运行', detail: '后台仍在生成补货建议，可稍后刷新补货队列。' });
+            return;
+          }
+          if (status === 'success') {
+            this.messages.add({ severity: 'success', summary: '补货建议已生成', detail: `新增或更新 ${replenishmentCreatedCount(event.result)} 条补货建议。` });
+            this.load();
+          } else {
+            this.messages.add({ severity: 'warn', summary: '生成未完成', detail: event.result.job?.error_message || '后台补货任务未完成。' });
           }
         });
       }

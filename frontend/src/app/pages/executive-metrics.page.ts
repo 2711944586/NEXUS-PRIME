@@ -12,7 +12,7 @@ import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { ExecutiveAnalytics, ManufacturingCommandCenter, OperationsTodoPayload } from '../core/models';
-import { chartLegend, compactMoneyText, compactNumberText } from './page-utils';
+import { chartLegend, compactMoneyText, compactNumberText, EMPTY_TODO } from './page-utils';
 
 const EMPTY_ANALYTICS: ExecutiveAnalytics = {
   kpis: { total_sales: 0, unpaid_amount: 0, pending_purchase: 0, active_alerts: 0, collaboration_items: 0 },
@@ -38,8 +38,6 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
   flows: [],
   risks: []
 };
-
-const EMPTY_TODO: OperationsTodoPayload = { items: [], stock_quantity: 0 };
 
 @Component({
   standalone: true,
@@ -147,7 +145,11 @@ const EMPTY_TODO: OperationsTodoPayload = { items: [], stock_quantity: 0 };
               <h2>模块吞吐</h2>
             </div>
           </div>
-          <div class="executive-chart" echarts [options]="throughputChart()"></div>
+          @defer (on viewport) {
+            <div class="executive-chart" echarts [options]="throughputChart()"></div>
+          } @placeholder {
+            <p-skeleton height="200px" />
+          }
         </article>
 
         <article class="atlas-panel metrics-chart-panel">
@@ -157,7 +159,11 @@ const EMPTY_TODO: OperationsTodoPayload = { items: [], stock_quantity: 0 };
               <h2>风险构成</h2>
             </div>
           </div>
-          <div class="executive-chart" echarts [options]="riskChart()"></div>
+          @defer (on viewport) {
+            <div class="executive-chart" echarts [options]="riskChart()"></div>
+          } @placeholder {
+            <p-skeleton height="200px" />
+          }
         </article>
 
         <article class="atlas-panel metrics-todo-panel">

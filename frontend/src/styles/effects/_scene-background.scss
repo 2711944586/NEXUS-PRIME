@@ -1,0 +1,106 @@
+@layer app {
+  .nexus-scene-background {
+    --nexus-scene-image: url("/images/industrial-manufacturing.jpg");
+    position: fixed;
+    inset: 0;
+    z-index: -4;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--bg);
+  }
+
+  .nexus-login-redesign::before {
+    display: none;
+  }
+
+  .nexus-scene-background__image,
+  .nexus-scene-background__aurora,
+  .nexus-scene-background__grid,
+  .nexus-scene-background__scan {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .nexus-scene-background__image {
+    background:
+      linear-gradient(90deg, rgba(7, 11, 9, .74), rgba(7, 11, 9, .28) 48%, rgba(7, 11, 9, .82)),
+      linear-gradient(180deg, rgba(7, 11, 9, .08), rgba(7, 11, 9, .92) 88%),
+      var(--nexus-scene-image) center / cover no-repeat;
+    filter: saturate(.88) contrast(1.04) brightness(.82);
+    transform: scale(1.018);
+    transform-origin: center;
+    animation: scene-background-drift 22s var(--ease-standard) infinite alternate;
+  }
+
+  .nexus-scene-background__aurora {
+    opacity: var(--scene-aurora-opacity);
+    background:
+      radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 28rem),
+      radial-gradient(circle at 72% 12%, color-mix(in srgb, var(--accent-warm) 18%, transparent), transparent 24rem),
+      radial-gradient(circle at 50% 86%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 30rem);
+    mix-blend-mode: screen;
+    animation: scene-aurora-shift 18s var(--ease-standard) infinite alternate;
+  }
+
+  .nexus-scene-background__grid {
+    opacity: .26;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(180deg, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px);
+    background-size: var(--scene-grid-size) var(--scene-grid-size);
+    mask-image: linear-gradient(180deg, #000 0 56%, transparent);
+  }
+
+  .nexus-scene-background__scan {
+    opacity: .24;
+    background:
+      linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--accent) 22%, transparent) 50%, transparent 58% 100%);
+    background-size: 100% 220%;
+    mix-blend-mode: screen;
+    animation: scene-scan-line 9s linear infinite;
+  }
+
+  .nexus-scene-background--register .nexus-scene-background__image {
+    filter: saturate(.92) contrast(1.02) brightness(.86);
+  }
+
+  @keyframes scene-background-drift {
+    from {
+      transform: scale(1.018) translate3d(-.35rem, -.25rem, 0);
+    }
+
+    to {
+      transform: scale(1.04) translate3d(.35rem, .2rem, 0);
+    }
+  }
+
+  @keyframes scene-aurora-shift {
+    from {
+      transform: translate3d(-1.2%, -.8%, 0) scale(1);
+    }
+
+    to {
+      transform: translate3d(1.4%, .8%, 0) scale(1.04);
+    }
+  }
+
+  @keyframes scene-scan-line {
+    from {
+      background-position: 0 -120%;
+    }
+
+    to {
+      background-position: 0 220%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nexus-scene-background__image,
+    .nexus-scene-background__aurora,
+    .nexus-scene-background__scan {
+      animation: none !important;
+      transform: none !important;
+    }
+  }
+}

@@ -1,4 +1,5 @@
 from app.services.health_service import database_health, service_health
+from app.platform.observability import metrics_snapshot
 from app.utils.time import utcnow
 
 from . import api_bp
@@ -35,3 +36,13 @@ def health_ready():
     }
     status = 200 if payload['status'] == 'ready' else 503
     return api_success(payload, 'API 数据库就绪' if status == 200 else 'API 数据库不可用', status=status)
+
+
+@api_bp.get('/observability/metrics')
+def observability_metrics():
+    return api_success({
+        'service': 'NEXUS API',
+        'api_base': '/api/v1',
+        'metrics': metrics_snapshot(),
+        'timestamp': utcnow().isoformat(),
+    }, 'API 可观测性指标')

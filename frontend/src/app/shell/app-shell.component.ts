@@ -2,14 +2,15 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { catchError, filter, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, interval, of, startWith, Subject, switchMap } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { DockGroup, DockItem, ManufacturingCommandCenter, ServiceHealth } from '../core/models';
 import {
+  COMPACT_DOCK_KEYS,
   DESKTOP_DOCK_KEYS,
   dockItemForUrl,
   dockItemMatchesUrl,
@@ -69,7 +70,10 @@ const COMMAND_SUGGESTIONS = [
   standalone: true,
   imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, AppContextPanelComponent, AppDockComponent, AppModuleMapComponent, AppTopbarComponent, ResourceWorkbenchComponent],
   template: `
-    <div class="atlas-shell" [class.drawer-open]="moreOpen">
+    <div class="atlas-shell" [class.drawer-open]="moreOpen" [class.route-overview]="isOverviewRoute()">
+      @if (routeLoading()) {
+        <div class="route-loading-bar" aria-hidden="true"></div>
+      }
       <app-topbar
         [activeDock]="activeDock()"
         [searchQuery]="searchQuery"
@@ -82,6 +86,7 @@ const COMMAND_SUGGESTIONS = [
         [serviceHealthLatencyLabel]="serviceHealthLatencyLabel()"
         [serviceHealthTooltip]="serviceHealthTooltip()"
         [todayText]="todayText"
+        [notificationCount]="unreadNotificationCount()"
         [brokenAvatarUrl]="brokenAvatarUrl()"
         [initials]="initials"
         (searchFocus)="showSearchSuggestions()"
@@ -96,16 +101,16 @@ const COMMAND_SUGGESTIONS = [
         (logout)="logout()"
       />
 
-      <app-dock
-        [groups]="visibleDockGroups()"
-        [drawerOpen]="moreOpen"
-        [moreActive]="moreIsActive()"
-        [itemIsActive]="itemIsActive"
-        [groupIsActive]="groupIsActive"
-        (moreOpen)="openModuleMap($event)"
-      />
-
       <div class="atlas-workbench">
+        <app-dock
+          [groups]="visibleDockGroups()"
+          [drawerOpen]="moreOpen"
+          [moreActive]="moreIsActive()"
+          [itemIsActive]="itemIsActive"
+          [groupIsActive]="groupIsActive"
+          (moreOpen)="openModuleMap($event)"
+        />
+
         <main class="content-stage atlas-stage" id="main-content">
           <router-outlet />
         </main>
@@ -157,7 +162,6 @@ const COMMAND_SUGGESTIONS = [
           [serviceHealthLabel]="serviceHealthLabel()"
           [serviceHealthLatencyLabel]="serviceHealthLatencyLabel()"
           [riskCount]="commandData().risks.length"
-          [modulePhotos]="modulePhotos"
           [groups]="extraDockGroups()"
           [itemIsActive]="itemIsActive"
           (close)="closeModuleMap()"
@@ -174,23 +178,36 @@ export class AppShellComponent implements OnInit, OnDestroy {
   private readonly messages = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly currentUrl = signal(this.router.url || '/app/overview');
   protected moreOpen = false;
   protected createOpen = false;
   protected searchQuery = '';
   protected readonly searchResults = signal<Array<{ type: string; label: string; description?: string; path: string }>>([]);
   protected readonly quickCreateActions = QUICK_CREATE_ACTIONS;
-  protected readonly modulePhotos = COMMAND_CENTER_PHOTOS.slice(0, 12);
   protected readonly visualAssetCount = COMMAND_CENTER_PHOTOS.length;
   protected readonly primaryDockItems = DOCK_ITEMS;
   protected readonly desktopDockItems = dockItemsByKeys(DESKTOP_DOCK_KEYS);
+  protected readonly compactDockItems = dockItemsByKeys(COMPACT_DOCK_KEYS);
   protected readonly mobileDockItems = dockItemsByKeys(MOBILE_DOCK_KEYS);
-  private readonly currentUrl = signal(this.router.url);
+  protected readonly unreadNotificationCount = signal(0);
+  protected readonly routeLoading = signal(false);
+  private readonly searchInput$ = new Subject<string>();
   protected readonly commandData = signal<ManufacturingCommandCenter>(EMPTY_COMMAND_CENTER);
   protected readonly serviceHealth = signal<ServiceHealth>(EMPTY_SERVICE_HEALTH);
   protected readonly activeDock = computed<DockItem>(() => dockItemForUrl(this.currentUrl()));
-  protected readonly isMobileDock = signal(false);
+  protected readonly isOverviewRoute = computed(() => this.currentUrl().startsWith('/app/overview'));
+  protected readonly dockDensity = signal<'desktop' | 'compact' | 'mobile'>('desktop');
   protected readonly brokenAvatarUrl = signal('');
-  protected readonly visibleDockItems = computed(() => this.isMobileDock() ? this.mobileDockItems : this.desktopDockItems);
+  protected readonly visibleDockItems = computed(() => {
+    switch (this.dockDensity()) {
+      case 'mobile':
+        return this.mobileDockItems;
+      case 'compact':
+        return this.compactDockItems;
+      default:
+        return this.desktopDockItems;
+    }
+  });
   protected readonly visibleDockGroups = computed<DockGroup[]>(() => groupedDockItems(this.visibleDockItems()));
   protected readonly currentWorkflow = computed<WorkflowBlueprint>(() => workflowForUrl(this.currentUrl()));
   protected readonly activeWorkflowStep = computed<WorkflowStage>(() => activeWorkflowStage(this.currentWorkflow(), this.currentUrl()));
@@ -200,7 +217,11 @@ export class AppShellComponent implements OnInit, OnDestroy {
   protected readonly pageEvidenceTiles = computed(() => pageEvidenceTiles(this.currentWorkflow(), COMMAND_CENTER_PHOTOS));
   protected readonly shiftHandoffActions = computed(() => buildShiftHandoffActions(this.currentWorkflow(), this.workflowSignals(), this.nextWorkflowSteps()));
   protected readonly extraDockGroups = computed(() => {
-    const all = [...DOCK_ITEMS, ...MORE_DOCK_ITEMS];
+    const visibleKeys = new Set(this.visibleDockItems().map(item => item.key));
+    const all = [
+      ...DOCK_ITEMS.filter(item => !visibleKeys.has(item.key)),
+      ...MORE_DOCK_ITEMS
+    ];
     const seen = new Set<string>();
     return groupedDockItems(all.filter(item => {
       if (seen.has(item.key)) {
@@ -235,6 +256,20 @@ export class AppShellComponent implements OnInit, OnDestroy {
     this.loadCommandData();
     this.loadServiceHealth();
     this.syncViewportMode();
+    interval(60_000).pipe(
+      startWith(0),
+      switchMap(() => this.api.get<{ unread: number }>('notifications/unread-count', {}, { silent: true }).pipe(catchError(() => of({ unread: 0 })))),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(r => this.unreadNotificationCount.set(r.unread));
+    this.searchInput$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(q => { if (q.trim().length >= 2) this.runSearch(); else this.showSearchSuggestions(); });
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationStart || e instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(e => this.routeLoading.set(e instanceof NavigationStart));
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
       takeUntilDestroyed(this.destroyRef)
@@ -287,11 +322,15 @@ export class AppShellComponent implements OnInit, OnDestroy {
     }
     const insideCreateSurface = Boolean(target.closest('.create-action, .quick-create-popover'));
     const insideModuleSurface = Boolean(target.closest('.module-panel, button[aria-label="更多模块"], .atlas-dock-more'));
+    const insideSearchSurface = Boolean(target.closest('.atlas-search, .atlas-search-popover'));
     if (!insideCreateSurface) {
       this.createOpen = false;
     }
     if (!insideModuleSurface && !target.closest('.module-panel-backdrop')) {
       this.moreOpen = false;
+    }
+    if (!insideSearchSurface) {
+      this.clearSearch();
     }
   }
 
@@ -326,7 +365,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
       this.showSearchSuggestions();
       return;
     }
-    this.api.get<{ items: Array<{ type: string; label: string; description?: string; path: string }> }>('search', { q }).subscribe({
+    this.api.get<{ items: Array<{ type: string; label: string; description?: string; path: string }> }>('search', { q }, { silent: true }).subscribe({
       next: result => {
         this.searchResults.set(result.items.slice(0, 8));
       },
@@ -343,14 +382,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   onSearchInput(value: string): void {
     this.searchQuery = value;
-    const q = value.trim();
-    if (!q) {
-      this.showSearchSuggestions();
-      return;
-    }
-    if (q.length >= 2) {
-      this.runSearch();
-    }
+    this.searchInput$.next(value);
   }
 
   showSearchSuggestions(): void {
@@ -431,7 +463,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
       return;
     }
     this.serviceHealthLoading = true;
-    this.api.get<ServiceHealth>('health').pipe(
+    this.api.get<ServiceHealth>('health', undefined, { silent: true }).pipe(
       catchError(() => of(normalizeServiceHealth({
         status: 'down',
         timestamp: new Date().toISOString(),
@@ -446,7 +478,18 @@ export class AppShellComponent implements OnInit, OnDestroy {
   }
 
   private syncViewportMode(): void {
-    this.isMobileDock.set(typeof window !== 'undefined' ? window.innerWidth <= 760 : false);
+    if (typeof window === 'undefined') {
+      this.dockDensity.set('desktop');
+      return;
+    }
+    const width = window.innerWidth;
+    if (width <= 760) {
+      this.dockDensity.set('mobile');
+    } else if (width <= 1380) {
+      this.dockDensity.set('compact');
+    } else {
+      this.dockDensity.set('desktop');
+    }
   }
 
   private readonly onResize = (): void => {

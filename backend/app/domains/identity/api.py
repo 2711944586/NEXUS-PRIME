@@ -1,0 +1,1 @@
+"""Identity API facade placeholder."""

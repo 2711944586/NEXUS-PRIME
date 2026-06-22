@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { injectQuery } from '@tanstack/angular-query-experimental';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -11,14 +12,16 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { catchError, finalize, of } from 'rxjs';
+import { catchError, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
+import { SalesService } from '../core/sales.service';
 import { DataRecord } from '../core/models';
-import { compactMoneyText, dateText, emptyPageResult, moneyText, numberOf, percentNumber, recordTitle, statusLabel, statusSeverity, textOf } from './page-utils';
+import { compactMoneyText, dateText, moneyText, numberOf, percentNumber, recordTitle, statusLabel, statusSeverity, textOf } from './page-utils';
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule, TooltipModule],
   template: `
     <section class="ops-atlas-page fulfillment-atlas">
@@ -164,7 +167,7 @@ import { compactMoneyText, dateText, emptyPageResult, moneyText, numberOf, perce
           </div>
           <div class="atlas-filter">
             <i class="pi pi-search"></i>
-            <input pInputText [(ngModel)]="query" placeholder="搜索订单、客户、阶段" />
+            <input pInputText [ngModel]="query()" (ngModelChange)="onQueryChange($event)" placeholder="搜索订单、客户、阶段" />
           </div>
           <button type="button" [class.active]="statusFilter() === ''" (click)="statusFilter.set('')">全部阶段</button>
         </div>
@@ -211,28 +214,37 @@ import { compactMoneyText, dateText, emptyPageResult, moneyText, numberOf, perce
     </section>
   `
 })
-export class FulfillmentPage implements OnInit {
+export class FulfillmentPage {
   private readonly api = inject(ApiService);
+  private readonly sales = inject(SalesService);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
 
-  protected readonly rows = signal<DataRecord[]>([]);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
   protected readonly statusFilter = signal('');
   protected readonly chartMode = signal<'stage' | 'amount' | 'customer'>('stage');
   protected readonly pageSize = signal(12);
   protected readonly page = signal(1);
+  protected readonly query = signal('');
   protected pageInput = '1';
-  protected query = '';
   protected readonly fulfillmentChartModes = [
     { key: 'stage' as const, label: '阶段', icon: 'pi-chart-bar' },
     { key: 'amount' as const, label: '金额', icon: 'pi-chart-line' },
     { key: 'customer' as const, label: '客户', icon: 'pi-users' }
   ];
+  protected readonly salesOrdersQuery = injectQuery(() => this.sales.ordersQuery({
+    page: 1,
+    page_size: 100,
+    q: this.query().trim()
+  }));
+  protected readonly rows = computed(() => this.salesOrdersQuery.data()?.items ?? []);
+  protected readonly loading = computed(() => this.salesOrdersQuery.isPending() || this.salesOrdersQuery.isFetching());
+  protected readonly error = computed(() => {
+    const error = this.salesOrdersQuery.error();
+    return error ? error.message || '无法读取销售订单。' : '';
+  });
 
   protected readonly visibleOrders = computed(() => {
-    const q = this.query.trim().toLowerCase();
+    const q = this.query().trim().toLowerCase();
     const status = this.statusFilter();
     return this.rows().filter(row => {
       const rowStatus = String(row['status'] ?? '');
@@ -290,23 +302,14 @@ export class FulfillmentPage implements OnInit {
     return this.stageChart();
   });
 
-  ngOnInit(): void {
-    this.load();
+  load(): void {
+    this.salesOrdersQuery.refetch();
+    this.setPage(1);
   }
 
-  load(): void {
-    this.loading.set(true);
-    this.error.set('');
-    this.api.list<DataRecord>('orders', { page: 1, page_size: 100, q: this.query, status: this.statusFilter() }).pipe(
-      catchError(error => {
-        this.error.set(error?.message || '无法读取销售订单。');
-        return of(emptyPageResult<DataRecord>());
-      }),
-      finalize(() => this.loading.set(false))
-    ).subscribe(result => {
-      this.rows.set(result.items);
-      this.setPage(1);
-    });
+  onQueryChange(value: string): void {
+    this.query.set(value);
+    this.setPage(1);
   }
 
   setPage(page: number): void {

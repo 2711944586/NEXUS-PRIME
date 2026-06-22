@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
-from app.extensions import db
+from app.extensions import cache, db
 from app.models.auth import User
 from app.models.biz import Category, Product
 from app.models.finance import Receivable
@@ -20,6 +20,7 @@ from .responses import api_success
 
 @api_bp.get('/dashboard/summary')
 @jwt_required
+@cache.cached(timeout=120, key_prefix='dashboard_summary')
 def dashboard_summary():
     order_amount = db.session.query(func.coalesce(func.sum(Order.total_amount), 0)).scalar()
     stock_qty = db.session.query(func.coalesce(func.sum(Stock.quantity), 0)).scalar()
@@ -36,6 +37,7 @@ def dashboard_summary():
 
 @api_bp.get('/dashboard/charts')
 @jwt_required
+@cache.cached(timeout=300, key_prefix='dashboard_charts')
 def dashboard_charts():
     status_rows = db.session.query(Order.status, func.count(Order.id)).group_by(Order.status).all()
     category_rows = (
@@ -87,6 +89,12 @@ def executive_analytics():
 @jwt_required
 def erp_control_tower():
     return api_success(erp_control_tower_payload(), 'ERP 控制塔数据')
+
+
+@api_bp.get('/overview/control-tower')
+@jwt_required
+def overview_control_tower():
+    return erp_control_tower()
 
 
 @api_bp.get('/manufacturing/command-center')
@@ -163,7 +171,19 @@ def manufacturing_command_center():
     }, '制造仓配指挥数据')
 
 
+@api_bp.get('/overview/command-center')
+@jwt_required
+def overview_command_center():
+    return manufacturing_command_center()
+
+
 @api_bp.get('/manufacturing/workflow-board')
 @jwt_required
 def manufacturing_workflow_board():
     return api_success(manufacturing_workflow_board_payload(), '制造经营作战流')
+
+
+@api_bp.get('/overview/workflow-board')
+@jwt_required
+def overview_workflow_board():
+    return manufacturing_workflow_board()

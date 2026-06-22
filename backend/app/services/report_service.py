@@ -208,6 +208,25 @@ class ReportService:
             return data, None
         except Exception as e:
             return None, str(e)
+
+    @staticmethod
+    def create_generated_report(report_type, params=None, generated_by=None, subscription_id=None):
+        data, error = ReportService.generate_report(report_type, params)
+        if error:
+            return None, data, error
+
+        values = {
+            'subscription_id': subscription_id,
+            'report_type': report_type,
+            'report_name': ReportService.REPORT_TYPES.get(report_type, {}).get('name', report_type),
+            'report_data': data,
+            'generated_by': getattr(generated_by, 'id', generated_by),
+            'generated_at': utcnow(),
+        }
+        report = GeneratedReport(**values)
+        db.session.add(report)
+        db.session.flush()
+        return report, data, None
     
     @staticmethod
     def _generate_sales_daily(params):

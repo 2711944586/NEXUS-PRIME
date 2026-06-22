@@ -12,6 +12,7 @@ import { AuthService } from '../core/auth.service';
 import { ThemeService } from '../core/theme.service';
 import { environment } from '../../environments/environment';
 import type { DemoAccountRole } from '../../environments/environment.model';
+import { NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent } from '../motion';
 
 interface RegisterPolicy {
   terms_version: string;
@@ -30,17 +31,30 @@ interface CaptchaChallenge {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, ButtonModule, InputTextModule],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    SceneBackgroundComponent,
+    NexusRevealDirective,
+    NexusSpotlightDirective
+  ],
   template: `
     <main class="login-screen nexus-login-redesign" [class.register-screen]="authMode() === 'register'">
+      <nexus-scene-background
+        [mode]="authMode()"
+        [image]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'"
+      ></nexus-scene-background>
       <section class="login-stage" aria-label="NEXUS Prime 登录">
-        <a class="login-back-link" routerLink="/">
+        <a class="login-back-link" routerLink="/" nexusReveal [nexusRevealDelay]="40">
           <i class="pi pi-arrow-left"></i>
           首页
         </a>
 
         <div class="login-composition" [class.register-composition]="authMode() === 'register'">
-          <aside class="login-identity-panel" aria-label="入口现场">
+          <aside class="login-identity-panel" aria-label="入口现场" nexusReveal [nexusRevealDelay]="110">
             <figure class="login-photo-card">
               <img [src]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'" alt="制造与仓配现场" />
               <figcaption>
@@ -60,7 +74,13 @@ interface CaptchaChallenge {
             </div>
           </aside>
 
-          <section class="login-panel enterprise-login-panel login-card-shell" [class.register-mode]="authMode() === 'register'">
+          <section
+            class="login-panel enterprise-login-panel login-card-shell"
+            [class.register-mode]="authMode() === 'register'"
+            nexusReveal
+            nexusSpotlight
+            [nexusRevealDelay]="170"
+          >
             <button pButton type="button" class="theme-fab" [text]="true" [rounded]="true" (click)="theme.toggle(false)" aria-label="切换主题">
               <i class="pi" [ngClass]="theme.mode() === 'dark-cockpit' ? 'pi-moon' : 'pi-sun'"></i>
             </button>
@@ -87,7 +107,7 @@ interface CaptchaChallenge {
               @if (demoRoleEntries().length) {
                 <div class="login-role-switch" aria-label="账号角色">
                   @for (entry of demoRoleEntries(); track entry.kind) {
-                    <button type="button" [class.active]="selectedRole() === entry.kind" (click)="prefillRole(entry.kind)">
+                    <button type="button" [class.active]="selectedRole() === entry.kind" (click)="prefillRole(entry.kind)" nexusSpotlight>
                       <i [class]="entry.icon"></i>
                       <strong>{{ entry.title }}</strong>
                       <span>{{ entry.body }}</span>
@@ -313,7 +333,7 @@ interface CaptchaChallenge {
 
             <div class="login-capabilities" aria-label="系统能力">
               @for (item of capabilityTiles(); track item.title) {
-                <div>
+                <div nexusSpotlight>
                   <i [class]="item.icon"></i>
                   <strong>{{ item.title }}</strong>
                   <span>{{ item.body }}</span>

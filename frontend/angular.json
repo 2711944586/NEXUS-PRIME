@@ -32,9 +32,6 @@
             "styles": [
               "node_modules/primeicons/primeicons.css",
               "src/styles.scss",
-              "src/auth-entry.scss",
-              "src/motion-system.scss",
-              "src/experience-polish.scss",
               "src/workflow-board.scss",
               "src/deployment-readiness.scss"
             ]

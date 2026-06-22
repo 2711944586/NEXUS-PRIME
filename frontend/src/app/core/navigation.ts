@@ -9,11 +9,17 @@ export const DESKTOP_DOCK_KEYS = [
   'stocktake',
   'receivables',
   'reports',
-  'ai',
-  'notifications',
-  'files',
-  'security',
-  'settings'
+  'notifications'
+] as const;
+
+export const COMPACT_DOCK_KEYS = [
+  'overview',
+  'materials',
+  'procurement',
+  'fulfillment',
+  'receivables',
+  'reports',
+  'notifications'
 ] as const;
 
 export const MOBILE_DOCK_KEYS = ['overview', 'materials', 'procurement', 'fulfillment', 'reports'] as const;

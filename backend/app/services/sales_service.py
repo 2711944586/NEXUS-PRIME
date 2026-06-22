@@ -1,10 +1,40 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from app.extensions import db
 from app.models.trade import Order, OrderItem
 from app.models.biz import Product, Partner
-from app.models.stock import Stock, InventoryLog
+from app.models.stock import Stock, InventoryLog, StockMovement
 from app.models.auth import User
+from app.domains.inventory.application import InventoryApplicationService
+from app.platform.events import outbox
+
+
+def sales_order_created_event_payload(order: Order) -> dict:
+    return {
+        "order_id": order.id,
+        "order_no": order.order_no,
+        "customer_id": order.customer_id,
+        "seller_id": order.seller_id,
+        "status": order.status,
+        "total_amount": float(order.total_amount or 0),
+        "items": [
+            {
+                "item_id": item.id,
+                "product_id": item.product_id,
+                "quantity": item.quantity,
+                "price_snapshot": float(item.price_snapshot or 0),
+            }
+            for item in order.items
+        ],
+    }
+
+
+def sales_order_transition_event_payload(order: Order, old_status: str) -> dict:
+    payload = sales_order_created_event_payload(order)
+    payload["previous_status"] = old_status
+    return payload
+
 
 class SalesService:
     @staticmethod
@@ -36,7 +66,7 @@ class SalesService:
             db.session.flush() # 获取 order.id
 
             # 3. 处理订单行并计算总价
-            total = 0.0
+            total = Decimal("0")
             valid_items = 0
             for item in items_data:
                 pid = int(item.get('product_id'))
@@ -56,7 +86,7 @@ class SalesService:
                     price_snapshot=product.price
                 )
                 db.session.add(order_item)
-                total += (product.price * qty)
+                total += (product.price or Decimal("0")) * qty
                 valid_items += 1
 
             if valid_items == 0:
@@ -64,6 +94,8 @@ class SalesService:
 
             # 4. 更新总价
             order.total_amount = total
+            db.session.flush()
+            SalesService.record_order_created_event(order, user)
             
             return order
 
@@ -72,14 +104,59 @@ class SalesService:
             raise e
 
     @staticmethod
+    def record_order_created_event(order: Order, user: User) -> None:
+        outbox.add(
+            "SalesOrderCreated",
+            "Order",
+            order.id,
+            sales_order_created_event_payload(order),
+            created_by=user.id if user else None,
+        )
+
+    @staticmethod
     def transition_order(order: Order, target_status: str, user: User) -> None:
         old_status = order.status
         if target_status in (Order.STATUS_SHIPPED, Order.STATUS_DONE) and old_status not in (Order.STATUS_SHIPPED, Order.STATUS_DONE):
             SalesService._deduct_stock_for_order(order, user)
         order.status = target_status
+        if old_status != Order.STATUS_PAID and target_status == Order.STATUS_PAID:
+            SalesService.record_order_confirmed_event(order, old_status, user)
+        if old_status != Order.STATUS_CANCEL and target_status == Order.STATUS_CANCEL:
+            SalesService.record_order_cancelled_event(order, old_status, user)
+
+    @staticmethod
+    def record_order_confirmed_event(order: Order, old_status: str, user: User) -> None:
+        outbox.add(
+            "SalesOrderConfirmed",
+            "Order",
+            order.id,
+            sales_order_transition_event_payload(order, old_status),
+            created_by=user.id if user else None,
+        )
+
+    @staticmethod
+    def record_order_cancelled_event(order: Order, old_status: str, user: User) -> None:
+        outbox.add(
+            "SalesOrderCancelled",
+            "Order",
+            order.id,
+            sales_order_transition_event_payload(order, old_status),
+            created_by=user.id if user else None,
+        )
 
     @staticmethod
     def _deduct_stock_for_order(order: Order, user: User) -> None:
+        reserved_items = SalesService._reserved_items_for_order(order)
+        if reserved_items:
+            InventoryApplicationService().deduct_stock(
+                "sales_order",
+                order.id,
+                reserved_items,
+                f"sales-order:{order.id}:ship",
+                created_by=user,
+                reason=f"销售出库 - {order.order_no}",
+            )
+            return
         for item in order.items:
             remaining = int(item.quantity or 0)
             stocks = (
@@ -110,3 +187,27 @@ class SalesService:
                     operator_id=user.id,
                     remark=f"销售出库 - {order.order_no}"
                 ))
+
+    @staticmethod
+    def _reserved_items_for_order(order: Order):
+        movements = (
+            StockMovement.query
+            .filter(
+                StockMovement.source_type == "sales_order",
+                StockMovement.source_id == str(order.id),
+                StockMovement.direction == StockMovement.DIRECTION_RESERVE,
+                StockMovement.is_deleted == False,
+            )
+            .order_by(StockMovement.id.asc())
+            .all()
+        )
+        if not movements:
+            return []
+        return [
+            {
+                "product_id": movement.product_id,
+                "warehouse_id": movement.warehouse_id,
+                "quantity": movement.quantity,
+            }
+            for movement in movements
+        ]

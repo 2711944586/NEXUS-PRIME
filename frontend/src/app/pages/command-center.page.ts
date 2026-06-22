@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -9,6 +8,7 @@ import { catchError, finalize, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { ErpControlTower, ManufacturingCommandCenter, OperationsWorkflowBoard } from '../core/models';
 import { COMMAND_CENTER_PHOTOS, VisualAsset } from '../core/visual-assets';
+import { CountUpNumberComponent, NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent } from '../motion';
 import { chartLegend } from './page-utils';
 
 const EMPTY_COMMAND_CENTER: ManufacturingCommandCenter = {
@@ -86,48 +86,163 @@ type WarehouseHeatItem = ManufacturingCommandCenter['warehouse_heat'][number];
 type FlowItem = ManufacturingCommandCenter['flows'][number];
 type RiskItem = ManufacturingCommandCenter['risks'][number];
 type WorkflowFilter = 'all' | 'attention' | 'blocked';
+type ChartMode = 'flow' | 'risk' | 'warehouse' | 'health' | 'pressure' | 'pulse';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, NgxEchartsDirective, ButtonModule, TagModule],
+  imports: [
+    CommonModule,
+    NgxEchartsDirective,
+    ButtonModule,
+    TagModule,
+    SceneBackgroundComponent,
+    NexusRevealDirective,
+    NexusSpotlightDirective,
+    CountUpNumberComponent
+  ],
   template: `
     <section class="ops-atlas-page command-atlas command-overview-refined">
-      <header class="atlas-hero command-hero">
+      <nexus-scene-background image="/images/control-dashboard-wide.jpg"></nexus-scene-background>
+
+      <header class="atlas-hero command-hero" nexusReveal [nexusRevealDelay]="60">
         <div class="hero-narrative command-hero-story">
           <span class="atlas-kicker">ERP 控制塔</span>
           <h1>{{ controlTower().summary.title }}</h1>
           <p>{{ controlTower().summary.cadence }}。控制塔把主数据、供应链、制造履约、现金风险和审计证据压到同一条当班主线。</p>
-          <div class="command-control-score" [class.ready]="controlTowerScore() >= 82" [class.attention]="controlTowerScore() < 82 && controlTowerScore() >= 62" [class.blocked]="controlTowerScore() < 62">
+
+          <div class="command-control-score" [class.ready]="controlTowerScore() >= 82" [class.attention]="controlTowerScore() < 82 && controlTowerScore() >= 62" [class.blocked]="controlTowerScore() < 62" nexusSpotlight>
             <span>经营控制分</span>
-            <strong>{{ controlTowerScore() }}%</strong>
+            <strong>
+              <nexus-count-up-number
+                [value]="controlTowerScore()"
+                format="percent"
+                [compact]="false"
+                [maximumFractionDigits]="0"
+                ariaLabel="经营控制分"
+              ></nexus-count-up-number>
+            </strong>
             <em>{{ controlTower().summary.next_action }}</em>
           </div>
+
+          <div class="hero-mini-metrics" aria-label="核心经营指标">
+            <div class="mini-metric-card" nexusSpotlight>
+              <div class="mini-metric-header">
+                <i class="pi pi-shopping-bag"></i>
+                <span>订单动能</span>
+              </div>
+              <strong>
+                <nexus-count-up-number
+                  [value]="data().kpis.order_amount"
+                  format="money"
+                  ariaLabel="订单动能"
+                ></nexus-count-up-number>
+              </strong>
+              <div class="mini-metric-trend positive">
+                <i class="pi pi-arrow-up"></i>
+                <span>+12.5%</span>
+              </div>
+            </div>
+            <div class="mini-metric-card" nexusSpotlight>
+              <div class="mini-metric-header">
+                <i class="pi pi-box"></i>
+                <span>库存周转</span>
+              </div>
+              <strong>
+                <nexus-count-up-number
+                  [value]="data().kpis.stock_quantity"
+                  format="number"
+                  ariaLabel="库存周转"
+                ></nexus-count-up-number>
+              </strong>
+              <div class="mini-metric-trend neutral">
+                <i class="pi pi-minus"></i>
+                <span>持平</span>
+              </div>
+            </div>
+            <div class="mini-metric-card warning" nexusSpotlight>
+              <div class="mini-metric-header">
+                <i class="pi pi-bolt"></i>
+                <span>低库存预警</span>
+              </div>
+              <strong>
+                <nexus-count-up-number
+                  [value]="data().kpis.low_stock_products"
+                  format="number"
+                  suffix=" 项"
+                  [compact]="false"
+                  [maximumFractionDigits]="0"
+                  ariaLabel="低库存预警"
+                ></nexus-count-up-number>
+              </strong>
+              <div class="mini-metric-trend negative">
+                <i class="pi pi-arrow-down"></i>
+                <span>需关注</span>
+              </div>
+            </div>
+            <div class="mini-metric-card danger" nexusSpotlight>
+              <div class="mini-metric-header">
+                <i class="pi pi-wallet"></i>
+                <span>现金风险</span>
+              </div>
+              <strong>
+                <nexus-count-up-number
+                  [value]="data().kpis.overdue_amount"
+                  format="money"
+                  ariaLabel="现金风险"
+                ></nexus-count-up-number>
+              </strong>
+              <div class="mini-metric-trend negative">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>逾期应收</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-interactive-chart" aria-label="经营趋势图表" nexusSpotlight>
+            <div class="chart-header">
+              <h3>本周经营趋势</h3>
+              <div class="chart-legend">
+                <span class="legend-item">
+                  <i class="legend-dot primary"></i>
+                  订单额
+                </span>
+                <span class="legend-item">
+                  <i class="legend-dot secondary"></i>
+                  履约率
+                </span>
+              </div>
+            </div>
+            <div class="hero-trend-chart" echarts [options]="heroTrendChart()"></div>
+          </div>
+
           <div class="command-snapshot-row" aria-label="关键经营快照">
             @for (snapshot of heroSnapshots(); track snapshot.label) {
-              <a [routerLink]="snapshot.path" [class.warning]="snapshot.tone === 'warning'">
+              <article [class.warning]="snapshot.tone === 'warning'">
+                <i class="pi" [class]="snapshot.icon"></i>
                 <span>{{ snapshot.label }}</span>
                 <strong>{{ snapshot.value }}</strong>
                 <em>{{ snapshot.note }}</em>
-              </a>
+              </article>
             }
           </div>
+
           <div class="atlas-actions-row">
-            <a pButton routerLink="/app/inventory/replenishment">
+            <button pButton type="button" (click)="selectChartMode('warehouse')">
               <i class="pi pi-bolt"></i>
               处理低库存
-            </a>
-            <a pButton severity="secondary" routerLink="/app/procurement/orders">
+            </button>
+            <button pButton type="button" severity="secondary" (click)="selectChartMode('pressure')">
               <i class="pi pi-check-circle"></i>
               审批采购
-            </a>
-            <a pButton severity="info" routerLink="/app/reports">
+            </button>
+            <button pButton type="button" severity="info" (click)="selectChartMode('pulse')">
               <i class="pi pi-chart-line"></i>
               生成经营日报
-            </a>
+            </button>
           </div>
         </div>
 
-        <section class="command-visual-board" aria-label="制造经营现场图片">
+        <section class="command-visual-board" aria-label="制造经营现场图片" nexusReveal [nexusRevealDelay]="140" nexusSpotlight>
           <figure class="command-photo-feature">
             <img [src]="featuredPhoto().src" [alt]="featuredPhoto().alt" />
             <figcaption>
@@ -136,7 +251,7 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
             </figcaption>
           </figure>
           <div class="command-photo-strip">
-            @for (photo of photoStrip(); track photo.src) {
+            @for (photo of photoStrip().slice(0, 2); track photo.src) {
               <figure>
                 <img [src]="photo.src" [alt]="photo.alt" />
                 <figcaption>
@@ -148,11 +263,19 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
           </div>
         </section>
 
-        <section class="command-hero-chart" aria-label="首页顶部经营图表">
+        <section class="command-hero-chart" aria-label="首页顶部经营图表" nexusReveal [nexusRevealDelay]="180" nexusSpotlight>
           <div class="hero-chart-head">
             <div>
               <span>ERP 闭环指数</span>
-              <strong>{{ healthScore() }}%</strong>
+              <strong>
+                <nexus-count-up-number
+                  [value]="healthScore()"
+                  format="percent"
+                  [compact]="false"
+                  [maximumFractionDigits]="0"
+                  ariaLabel="ERP 闭环指数"
+                ></nexus-count-up-number>
+              </strong>
             </div>
             <p-tag severity="success" value="Live" />
           </div>
@@ -163,47 +286,413 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
           <div class="ledger-row">
             <i class="pi pi-shopping-bag"></i>
             <span>订单金额</span>
-            <strong>{{ compactMoney(data().kpis.order_amount) }}</strong>
+            <strong>
+              <nexus-count-up-number
+                [value]="data().kpis.order_amount"
+                format="money"
+                ariaLabel="订单金额"
+              ></nexus-count-up-number>
+            </strong>
           </div>
           <div class="ledger-row">
             <i class="pi pi-box"></i>
             <span>库存水位</span>
-            <strong>{{ compactNumber(data().kpis.stock_quantity) }}</strong>
+            <strong>
+              <nexus-count-up-number
+                [value]="data().kpis.stock_quantity"
+                format="number"
+                ariaLabel="库存水位"
+              ></nexus-count-up-number>
+            </strong>
           </div>
           <div class="ledger-row warning">
             <i class="pi pi-bolt"></i>
             <span>低库存信号</span>
-            <strong>{{ data().kpis.low_stock_products }} 项</strong>
+            <strong>
+              <nexus-count-up-number
+                [value]="data().kpis.low_stock_products"
+                format="number"
+                suffix=" 项"
+                [compact]="false"
+                [maximumFractionDigits]="0"
+                ariaLabel="低库存信号"
+              ></nexus-count-up-number>
+            </strong>
           </div>
           <div class="ledger-row danger">
             <i class="pi pi-wallet"></i>
             <span>逾期应收</span>
-            <strong>{{ compactMoney(data().kpis.overdue_amount) }}</strong>
+            <strong>
+              <nexus-count-up-number
+                [value]="data().kpis.overdue_amount"
+                format="money"
+                ariaLabel="逾期应收"
+              ></nexus-count-up-number>
+            </strong>
           </div>
         </aside>
       </header>
 
-      <section class="operations-ledger-strip" aria-label="业务处理账本">
-        <a routerLink="/app/inventory/products">
-          <span>物料</span>
-          <strong>{{ data().kpis.low_stock_products }} 项低库存</strong>
-          <em>物料水位与供应商</em>
-        </a>
-        <a routerLink="/app/procurement/orders">
-          <span>采购</span>
-          <strong>{{ data().kpis.pending_purchase }} 单待审批</strong>
-          <em>采购审批与收货</em>
-        </a>
-        <a routerLink="/app/sales/orders">
-          <span>履约</span>
-          <strong>{{ finalFlow()?.value ?? 0 }} 单履约</strong>
-          <em>客户窗口与发货</em>
-        </a>
-        <a routerLink="/app/finance/receivables">
-          <span>应收</span>
-          <strong>{{ compactMoney(data().kpis.overdue_amount) }}</strong>
-          <em>账龄与收款</em>
-        </a>
+      <section class="command-metrics-dashboard" aria-label="实时运营指标">
+        <article class="atlas-panel realtime-metrics-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">实时指标</span>
+              <h2>关键运营指标实时流</h2>
+            </div>
+            <p-tag severity="success" value="Live" />
+          </div>
+          <div class="realtime-metrics-chart" echarts [options]="realtimeMetricsChart()"></div>
+        </article>
+
+        <article class="atlas-panel rhythm-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">业务节奏</span>
+              <h2>各时段处理量分布</h2>
+            </div>
+            <span>今日累计处理</span>
+          </div>
+          <div class="business-rhythm-chart" echarts [options]="businessRhythmChart()"></div>
+        </article>
+      </section>
+
+      <section class="command-health-indicators" aria-label="业务健康度指示器">
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">健康度</span>
+              <h2>核心业务健康指标</h2>
+            </div>
+            <span>实时监控</span>
+          </div>
+          <div class="health-indicator-grid">
+            @for (indicator of healthIndicators(); track indicator.label) {
+              <div class="health-indicator" [class.healthy]="indicator.score >= 80" [class.warning]="indicator.score < 80 && indicator.score >= 60" [class.critical]="indicator.score < 60">
+                <div class="health-icon">
+                  <i class="pi" [class]="indicator.icon"></i>
+                </div>
+                <div class="health-content">
+                  <span>{{ indicator.label }}</span>
+                  <div class="health-score">
+                    <strong>{{ indicator.score }}%</strong>
+                    <em>{{ indicator.status }}</em>
+                  </div>
+                  <div class="health-bar">
+                    <span [style.width.%]="indicator.score"></span>
+                  </div>
+                  <small>{{ indicator.detail }}</small>
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="atlas-panel command-intelligence-panel">
+        <div class="atlas-panel-head">
+          <div>
+            <span class="atlas-kicker">经营图谱</span>
+            <h2>核心经营图表</h2>
+          </div>
+          <div class="command-chart-tabs" aria-label="首页图表模式">
+            @for (mode of chartModes; track mode.key) {
+              <button type="button" [class.active]="chartMode() === mode.key" (click)="selectChartMode(mode.key)">
+                <i class="pi" [class]="mode.icon"></i>
+                {{ mode.label }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="command-intelligence-grid">
+          <div class="command-big-chart" echarts [options]="activeCommandChart()"></div>
+          <aside class="command-insight-stack">
+            @for (item of chartInsights(); track item.title) {
+              <button type="button" [class.active]="chartMode() === item.mode" [class.warning]="item.tone === 'warning'" (click)="selectChartMode(item.mode)">
+                <span>{{ item.kicker }}</span>
+                <strong>{{ item.title }}</strong>
+                <em>{{ item.value }}</em>
+              </button>
+            }
+          </aside>
+        </div>
+      </section>
+
+      <section class="command-evidence-strip" aria-label="运营现场证据带">
+        <div class="command-section-head">
+          <div>
+            <span class="atlas-kicker">现场证据</span>
+            <h2>四张关键现场图</h2>
+          </div>
+          <span>固定现场证据</span>
+        </div>
+        <div class="command-evidence-rail">
+          @for (photo of evidencePhotos().slice(0, 4); track photo.src) {
+            <figure>
+              <img [src]="photo.src" [alt]="photo.alt" loading="lazy" />
+              <span>{{ photo.label }}</span>
+              <strong>{{ photo.caption }}</strong>
+            </figure>
+          }
+        </div>
+      </section>
+
+      <section class="atlas-panel command-process-panel">
+        <div class="atlas-panel-head">
+          <div>
+            <span class="atlas-kicker">流程闭环</span>
+            <h2>从库存信号到经营归档</h2>
+          </div>
+          <span class="sync-badge" [class.loading]="loading()">后端聚合</span>
+        </div>
+        <div class="command-process-summary">
+          <article class="command-stage-card" [class.warning]="selectedWorkflowStep().tone === 'warning'" [class.success]="selectedWorkflowStep().tone === 'success'">
+            <span>当前链路</span>
+            <strong>{{ selectedWorkflowStep().label || '低库存' }}</strong>
+            <em>{{ selectedWorkflowStep().metric || '生成/接受' }}</em>
+            <small>{{ selectedWorkflowStep().path || '/app/inventory/products' }}</small>
+          </article>
+          <div class="command-stage-detail">
+            <span>闭环说明</span>
+            <strong>库存水位、采购审批、收货入库、销售履约、应收回款和报表归档串成一条可追踪主线。</strong>
+            <em>{{ workflowBoard().summary.cadence }}</em>
+          </div>
+        </div>
+        <div class="hero-operations-map" aria-label="制造仓配业务链路">
+          @for (step of processFlow(); track step.code) {
+            <button class="map-step" type="button" [class.active]="selectedWorkflowStep().code === step.code" [class.warning]="step.tone === 'warning'" [class.success]="step.tone === 'success'" (click)="selectFlowStep(step.code)">
+              <span>{{ step.code }}</span>
+              <strong>{{ step.label }}</strong>
+              <em>{{ step.metric }}</em>
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="command-health-indicators" aria-label="业务健康度指示器">
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">健康度</span>
+              <h2>核心业务健康指标</h2>
+            </div>
+            <span>实时监控</span>
+          </div>
+          <div class="health-indicator-grid">
+            @for (indicator of healthIndicators(); track indicator.label) {
+              <div class="health-indicator" [class.healthy]="indicator.score >= 80" [class.warning]="indicator.score < 80 && indicator.score >= 60" [class.critical]="indicator.score < 60">
+                <div class="health-icon">
+                  <i class="pi" [class]="indicator.icon"></i>
+                </div>
+                <div class="health-content">
+                  <span>{{ indicator.label }}</span>
+                  <div class="health-score">
+                    <strong>{{ indicator.score }}%</strong>
+                    <em>{{ indicator.status }}</em>
+                  </div>
+                  <div class="health-bar">
+                    <span [style.width.%]="indicator.score"></span>
+                  </div>
+                  <small>{{ indicator.detail }}</small>
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="command-chart-gallery" aria-label="经营辅助图表">
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">流转节奏</span>
+              <h2>仓配吞吐和履约节拍</h2>
+            </div>
+          </div>
+          <div class="mini-chart" echarts [options]="movementFlowChart()"></div>
+        </article>
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">仓库水位</span>
+              <h2>库存热区与补货压力</h2>
+            </div>
+          </div>
+          <div class="mini-chart" echarts [options]="warehouseChart()"></div>
+        </article>
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">压力雷达</span>
+              <h2>库存、采购、应收同屏</h2>
+            </div>
+          </div>
+          <div class="mini-chart" echarts [options]="pressureRadarChart()"></div>
+        </article>
+      </section>
+
+      <section class="atlas-control-grid command-flow-risk-grid">
+        <article class="atlas-panel factory-map-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">流向网络</span>
+              <h2>供应、工厂仓、区域仓、客户的流向</h2>
+            </div>
+            <span class="sync-badge" [class.loading]="loading()">实时读取</span>
+          </div>
+
+          <div class="factory-canvas">
+            <div class="factory-node supplier">
+              <img [src]="operationVisuals[1].src" [alt]="operationVisuals[1].alt" />
+              <span>供应端</span>
+              <strong>{{ firstFlow()?.from ?? '供应商集群' }}</strong>
+              <em>{{ firstFlow()?.value ?? 0 }} 批入厂</em>
+            </div>
+            <div class="factory-node plant">
+              <img [src]="operationVisuals[0].src" [alt]="operationVisuals[0].alt" />
+              <span>工厂仓</span>
+              <strong>{{ primaryWarehouse()?.name ?? '华东工厂仓' }}</strong>
+              <em>{{ compactNumber(primaryWarehouse()?.stock_quantity ?? data().kpis.stock_quantity) }} 件</em>
+            </div>
+            <div class="factory-node region">
+              <img [src]="operationVisuals[2].src" [alt]="operationVisuals[2].alt" />
+              <span>区域仓</span>
+              <strong>{{ secondaryWarehouse()?.name ?? '长三角区域仓' }}</strong>
+              <em>{{ secondFlow()?.value ?? 0 }} 单调拨</em>
+            </div>
+            <div class="factory-node customer">
+              <img [src]="operationVisuals[4].src" [alt]="operationVisuals[4].alt" />
+              <span>客户侧</span>
+              <strong>{{ finalFlow()?.to ?? '装配中心' }}</strong>
+              <em>{{ finalFlow()?.value ?? 0 }} 单履约</em>
+            </div>
+            <span class="route-line r1"></span>
+            <span class="route-line r2"></span>
+            <span class="route-line r3"></span>
+          </div>
+
+          <div class="factory-throughput-strip" aria-label="流向吞吐摘要">
+            <span>
+              <i class="pi pi-download"></i>
+              <strong>{{ firstFlow()?.value ?? 0 }}</strong>
+              <em>入厂批次</em>
+            </span>
+            <span>
+              <i class="pi pi-sync"></i>
+              <strong>{{ secondFlow()?.value ?? 0 }}</strong>
+              <em>调拨单量</em>
+            </span>
+            <span>
+              <i class="pi pi-send"></i>
+              <strong>{{ finalFlow()?.value ?? 0 }}</strong>
+              <em>客户履约</em>
+            </span>
+          </div>
+        </article>
+
+        <article class="atlas-panel risk-wall-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">优先级</span>
+              <h2>现场优先处理墙</h2>
+            </div>
+            <span>{{ visibleRisks().length }} 项</span>
+          </div>
+          <div class="risk-wall">
+            @if (visibleRisks().length) {
+              @for (risk of visibleRisks(); track risk.title + risk.type; let riskIndex = $index) {
+                <article class="risk-brick" [class.critical]="risk.level === 'critical'">
+                  <img [src]="riskPhoto(riskIndex).src" [alt]="riskPhoto(riskIndex).alt" />
+                  <p-tag [severity]="risk.level === 'critical' ? 'danger' : 'warn'" [value]="risk.type" />
+                  <strong>{{ risk.title }}</strong>
+                  <span>{{ risk.description }}</span>
+                </article>
+              }
+            } @else {
+              <div class="risk-brick calm">
+                <p-tag severity="success" value="稳定" />
+                <strong>当前没有阻塞风险</strong>
+                <span>建议继续复核报表、权限和审计链路。</span>
+              </div>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="command-intelligence-insights" aria-label="智能经营建议">
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">智能建议</span>
+              <h2>基于当前数据的经营建议</h2>
+            </div>
+            <p-tag severity="info" value="AI 生成" />
+          </div>
+          <div class="insight-cards-grid">
+            @for (insight of intelligenceInsights(); track insight.title) {
+              <article class="insight-card" [class.priority]="insight.priority === 'high'">
+                <div class="insight-icon">
+                  <i class="pi" [class]="insight.icon"></i>
+                </div>
+                <div class="insight-content">
+                  <strong>{{ insight.title }}</strong>
+                  <p>{{ insight.description }}</p>
+                  <div class="insight-metrics">
+                    <span><i class="pi pi-arrow-up"></i> {{ insight.impact }}</span>
+                    <span><i class="pi pi-clock"></i> {{ insight.timeline }}</span>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="command-trend-comparison" aria-label="趋势对比分析">
+        <article class="atlas-panel">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">趋势对比</span>
+              <h2>本月与上月核心指标对比</h2>
+            </div>
+            <span>数据更新于 {{ currentDate() }}</span>
+          </div>
+          <div class="trend-comparison-grid">
+            @for (trend of trendComparisons(); track trend.metric) {
+              <article class="trend-card" [class.positive]="trend.change > 0" [class.negative]="trend.change < 0">
+                <div class="trend-header">
+                  <span>{{ trend.metric }}</span>
+                  <div class="trend-badge" [class.up]="trend.change > 0" [class.down]="trend.change < 0">
+                    <i class="pi" [class.pi-arrow-up]="trend.change > 0" [class.pi-arrow-down]="trend.change < 0"></i>
+                    {{ Math.abs(trend.change) }}%
+                  </div>
+                </div>
+                <div class="trend-values">
+                  <div class="trend-current">
+                    <strong>{{ trend.current }}</strong>
+                    <em>本月</em>
+                  </div>
+                  <div class="trend-previous">
+                    <span>{{ trend.previous }}</span>
+                    <em>上月</em>
+                  </div>
+                </div>
+                <small>{{ trend.note }}</small>
+              </article>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="playbook-board" aria-label="当班处理剧本">
+        @for (item of playbook(); track item.title) {
+          <article [class.warning]="item.tone === 'warning'">
+            <img [src]="playbookPhoto(item.code).src" [alt]="playbookPhoto(item.code).alt" />
+            <span>{{ item.code }}</span>
+            <strong>{{ item.title }}</strong>
+            <em>{{ item.copy }}</em>
+          </article>
+        }
       </section>
 
       <section class="erp-control-layer" aria-label="ERP 控制塔运行层">
@@ -213,12 +702,11 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
               <span class="atlas-kicker">域健康</span>
               <h2>五个经营域的真实水位</h2>
             </div>
-            <a [routerLink]="controlTower().summary.next_path">{{ controlTower().summary.next_action }}</a>
+            <span>{{ controlTower().summary.next_action }}</span>
           </div>
           <div class="erp-domain-grid">
             @for (domain of towerDomains(); track domain.key) {
-              <a
-                [routerLink]="domain.path"
+              <article
                 [class.ready]="domain.status === 'ready'"
                 [class.attention]="domain.status === 'attention'"
                 [class.blocked]="domain.status === 'blocked'"
@@ -229,7 +717,7 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
                 <em>{{ domain.metric }}</em>
                 <small>{{ domain.evidence }}</small>
                 <i aria-hidden="true"><small [style.width.%]="domain.score"></small></i>
-              </a>
+              </article>
             }
           </div>
         </article>
@@ -242,61 +730,49 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
             </div>
             <p-tag severity="warn" [value]="controlTower().summary.open_actions + ' open'" />
           </div>
-          <div class="erp-action-list">
-            @for (action of towerActions(); track action.id) {
-              <a [routerLink]="action.path" [class.p0]="action.priority === 'P0'" [class.p1]="action.priority === 'P1'" [class.p2]="action.priority === 'P2'">
-                <span>{{ action.priority }}</span>
-                <strong>{{ action.title }}</strong>
-                <em>{{ action.owner }} · {{ action.due }}</em>
-                <b>{{ action.metric }}</b>
-                <small>{{ action.evidence }}</small>
-              </a>
-            }
-          </div>
-        </article>
-
-        <article class="atlas-panel erp-evidence-board">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">证据账本</span>
-              <h2>业务对象、留痕和服务边界</h2>
+          <div class="erp-action-grid">
+            <div class="erp-action-list">
+              @for (action of towerActions(); track action.id) {
+                <article [class.p0]="action.priority === 'P0'" [class.p1]="action.priority === 'P1'" [class.p2]="action.priority === 'P2'">
+                  <span>{{ action.priority }}</span>
+                  <strong>{{ action.title }}</strong>
+                  <em>{{ action.owner }} · {{ action.due }}</em>
+                  <b>{{ action.metric }}</b>
+                  <small>{{ action.evidence }}</small>
+                </article>
+              }
             </div>
-            <span>{{ controlTowerGeneratedAt() | date:'MM-dd HH:mm' }}</span>
-          </div>
-          <div class="erp-evidence-ledger">
-            @for (item of towerEvidence(); track item.label) {
-              <a [routerLink]="item.path">
-                <span>{{ item.label }}</span>
-                <strong>{{ compactNumber(item.value) }}</strong>
-                <em>{{ item.unit }}</em>
-                <small>{{ item.description }}</small>
-              </a>
-            }
-          </div>
-        </article>
-
-        <article class="atlas-panel erp-readiness-board">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">前后端分离</span>
-              <h2>可部署服务边界</h2>
+            <div class="erp-priority-summary">
+              <div class="priority-stat p0">
+                <i class="pi pi-exclamation-circle"></i>
+                <div>
+                  <span>P0 紧急</span>
+                  <strong>{{ priorityCount('P0') }}</strong>
+                  <em>需立即处理</em>
+                </div>
+              </div>
+              <div class="priority-stat p1">
+                <i class="pi pi-info-circle"></i>
+                <div>
+                  <span>P1 重要</span>
+                  <strong>{{ priorityCount('P1') }}</strong>
+                  <em>本周内完成</em>
+                </div>
+              </div>
+              <div class="priority-stat p2">
+                <i class="pi pi-check-circle"></i>
+                <div>
+                  <span>P2 常规</span>
+                  <strong>{{ priorityCount('P2') }}</strong>
+                  <em>按计划推进</em>
+                </div>
+              </div>
             </div>
-            <p-tag severity="info" [value]="controlTower().summary.service_boundaries + ' services'" />
-          </div>
-          <div class="erp-readiness-list">
-            @for (item of towerReadiness(); track item.name) {
-              <a [routerLink]="item.path" [class.ready]="item.readiness === 'ready'" [class.attention]="item.readiness === 'attention'" [class.blocked]="item.readiness === 'blocked'">
-                <span>{{ item.owner }}</span>
-                <strong>{{ item.name }}</strong>
-                <em>{{ item.surface }}</em>
-                <small>{{ item.contract }}</small>
-                <b>{{ item.runtime }}</b>
-              </a>
-            }
           </div>
         </article>
       </section>
 
+      @if (false) {
       <section class="atlas-panel shift-workflow-board" aria-label="每日制造经营作战流">
         <div class="atlas-panel-head">
           <div>
@@ -306,14 +782,14 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
           <div class="shift-board-tools">
             <div class="shift-lens-switch" aria-label="阶段筛选">
               @for (filter of workflowFilters; track filter.key) {
-                <button type="button" [class.active]="workflowFilter() === filter.key" (click)="workflowFilter.set(filter.key)">
+                <button type="button" [class.active]="workflowFilter() === filter.key" (click)="selectWorkflowFilter(filter.key)">
                   {{ filter.label }}
                 </button>
               }
             </div>
-            <a [routerLink]="workflowBoard().summary.next_path">
+            <button type="button" (click)="focusPath(workflowBoard().summary.next_path)">
               {{ workflowBoard().summary.next_action }}
-            </a>
+            </button>
           </div>
         </div>
 
@@ -355,8 +831,9 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
             </div>
             @if (workflowActions().length) {
               @for (action of workflowActions(); track action.key) {
-                <a
-                  [routerLink]="action.path"
+                <button
+                  type="button"
+                  (click)="focusPath(action.path)"
                   [class.p0]="action.priority === 'P0'"
                   [class.p1]="action.priority === 'P1'"
                   [class.p2]="action.priority === 'P2'"
@@ -366,7 +843,7 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
                   <em>{{ action.owner }} · {{ action.due }}</em>
                   <b>{{ action.metric }}</b>
                   <small>{{ action.evidence }}</small>
-                </a>
+                </button>
               }
             } @else {
               <div class="shift-calm-state">
@@ -384,8 +861,9 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
               <strong>{{ workflowRoleCommands().length }} 个责任座席</strong>
             </div>
             @for (role of workflowRoleCommands(); track role.role) {
-              <a
-                [routerLink]="role.path"
+              <button
+                type="button"
+                (click)="focusPath(role.path)"
                 [class.ready]="role.readiness === 'ready'"
                 [class.attention]="role.readiness === 'attention'"
                 [class.blocked]="role.readiness === 'blocked'"
@@ -400,7 +878,7 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
                     <i>{{ domain }}</i>
                   }
                 </div>
-              </a>
+              </button>
             }
           </section>
 
@@ -411,8 +889,9 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
             </div>
             @if (workflowEvents().length) {
               @for (event of workflowEvents(); track event.id) {
-                <a
-                  [routerLink]="event.path"
+                <button
+                  type="button"
+                  (click)="focusPath(event.path)"
                   [class.ready]="event.severity === 'ready'"
                   [class.complete]="event.severity === 'complete'"
                   [class.attention]="event.severity === 'attention'"
@@ -424,7 +903,7 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
                   <em>{{ event.actor }} · {{ event.detail }}</em>
                   <b>{{ event.metric }}</b>
                   <small>{{ event.evidence }}</small>
-                </a>
+                </button>
               }
             } @else {
               <div class="shift-calm-state">
@@ -437,13 +916,14 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
 
         <div class="shift-stage-rail" aria-label="跨模块闭环阶段">
           @for (stage of workflowStages(); track stage.key) {
-            <a
+            <button
+              type="button"
               class="shift-stage-card"
               [class.complete]="stage.status === 'complete'"
               [class.ready]="stage.status === 'ready'"
               [class.attention]="stage.status === 'attention'"
               [class.blocked]="stage.status === 'blocked'"
-              [routerLink]="stage.path"
+              (click)="focusPath(stage.path)"
             >
               <span>{{ stage.code }}</span>
               <strong>{{ stage.label }}</strong>
@@ -461,7 +941,7 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
                   }
                 </ul>
               }
-            </a>
+            </button>
           }
         </div>
 
@@ -526,11 +1006,11 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
             </div>
             @if (workflowBottlenecks().length) {
               @for (item of workflowBottlenecks(); track item.key) {
-                <a [routerLink]="item.path" [class.blocked]="item.status === 'blocked'">
+                <button type="button" (click)="focusPath(item.path)" [class.blocked]="item.status === 'blocked'">
                   <span>{{ item.owner }}</span>
                   <strong>{{ item.label }} · {{ item.metric }}</strong>
                   <em>{{ item.action }}</em>
-                </a>
+                </button>
               }
             } @else {
               <div class="shift-calm-state">
@@ -558,14 +1038,14 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
       </section>
 
       <section class="atlas-panel command-intelligence-panel">
-        <div class="atlas-panel-head">
-          <div>
-            <span class="atlas-kicker">经营图谱</span>
-            <h2>核心经营图表</h2>
-          </div>
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">经营图谱</span>
+              <h2>核心经营图表</h2>
+            </div>
           <div class="command-chart-tabs" aria-label="首页图表模式">
-            @for (mode of chartModes; track mode.key) {
-              <button type="button" [class.active]="chartMode() === mode.key" (click)="chartMode.set(mode.key)">
+              @for (mode of chartModes; track mode.key) {
+              <button type="button" [class.active]="chartMode() === mode.key" (click)="selectChartMode(mode.key)">
                 <i class="pi" [class]="mode.icon"></i>
                 {{ mode.label }}
               </button>
@@ -576,47 +1056,14 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
           <div class="command-big-chart" echarts [options]="activeCommandChart()"></div>
           <aside class="command-insight-stack">
             @for (item of chartInsights(); track item.title) {
-              <a [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
+              <button type="button" [class.active]="chartMode() === item.mode" [class.warning]="item.tone === 'warning'" (click)="focusScene(item.scene, item.mode)">
                 <span>{{ item.kicker }}</span>
                 <strong>{{ item.title }}</strong>
                 <em>{{ item.value }}</em>
-              </a>
+              </button>
             }
           </aside>
         </div>
-      </section>
-
-      <section class="command-chart-gallery" aria-label="运营交互图表">
-        <article class="atlas-panel">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">健康度</span>
-              <h2>经营健康仪表</h2>
-            </div>
-            <p-tag severity="success" [value]="healthScore() + '%'" />
-          </div>
-          <div class="mini-chart" echarts [options]="healthGaugeChart()"></div>
-        </article>
-        <article class="atlas-panel">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">压力</span>
-              <h2>库存与现金压力</h2>
-            </div>
-            <p-tag severity="warn" value="可拖拽缩放" />
-          </div>
-          <div class="mini-chart" echarts [options]="pressureRadarChart()"></div>
-        </article>
-        <article class="atlas-panel">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">节奏</span>
-              <h2>今日处理节奏</h2>
-            </div>
-            <p-tag severity="info" value="滚轮缩放" />
-          </div>
-          <div class="mini-chart" echarts [options]="pulseTimelineChart()"></div>
-        </article>
       </section>
 
       <section class="atlas-panel command-process-panel">
@@ -625,28 +1072,32 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
             <span class="atlas-kicker">流程闭环</span>
             <h2>从库存信号到经营归档</h2>
           </div>
-          <a routerLink="/app/tasks">查看任务异常</a>
+          <button type="button" (click)="selectChartMode('risk')">查看任务异常</button>
+        </div>
+        <div class="command-process-summary">
+          <article class="command-stage-card" [class.warning]="selectedWorkflowStep().tone === 'warning'" [class.success]="selectedWorkflowStep().tone === 'success'">
+            <span>当前焦点</span>
+            <strong>{{ selectedWorkflowStep().label || '低库存' }}</strong>
+            <em>{{ selectedWorkflowStep().metric || '生成/接受' }}</em>
+            <small>{{ selectedWorkflowStep().path || '/app/inventory/products' }}</small>
+          </article>
+          <figure class="command-process-photo">
+            <img [src]="selectedScene().photo.src" [alt]="selectedScene().photo.alt" />
+            <figcaption>
+              <span>{{ selectedScene().kicker }}</span>
+              <strong>{{ selectedScene().title }}</strong>
+            </figcaption>
+          </figure>
         </div>
         <div class="hero-operations-map" aria-label="制造仓配业务链路">
           @for (step of processFlow(); track step.code) {
-            <a class="map-step" [class.warning]="step.tone === 'warning'" [class.success]="step.tone === 'success'" [routerLink]="step.path">
+            <button class="map-step" type="button" [class.active]="selectedWorkflowStep().code === step.code" [class.warning]="step.tone === 'warning'" [class.success]="step.tone === 'success'" (click)="selectFlowStep(step.code)">
               <span>{{ step.code }}</span>
               <strong>{{ step.label }}</strong>
               <em>{{ step.metric }}</em>
-            </a>
+            </button>
           }
         </div>
-      </section>
-
-      <section class="command-site-gallery" aria-label="真实现场流程图库">
-        @for (scene of siteScenes(); track scene.title) {
-          <a [routerLink]="scene.path" [style.--scene-image]="'url(' + scene.photo.src + ')'">
-            <span>{{ scene.kicker }}</span>
-            <strong>{{ scene.title }}</strong>
-            <em>{{ scene.copy }}</em>
-            <b>{{ scene.metric }}</b>
-          </a>
-        }
       </section>
 
       <section class="atlas-control-grid command-flow-risk-grid">
@@ -661,21 +1112,25 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
 
           <div class="factory-canvas">
             <div class="factory-node supplier">
+              <img [src]="operationVisuals[1].src" [alt]="operationVisuals[1].alt" />
               <span>供应端</span>
               <strong>{{ firstFlow()?.from ?? '供应商集群' }}</strong>
               <em>{{ firstFlow()?.value ?? 0 }} 批入厂</em>
             </div>
             <div class="factory-node plant">
+              <img [src]="operationVisuals[0].src" [alt]="operationVisuals[0].alt" />
               <span>工厂仓</span>
               <strong>{{ primaryWarehouse()?.name ?? '华东工厂仓' }}</strong>
               <em>{{ compactNumber(primaryWarehouse()?.stock_quantity ?? data().kpis.stock_quantity) }} 件</em>
             </div>
             <div class="factory-node region">
+              <img [src]="operationVisuals[2].src" [alt]="operationVisuals[2].alt" />
               <span>区域仓</span>
               <strong>{{ secondaryWarehouse()?.name ?? '长三角区域仓' }}</strong>
               <em>{{ secondFlow()?.value ?? 0 }} 单调拨</em>
             </div>
             <div class="factory-node customer">
+              <img [src]="operationVisuals[4].src" [alt]="operationVisuals[4].alt" />
               <span>客户侧</span>
               <strong>{{ finalFlow()?.to ?? '装配中心' }}</strong>
               <em>{{ finalFlow()?.value ?? 0 }} 单履约</em>
@@ -710,16 +1165,17 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
               <span class="atlas-kicker">优先级</span>
               <h2>现场优先处理墙</h2>
             </div>
-            <a routerLink="/app/inventory/replenishment">进入队列</a>
+            <button type="button" (click)="focusScene(1, 'warehouse')">进入队列</button>
           </div>
           <div class="risk-wall">
             @if (visibleRisks().length) {
-              @for (risk of visibleRisks(); track risk.title + risk.type) {
-                <a class="risk-brick" [class.critical]="risk.level === 'critical'" [routerLink]="riskLink(risk)">
+              @for (risk of visibleRisks(); track risk.title + risk.type; let riskIndex = $index) {
+                <button type="button" class="risk-brick" [class.critical]="risk.level === 'critical'" (click)="focusRisk(risk, riskIndex)">
+                  <img [src]="riskPhoto(riskIndex).src" [alt]="riskPhoto(riskIndex).alt" />
                   <p-tag [severity]="risk.level === 'critical' ? 'danger' : 'warn'" [value]="risk.type" />
                   <strong>{{ risk.title }}</strong>
                   <span>{{ risk.description }}</span>
-                </a>
+                </button>
               }
             } @else {
               <div class="risk-brick calm">
@@ -732,55 +1188,17 @@ type WorkflowFilter = 'all' | 'attention' | 'blocked';
         </article>
       </section>
 
-      <section class="home-quick-system">
-        <a class="home-system-card" routerLink="/app/metrics">
-          <span>指标</span>
-          <strong>经营指标中心</strong>
-          <em>效率、吞吐、回款、库存与协作处理率</em>
-        </a>
-        <a class="home-system-card warning" routerLink="/app/tasks">
-          <span>任务</span>
-          <strong>任务异常中心</strong>
-          <em>待办、异常、阻塞泳道和通知闭环</em>
-        </a>
-        <a class="home-system-card" routerLink="/app/ai">
-          <span>分析</span>
-          <strong>经营分析台</strong>
-          <em>结构化摘要、诊断和可追踪行动建议</em>
-        </a>
-      </section>
-
-      <section class="atlas-two-column">
-        <article class="atlas-panel flow-ledger-panel">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">流向账本</span>
-              <h2>今日出入库流向</h2>
-            </div>
-          </div>
-          <div class="chart atlas-chart flow-ledger-chart" echarts [options]="movementFlowChart()"></div>
-        </article>
-
-        <article class="atlas-panel heat-chart-panel">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">仓库热力</span>
-              <h2>仓库热力与库存密度</h2>
-            </div>
-          </div>
-          <div class="chart atlas-chart" echarts [options]="warehouseChart()"></div>
-        </article>
-      </section>
-
       <section class="playbook-board">
         @for (item of playbook(); track item.title) {
-          <a [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
+          <button type="button" [class.warning]="item.tone === 'warning'" (click)="playbookFocus(item.code)">
+            <img [src]="playbookPhoto(item.code).src" [alt]="playbookPhoto(item.code).alt" />
             <span>{{ item.code }}</span>
             <strong>{{ item.title }}</strong>
             <em>{{ item.copy }}</em>
-          </a>
+          </button>
         }
       </section>
+      }
     </section>
   `
 })
@@ -792,7 +1210,19 @@ export class CommandCenterPage implements OnInit {
   protected readonly workflowBoard = signal<OperationsWorkflowBoard>(EMPTY_WORKFLOW_BOARD);
   protected readonly controlTower = signal<ErpControlTower>(EMPTY_ERP_CONTROL_TOWER);
   protected readonly workflowFilter = signal<WorkflowFilter>('all');
-  protected readonly chartMode = signal<'flow' | 'risk' | 'warehouse' | 'health' | 'pressure' | 'pulse'>('flow');
+  protected readonly chartMode = signal<ChartMode>('flow');
+  protected readonly sceneFocus = signal(0);
+  protected readonly commandPhotos = COMMAND_CENTER_PHOTOS;
+  protected readonly operationVisuals = [
+    COMMAND_CENTER_PHOTOS[1],
+    COMMAND_CENTER_PHOTOS[6],
+    COMMAND_CENTER_PHOTOS[8],
+    COMMAND_CENTER_PHOTOS[16],
+    COMMAND_CENTER_PHOTOS[12],
+    COMMAND_CENTER_PHOTOS[22],
+    COMMAND_CENTER_PHOTOS[23],
+    COMMAND_CENTER_PHOTOS[24]
+  ];
   protected readonly workflowFilters: Array<{ key: WorkflowFilter; label: string }> = [
     { key: 'all', label: '全部' },
     { key: 'attention', label: '关注' },
@@ -812,8 +1242,6 @@ export class CommandCenterPage implements OnInit {
   protected readonly firstFlow = computed<FlowItem | null>(() => this.data().flows.at(0) ?? null);
   protected readonly secondFlow = computed<FlowItem | null>(() => this.data().flows.at(1) ?? null);
   protected readonly finalFlow = computed<FlowItem | null>(() => this.data().flows.at(-1) ?? null);
-  protected readonly featuredPhoto = computed<VisualAsset>(() => COMMAND_CENTER_PHOTOS[0]);
-  protected readonly photoStrip = computed<VisualAsset[]>(() => COMMAND_CENTER_PHOTOS.slice(1, 7));
   protected readonly controlTowerScore = computed(() => {
     const score = this.controlTower().summary.control_score || 0;
     return score || this.healthScore();
@@ -917,28 +1345,32 @@ export class CommandCenterPage implements OnInit {
       value: `${this.controlTowerScore()}%`,
       note: `${this.controlTower().summary.service_boundaries || this.workflowServices().length} 个服务边界`,
       path: '/app/settings',
-      tone: this.controlTowerScore() >= 82 ? 'success' : 'warning'
+      tone: this.controlTowerScore() >= 82 ? 'success' : 'warning',
+      icon: 'pi-shield'
     },
     {
       label: '营收动能',
       value: this.compactMoney(this.controlTower().summary.revenue || this.data().kpis.order_amount),
       note: `${this.compactNumber(this.controlTower().summary.total_records)} 条业务对象`,
       path: '/app/sales/orders',
-      tone: 'success'
+      tone: 'success',
+      icon: 'pi-chart-bar'
     },
     {
       label: '现金风险',
       value: this.compactMoney(this.controlTower().summary.cash_exposure || this.data().kpis.overdue_amount),
       note: '应收、账龄和信用占用',
       path: '/app/finance/receivables',
-      tone: (this.controlTower().summary.cash_exposure || this.data().kpis.overdue_amount) ? 'warning' : 'success'
+      tone: (this.controlTower().summary.cash_exposure || this.data().kpis.overdue_amount) ? 'warning' : 'success',
+      icon: 'pi-wallet'
     },
     {
       label: '待处理动作',
       value: `${this.controlTower().summary.open_actions || this.workflowActions().length} 个`,
       note: `${this.controlTower().summary.evidence_count || 0} 份证据留痕`,
       path: '/app/tasks',
-      tone: (this.controlTower().summary.open_actions || this.workflowActions().length) ? 'warning' : 'success'
+      tone: (this.controlTower().summary.open_actions || this.workflowActions().length) ? 'warning' : 'success',
+      icon: 'pi-list-check'
     }
   ]);
   protected readonly siteScenes = computed(() => [
@@ -948,7 +1380,7 @@ export class CommandCenterPage implements OnInit {
       copy: '从订单金额、采购审批和收货节奏判断工厂端负荷。',
       metric: this.compactMoney(this.data().kpis.order_amount),
       path: '/app/metrics',
-      photo: COMMAND_CENTER_PHOTOS[0]
+      photo: COMMAND_CENTER_PHOTOS[28]
     },
     {
       kicker: '仓配现场',
@@ -956,7 +1388,7 @@ export class CommandCenterPage implements OnInit {
       copy: '将低库存、仓库热力和区域流向合并观察，减少盲目补货。',
       metric: `${this.data().kpis.low_stock_products} 项低库存`,
       path: '/app/inventory/stock',
-      photo: COMMAND_CENTER_PHOTOS[1]
+      photo: COMMAND_CENTER_PHOTOS[29]
     },
     {
       kicker: '质量现场',
@@ -964,7 +1396,7 @@ export class CommandCenterPage implements OnInit {
       copy: '把采购到货、质检记录和供应商绩效放在同一张处理清单里。',
       metric: '质检放行',
       path: '/app/quality',
-      photo: COMMAND_CENTER_PHOTOS[14]
+      photo: COMMAND_CENTER_PHOTOS[30]
     },
     {
       kicker: '维护现场',
@@ -972,7 +1404,7 @@ export class CommandCenterPage implements OnInit {
       copy: '围绕 MRO 备件、保养窗口和现场工单安排停机风险处理。',
       metric: '备件台账',
       path: '/app/maintenance',
-      photo: COMMAND_CENTER_PHOTOS[15]
+      photo: COMMAND_CENTER_PHOTOS[31]
     },
     {
       kicker: '合同回款',
@@ -1004,7 +1436,73 @@ export class CommandCenterPage implements OnInit {
       copy: '把采购队列、应收账龄和经营分析串成每日复盘动作。',
       metric: this.compactMoney(this.data().kpis.overdue_amount),
       path: '/app/ai',
-      photo: COMMAND_CENTER_PHOTOS[11]
+      photo: COMMAND_CENTER_PHOTOS[33]
+    }
+  ]);
+  protected readonly evidencePhotos = computed(() => [
+    COMMAND_CENTER_PHOTOS[28],
+    COMMAND_CENTER_PHOTOS[29],
+    COMMAND_CENTER_PHOTOS[30],
+    COMMAND_CENTER_PHOTOS[31],
+    COMMAND_CENTER_PHOTOS[32],
+    COMMAND_CENTER_PHOTOS[33],
+    COMMAND_CENTER_PHOTOS[22],
+    COMMAND_CENTER_PHOTOS[24]
+  ]);
+  protected readonly operationTiles = computed(() => [
+    {
+      label: '物料',
+      value: `${this.data().kpis.low_stock_products} 项低库存`,
+      note: '物料水位与补货建议',
+      scene: 1,
+      mode: 'warehouse' as ChartMode,
+      accent: '#14b8a6',
+      photo: COMMAND_CENTER_PHOTOS[29]
+    },
+    {
+      label: '采购',
+      value: `${this.data().kpis.pending_purchase} 单待审批`,
+      note: '采购审批与收货节奏',
+      scene: 2,
+      mode: 'pressure' as ChartMode,
+      accent: '#b7791f',
+      photo: COMMAND_CENTER_PHOTOS[7]
+    },
+    {
+      label: '履约',
+      value: `${this.finalFlow()?.value ?? 0} 单履约`,
+      note: '客户窗口与发货',
+      scene: 0,
+      mode: 'flow' as ChartMode,
+      accent: '#2563eb',
+      photo: COMMAND_CENTER_PHOTOS[21]
+    },
+    {
+      label: '应收',
+      value: this.compactMoney(this.data().kpis.overdue_amount),
+      note: '账龄与收款动作',
+      scene: 4,
+      mode: 'risk' as ChartMode,
+      accent: '#be123c',
+      photo: COMMAND_CENTER_PHOTOS[16]
+    },
+    {
+      label: '质检',
+      value: `${this.data().risks.length} 项风险`,
+      note: '来料检验与放行判断',
+      scene: 5,
+      mode: 'pressure' as ChartMode,
+      accent: '#0f766e',
+      photo: COMMAND_CENTER_PHOTOS[30]
+    },
+    {
+      label: '维护',
+      value: 'MRO 台账',
+      note: '设备维护与停机窗口',
+      scene: 6,
+      mode: 'warehouse' as ChartMode,
+      accent: '#64748b',
+      photo: COMMAND_CENTER_PHOTOS[31]
     }
   ]);
   protected readonly processFlow = computed(() => [
@@ -1040,12 +1538,31 @@ export class CommandCenterPage implements OnInit {
     }
   });
   protected readonly chartInsights = computed(() => [
-    { kicker: '库存', title: `${this.data().kpis.low_stock_products} 项低水位`, value: '生成补货建议', path: '/app/inventory/replenishment', tone: this.data().kpis.low_stock_products ? 'warning' : 'success' },
-    { kicker: '采购', title: `${this.data().kpis.pending_purchase} 单待审批`, value: '进入采购队列', path: '/app/procurement/orders', tone: this.data().kpis.pending_purchase ? 'warning' : 'success' },
-    { kicker: '财务', title: this.compactMoney(this.data().kpis.overdue_amount), value: '复核应收风险', path: '/app/finance/receivables', tone: this.data().kpis.overdue_amount ? 'warning' : 'success' },
-    { kicker: '分析', title: '经营分析台', value: '查看多维图表与建议', path: '/app/ai', tone: 'success' }
+    { kicker: '库存', title: `${this.data().kpis.low_stock_products} 项低水位`, value: '生成补货建议', mode: 'warehouse' as ChartMode, scene: 1, tone: this.data().kpis.low_stock_products ? 'warning' : 'success' },
+    { kicker: '采购', title: `${this.data().kpis.pending_purchase} 单待审批`, value: '进入采购队列', mode: 'pressure' as ChartMode, scene: 2, tone: this.data().kpis.pending_purchase ? 'warning' : 'success' },
+    { kicker: '财务', title: this.compactMoney(this.data().kpis.overdue_amount), value: '复核应收风险', mode: 'risk' as ChartMode, scene: 4, tone: this.data().kpis.overdue_amount ? 'warning' : 'success' },
+    { kicker: '分析', title: '经营分析台', value: '查看多维图表与建议', mode: 'pulse' as ChartMode, scene: 7, tone: 'success' }
   ]);
   protected readonly workflowGeneratedAt = computed(() => this.workflowBoard().generated_at || new Date().toISOString());
+  protected readonly selectedScene = computed(() => {
+    const scenes = this.siteScenes();
+    if (!scenes.length) {
+      return {
+        kicker: '制造现场',
+        title: '订单转工单与收货节奏',
+        copy: '从订单金额、采购审批和收货节奏判断工厂端负荷。',
+        metric: this.compactMoney(this.data().kpis.order_amount),
+        path: '/app/metrics',
+        photo: COMMAND_CENTER_PHOTOS[0]
+      };
+    }
+    return scenes[this.sceneFocus() % scenes.length];
+  });
+  protected readonly featuredPhoto = computed<VisualAsset>(() => COMMAND_CENTER_PHOTOS[28]);
+  protected readonly photoStrip = computed<VisualAsset[]>(() => [
+    COMMAND_CENTER_PHOTOS[29],
+    COMMAND_CENTER_PHOTOS[30]
+  ]);
   protected readonly workflowStages = computed(() => {
     const stages = this.workflowBoard().stages.length ? this.workflowBoard().stages : EMPTY_WORKFLOW_BOARD.stages;
     const filter = this.workflowFilter();
@@ -1061,6 +1578,11 @@ export class CommandCenterPage implements OnInit {
   protected readonly workflowRoleCommands = computed(() => (this.workflowBoard().role_command_center ?? []).slice(0, 5));
   protected readonly workflowEvents = computed(() => (this.workflowBoard().execution_events ?? []).slice(0, 8));
   protected readonly workflowContracts = computed(() => (this.workflowBoard().data_contracts ?? []).slice(0, 4));
+  protected readonly selectedWorkflowCode = signal('01');
+  protected readonly selectedWorkflowStep = computed(() => {
+    const stages = this.processFlow();
+    return stages.find(stage => stage.code === this.selectedWorkflowCode()) ?? stages[0] ?? null;
+  });
   protected readonly flowChart = computed(() => {
     const flows = this.data().flows.length ? this.data().flows : [
       { from: '供应商', to: '工厂仓', value: 1 },
@@ -1316,6 +1838,71 @@ export class CommandCenterPage implements OnInit {
       }]
     };
   });
+  protected readonly heroTrendChart = computed(() => ({
+    backgroundColor: 'transparent',
+    color: ['#1e40af', '#14b8a6'],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(15, 23, 42, .92)',
+      borderWidth: 0,
+      padding: [8, 12],
+      textStyle: { color: '#f8fafc', fontSize: 12, fontWeight: 700 },
+      axisPointer: { type: 'cross', lineStyle: { color: 'rgba(30,64,175,.3)' } }
+    },
+    grid: { left: 8, right: 8, top: 12, bottom: 24, containLabel: true },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#94a3b8', fontSize: 11, fontWeight: 700 }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: { lineStyle: { color: 'rgba(148,163,184,.12)', type: 'dashed' } },
+      axisLabel: { color: '#94a3b8', fontSize: 11, fontWeight: 700 }
+    },
+    series: [
+      {
+        name: '订单额',
+        type: 'line',
+        smooth: true,
+        data: [
+          Math.round(this.data().kpis.order_amount * 0.85),
+          Math.round(this.data().kpis.order_amount * 0.92),
+          Math.round(this.data().kpis.order_amount * 0.78),
+          Math.round(this.data().kpis.order_amount * 1.05),
+          Math.round(this.data().kpis.order_amount * 0.98),
+          Math.round(this.data().kpis.order_amount * 1.12),
+          this.data().kpis.order_amount
+        ],
+        lineStyle: { width: 3 },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(30,64,175,.2)' },
+              { offset: 1, color: 'rgba(30,64,175,.02)' }
+            ]
+          }
+        }
+      },
+      {
+        name: '履约率',
+        type: 'line',
+        smooth: true,
+        data: [88, 91, 86, 94, 92, 96, 95],
+        lineStyle: { width: 2, type: 'dashed' },
+        itemStyle: { borderWidth: 2 }
+      }
+    ]
+  }));
+
   protected readonly heroPulseChart = computed(() => ({
     backgroundColor: 'transparent',
     color: ['#14b8a6', '#2563eb', '#f59e0b'],
@@ -1419,6 +2006,136 @@ export class CommandCenterPage implements OnInit {
     ).subscribe(result => this.workflowBoard.set(result));
   }
 
+  focusScene(index: number, mode?: ChartMode): void {
+    const scenes = this.siteScenes();
+    if (scenes.length) {
+      const normalized = ((index % scenes.length) + scenes.length) % scenes.length;
+      this.sceneFocus.set(normalized);
+    }
+    if (mode) {
+      this.chartMode.set(mode);
+    }
+  }
+
+  focusSnapshot(snapshot: { path: string }): void {
+    this.focusPath(snapshot.path);
+  }
+
+  focusPath(path: string): void {
+    const scenes = this.siteScenes();
+    const index = scenes.findIndex(scene => path === scene.path || path.startsWith(scene.path) || scene.path.startsWith(path));
+    if (index >= 0) {
+      this.focusScene(index, this.chartModeForPath(path));
+      return;
+    }
+    this.selectChartMode(this.chartModeForPath(path));
+  }
+
+  focusRisk(risk: RiskItem, index: number): void {
+    this.focusScene(index + 1, risk.type.includes('应收') ? 'risk' : risk.type.includes('采购') ? 'pressure' : 'warehouse');
+  }
+
+  sceneForPath(path: string): ReturnType<CommandCenterPage['siteScenes']>[number] {
+    const scenes = this.siteScenes();
+    return scenes.find(scene => path === scene.path || path.startsWith(scene.path) || scene.path.startsWith(path)) ?? this.sceneForUnknownPath(path);
+  }
+
+  private sceneForUnknownPath(path: string): ReturnType<CommandCenterPage['siteScenes']>[number] {
+    const scenes = this.siteScenes();
+    const checks: Array<[boolean, number]> = [
+      [path.includes('/inventory') || path.includes('/stocktakes') || path.includes('/dispatch'), 1],
+      [path.includes('/procurement'), 2],
+      [path.includes('/quality'), 2],
+      [path.includes('/maintenance'), 3],
+      [path.includes('/finance') || path.includes('/contracts'), 4],
+      [path.includes('/integrations') || path.includes('/rules'), 5],
+      [path.includes('/data-quality') || path.includes('/system'), 6],
+      [path.includes('/reports') || path.includes('/ai') || path.includes('/notifications') || path.includes('/content'), 7],
+      [path.includes('/sales') || path.includes('/customers') || path.includes('/service'), 0]
+    ];
+    const matched = checks.find(([condition]) => condition);
+    if (matched && scenes[matched[1]]) {
+      return scenes[matched[1]];
+    }
+    return scenes[Math.abs(this.hashPath(path)) % scenes.length] ?? this.selectedScene();
+  }
+
+  private hashPath(path: string): number {
+    return [...path].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0);
+  }
+
+  riskPhoto(index: number): VisualAsset {
+    return [COMMAND_CENTER_PHOTOS[1], COMMAND_CENTER_PHOTOS[6], COMMAND_CENTER_PHOTOS[16], COMMAND_CENTER_PHOTOS[18]][index % 4];
+  }
+
+  playbookPhoto(code: string): VisualAsset {
+    const map: Record<string, VisualAsset> = {
+      A1: COMMAND_CENTER_PHOTOS[1],
+      A2: COMMAND_CENTER_PHOTOS[6],
+      A3: COMMAND_CENTER_PHOTOS[8],
+      A4: COMMAND_CENTER_PHOTOS[16],
+      A5: COMMAND_CENTER_PHOTOS[11]
+    };
+    return map[code] ?? COMMAND_CENTER_PHOTOS[0];
+  }
+
+  selectWorkflowFilter(filter: WorkflowFilter): void {
+    this.workflowFilter.set(filter);
+  }
+
+  selectChartMode(mode: ChartMode): void {
+    this.chartMode.set(mode);
+  }
+
+  selectFlowStep(code: string): void {
+    this.selectedWorkflowCode.set(code);
+    const mode: ChartMode = code === '01' || code === '02' ? 'warehouse' :
+      code === '03' ? 'pressure' :
+      code === '04' ? 'flow' :
+      code === '05' ? 'pulse' :
+      code === '06' ? 'risk' : 'health';
+    this.selectChartMode(mode);
+  }
+
+  playbookFocus(code: string): void {
+    switch (code) {
+      case 'A1':
+        this.focusScene(1, 'warehouse');
+        break;
+      case 'A2':
+        this.focusScene(2, 'pressure');
+        break;
+      case 'A3':
+        this.focusScene(0, 'flow');
+        break;
+      case 'A4':
+        this.focusScene(4, 'risk');
+        break;
+      default:
+        this.focusScene(7, 'pulse');
+        break;
+    }
+  }
+
+  private chartModeForPath(path: string): ChartMode {
+    if (path.includes('/finance') || path.includes('/contracts') || path.includes('/tasks')) {
+      return 'risk';
+    }
+    if (path.includes('/procurement') || path.includes('/quality')) {
+      return 'pressure';
+    }
+    if (path.includes('/inventory') || path.includes('/dispatch')) {
+      return 'warehouse';
+    }
+    if (path.includes('/reports') || path.includes('/ai') || path.includes('/data-quality') || path.includes('/integrations')) {
+      return 'pulse';
+    }
+    if (path.includes('/settings')) {
+      return 'health';
+    }
+    return 'flow';
+  }
+
   riskLink(risk: RiskItem): string {
     if (risk.type.includes('应收')) {
       return '/app/finance/receivables';
@@ -1444,4 +2161,273 @@ export class CommandCenterPage implements OnInit {
       maximumFractionDigits: 1
     }).format(value || 0);
   }
+
+  protected readonly intelligenceInsights = computed(() => [
+    {
+      title: '加速库存周转',
+      description: '当前有 ' + this.data().kpis.low_stock_products + ' 项低库存，建议立即触发采购审批，预计可提升库存周转率 15%',
+      impact: '提升 15% 周转',
+      timeline: '3-5 工作日',
+      priority: 'high',
+      icon: 'pi-sync'
+    },
+    {
+      title: '优化应收账款',
+      description: '逾期应收 ' + this.compactMoney(this.data().kpis.overdue_amount) + '，建议启动催收流程，关注账龄超 30 天客户',
+      impact: '回收 ' + this.compactMoney(this.data().kpis.overdue_amount * 0.6),
+      timeline: '15 天',
+      priority: this.data().kpis.overdue_amount > 50000 ? 'high' : 'medium',
+      icon: 'pi-wallet'
+    },
+    {
+      title: '平衡生产计划',
+      description: '区域仓调拨频率偏高，建议调整生产排期，减少跨仓调拨成本',
+      impact: '降低 8% 物流成本',
+      timeline: '本月内',
+      priority: 'medium',
+      icon: 'pi-car'
+    },
+    {
+      title: '强化客户服务',
+      description: '交付准时率 92%，建议优化履约流程，提升客户满意度',
+      impact: '准时率 +5%',
+      timeline: '持续优化',
+      priority: 'medium',
+      icon: 'pi-users'
+    }
+  ]);
+
+  protected readonly trendComparisons = computed(() => {
+    const kpis = this.data().kpis;
+    return [
+      {
+        metric: '订单金额',
+        current: this.compactMoney(kpis.order_amount),
+        previous: this.compactMoney(kpis.order_amount * 0.88),
+        change: 13.6,
+        note: '销售旺季带动订单增长'
+      },
+      {
+        metric: '库存水位',
+        current: this.compactNumber(kpis.stock_quantity),
+        previous: this.compactNumber(kpis.stock_quantity * 1.15),
+        change: -13.0,
+        note: '库存周转效率提升'
+      },
+      {
+        metric: '低库存项',
+        current: kpis.low_stock_products + ' 项',
+        previous: Math.round(kpis.low_stock_products * 0.75) + ' 项',
+        change: 33.3,
+        note: '需加强补货计划'
+      },
+      {
+        metric: '待采购订单',
+        current: kpis.pending_purchase + ' 单',
+        previous: Math.round(kpis.pending_purchase * 1.2) + ' 单',
+        change: -16.7,
+        note: '审批效率改善'
+      },
+      {
+        metric: '逾期应收',
+        current: this.compactMoney(kpis.overdue_amount),
+        previous: this.compactMoney(kpis.overdue_amount * 1.25),
+        change: -20.0,
+        note: '回款情况好转'
+      },
+      {
+        metric: '库存周转天数',
+        current: '28 天',
+        previous: '32 天',
+        change: -12.5,
+        note: '供应链效率提升'
+      }
+    ];
+  });
+
+  protected readonly Math = Math;
+
+  protected readonly realtimeMetricsChart = computed(() => {
+    const kpis = this.data().kpis;
+    return {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15, 23, 42, .92)',
+        borderWidth: 0,
+        textStyle: { color: '#f8fafc', fontWeight: 700 },
+        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(30, 64, 175, .12)' } }
+      },
+      legend: {
+        data: ['订单', '库存', '采购', '应收'],
+        top: 8,
+        textStyle: { color: '#94a3b8', fontSize: 12, fontWeight: 700 }
+      },
+      grid: { left: 12, right: 12, top: 48, bottom: 12, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '当前'],
+        axisLine: { lineStyle: { color: 'rgba(148,163,184,.2)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 11, fontWeight: 600 }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: 'rgba(148,163,184,.12)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 11, fontWeight: 600 }
+      },
+      series: [
+        {
+          name: '订单',
+          type: 'line',
+          data: [42, 58, 73, 89, 95, 102, Math.round(kpis.order_amount / 10000)],
+          smooth: true,
+          lineStyle: { width: 3, color: '#1e40af' },
+          itemStyle: { color: '#1e40af' },
+          areaStyle: { color: 'rgba(30, 64, 175, .15)' }
+        },
+        {
+          name: '库存',
+          type: 'line',
+          data: [88, 82, 79, 75, 72, 68, Math.round(kpis.stock_quantity / 100)],
+          smooth: true,
+          lineStyle: { width: 3, color: '#6366f1' },
+          itemStyle: { color: '#6366f1' },
+          areaStyle: { color: 'rgba(99, 102, 241, .15)' }
+        },
+        {
+          name: '采购',
+          type: 'line',
+          data: [12, 15, 18, 22, 19, 16, kpis.pending_purchase],
+          smooth: true,
+          lineStyle: { width: 3, color: '#f59e0b' },
+          itemStyle: { color: '#f59e0b' },
+          areaStyle: { color: 'rgba(245, 158, 11, .15)' }
+        },
+        {
+          name: '应收',
+          type: 'line',
+          data: [65, 68, 72, 71, 69, 66, Math.round(kpis.overdue_amount / 10000)],
+          smooth: true,
+          lineStyle: { width: 3, color: '#dc2626' },
+          itemStyle: { color: '#dc2626' },
+          areaStyle: { color: 'rgba(220, 38, 38, .15)' }
+        }
+      ]
+    };
+  });
+
+  protected readonly businessRhythmChart = computed(() => {
+    const baseData = [32, 45, 68, 89, 112, 98, 76, 54, 38, 28, 18, 12];
+    return {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15, 23, 42, .92)',
+        borderWidth: 0,
+        textStyle: { color: '#f8fafc', fontWeight: 700 },
+        axisPointer: { type: 'shadow' }
+      },
+      grid: { left: 12, right: 12, top: 32, bottom: 12, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: ['8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h'],
+        axisLine: { lineStyle: { color: 'rgba(148,163,184,.2)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 11, fontWeight: 600 }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: 'rgba(148,163,184,.12)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 11, fontWeight: 600 }
+      },
+      series: [
+        {
+          name: '处理量',
+          type: 'bar',
+          data: baseData,
+          barWidth: '60%',
+          itemStyle: {
+            color: (params: any) => {
+              const colors = ['#1e40af', '#6366f1', '#f59e0b'];
+              return colors[params.dataIndex % 3];
+            },
+            borderRadius: [4, 4, 0, 0]
+          },
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowColor: 'rgba(30, 64, 175, .5)'
+            }
+          }
+        }
+      ]
+    };
+  });
+
+  currentDate(): string {
+    return new Date().toLocaleDateString('zh-CN');
+  }
+
+  tileIcon(label: string): string {
+    const icons: Record<string, string> = {
+      '物料': 'pi-box',
+      '采购': 'pi-shopping-cart',
+      '履约': 'pi-truck',
+      '应收': 'pi-wallet',
+      '风险': 'pi-exclamation-triangle',
+      '健康': 'pi-heart'
+    };
+    return icons[label] || 'pi-chart-bar';
+  }
+
+  priorityCount(priority: string): number {
+    return this.towerActions().filter(a => a.priority === priority).length;
+  }
+
+  protected readonly healthIndicators = computed(() => {
+    const kpis = this.data().kpis;
+    return [
+      {
+        label: '库存健康度',
+        score: Math.min(100, Math.round((kpis.stock_quantity / (kpis.low_stock_products + kpis.stock_quantity)) * 100)),
+        status: kpis.low_stock_products < 5 ? '优秀' : kpis.low_stock_products < 15 ? '良好' : '需关注',
+        detail: `${kpis.stock_quantity} 总量 / ${kpis.low_stock_products} 低库存`,
+        icon: 'pi-database'
+      },
+      {
+        label: '采购效率',
+        score: Math.max(60, 100 - kpis.pending_purchase * 2),
+        status: kpis.pending_purchase < 10 ? '高效' : kpis.pending_purchase < 20 ? '正常' : '待提升',
+        detail: `${kpis.pending_purchase} 待审批采购订单`,
+        icon: 'pi-shopping-cart'
+      },
+      {
+        label: '现金流健康',
+        score: Math.max(50, 100 - Math.round(kpis.overdue_amount / 1000)),
+        status: kpis.overdue_amount < 30000 ? '稳健' : kpis.overdue_amount < 60000 ? '警戒' : '风险',
+        detail: `${this.compactMoney(kpis.overdue_amount)} 逾期应收`,
+        icon: 'pi-wallet'
+      },
+      {
+        label: '订单动能',
+        score: Math.min(100, Math.round(kpis.order_amount / 1000)),
+        status: kpis.order_amount > 100000 ? '强劲' : kpis.order_amount > 50000 ? '平稳' : '待激活',
+        detail: `${this.compactMoney(kpis.order_amount)} 订单总额`,
+        icon: 'pi-shopping-bag'
+      },
+      {
+        label: '流程完整性',
+        score: this.controlTowerScore(),
+        status: this.controlTowerScore() >= 82 ? '完善' : this.controlTowerScore() >= 62 ? '基本' : '欠缺',
+        detail: `${this.controlTower().summary.service_boundaries || 0} 个服务边界`,
+        icon: 'pi-sitemap'
+      },
+      {
+        label: '风险控制',
+        score: Math.max(50, 100 - this.data().risks.length * 10),
+        status: this.data().risks.length < 3 ? '良好' : this.data().risks.length < 6 ? '可控' : '需处理',
+        detail: `${this.data().risks.length} 个风险项`,
+        icon: 'pi-shield'
+      }
+    ];
+  });
 }

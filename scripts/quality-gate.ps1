@@ -265,6 +265,10 @@ try {
     }
 
     if (-not $SkipApiContractAudit) {
+        Step 'OpenAPI generated artifacts sync'
+        $openApiSyncReportPath = Join-Path $OutputDir 'openapi-sync.json'
+        Invoke-Checked $Python @('scripts\check-openapi-sync.py', '--json-output', $openApiSyncReportPath) $Root
+
         Step 'Frontend/backend API contract audit'
         $reportPath = Join-Path $OutputDir 'api-contracts.json'
         Invoke-Checked $Python @('scripts\audit-api-contracts.py', '--json-output', $reportPath) $Root

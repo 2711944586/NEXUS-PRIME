@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
@@ -11,9 +11,11 @@ import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { DataRecord, ExecutiveAnalytics, OperationsExceptionItem, OperationsExceptionsPayload, OperationsTaskQueueItem, OperationsTaskQueuePayload, OperationsTodoPayload } from '../core/models';
-import { chartLegend, compactNumberText } from './page-utils';
+import { streamWorkflowTodo, WorkflowTodoSnapshot } from '../core/workflow-todo-stream';
+import { chartLegend, compactNumberText, EMPTY_TODO } from './page-utils';
 
-const EMPTY_TODO: OperationsTodoPayload = { items: [], stock_quantity: 0 };
+const WORKFLOW_TODO_RECONNECT_MS = 3000;
+
 const EMPTY_EXCEPTIONS: OperationsExceptionsPayload = { items: [], total: 0 };
 const EMPTY_TASK_QUEUE: OperationsTaskQueuePayload = {
   summary: {
@@ -178,6 +180,15 @@ const EMPTY_ANALYTICS: ExecutiveAnalytics = {
                         <i class="pi pi-send"></i>
                         创建任务
                       </button>
+                    } @else if (item.source === 'workflow') {
+                      <button pButton type="button" size="small" severity="success" [loading]="queueWorkflowActionId() === item.id + ':approve'" [disabled]="queueBusy() || !item.source_id" (click)="approveWorkflowQueueTask(item)" [attr.aria-label]="'审批通过 ' + item.title">
+                        <i class="pi pi-check"></i>
+                        通过
+                      </button>
+                      <button pButton type="button" size="small" severity="danger" [loading]="queueWorkflowActionId() === item.id + ':reject'" [disabled]="queueBusy() || !item.source_id" (click)="rejectWorkflowQueueTask(item)" [attr.aria-label]="'审批驳回 ' + item.title">
+                        <i class="pi pi-times"></i>
+                        驳回
+                      </button>
                     } @else {
                       <a pButton size="small" severity="secondary" [routerLink]="cleanPath(item.detail_path)">
                         {{ item.action_label }}
@@ -245,7 +256,7 @@ const EMPTY_ANALYTICS: ExecutiveAnalytics = {
     </section>
   `
 })
-export class OperationsTasksPage implements OnInit {
+export class OperationsTasksPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
 
@@ -254,13 +265,17 @@ export class OperationsTasksPage implements OnInit {
   protected readonly alertChecking = signal(false);
   protected readonly queueCompletingId = signal('');
   protected readonly queueCreatingId = signal('');
+  protected readonly queueWorkflowActionId = signal('');
   protected readonly todo = signal<OperationsTodoPayload>(EMPTY_TODO);
   protected readonly exceptions = signal<OperationsExceptionsPayload>(EMPTY_EXCEPTIONS);
   protected readonly taskQueue = signal<OperationsTaskQueuePayload>(EMPTY_TASK_QUEUE);
   protected readonly analytics = signal<ExecutiveAnalytics>(EMPTY_ANALYTICS);
+  private workflowTodoAbort?: AbortController;
+  private workflowTodoReconnectTimer?: ReturnType<typeof setTimeout>;
+  private workflowTodoDestroyed = false;
   protected readonly todoTotal = computed(() => this.todo().items.reduce((sum, item) => sum + Number(item.value || 0), 0));
   protected readonly highPriorityCount = computed(() => this.exceptions().items.filter(item => item.level === '高').length);
-  protected readonly queueBusy = computed(() => Boolean(this.queueCompletingId() || this.queueCreatingId()));
+  protected readonly queueBusy = computed(() => Boolean(this.queueCompletingId() || this.queueCreatingId() || this.queueWorkflowActionId()));
   protected readonly lanes = computed(() => {
     const map = new Map<string, { key: string; label: string; items: OperationsExceptionItem[] }>();
     for (const item of this.exceptions().items) {
@@ -273,7 +288,17 @@ export class OperationsTasksPage implements OnInit {
   });
 
   ngOnInit(): void {
+    this.workflowTodoDestroyed = false;
     this.load();
+    this.startWorkflowTodoStream();
+  }
+
+  ngOnDestroy(): void {
+    this.workflowTodoDestroyed = true;
+    if (this.workflowTodoReconnectTimer) {
+      clearTimeout(this.workflowTodoReconnectTimer);
+    }
+    this.workflowTodoAbort?.abort();
   }
 
   load(): void {
@@ -288,6 +313,109 @@ export class OperationsTasksPage implements OnInit {
       this.exceptions.set(exceptions);
       this.taskQueue.set(taskQueue);
       this.analytics.set(analytics);
+    });
+  }
+
+  private startWorkflowTodoStream(): void {
+    if (this.workflowTodoDestroyed || typeof AbortController === 'undefined') {
+      return;
+    }
+    if (this.workflowTodoAbort && !this.workflowTodoAbort.signal.aborted) {
+      return;
+    }
+    if (this.workflowTodoReconnectTimer) {
+      clearTimeout(this.workflowTodoReconnectTimer);
+      this.workflowTodoReconnectTimer = undefined;
+    }
+    const controller = new AbortController();
+    this.workflowTodoAbort = controller;
+    streamWorkflowTodo(
+      { onSnapshot: snapshot => this.applyWorkflowTodoSnapshot(snapshot) },
+      { signal: controller.signal }
+    ).then(() => {
+      if (this.workflowTodoAbort === controller) {
+        this.workflowTodoAbort = undefined;
+      }
+      this.scheduleWorkflowTodoReconnect();
+    }).catch(error => {
+      if (controller.signal.aborted) {
+        return;
+      }
+      if (this.workflowTodoAbort === controller) {
+        this.workflowTodoAbort = undefined;
+      }
+      console.warn('Workflow todo stream unavailable, keeping task queue fallback.', error);
+      this.scheduleWorkflowTodoReconnect();
+    });
+  }
+
+  private scheduleWorkflowTodoReconnect(): void {
+    if (this.workflowTodoDestroyed) {
+      return;
+    }
+    if (this.workflowTodoReconnectTimer) {
+      clearTimeout(this.workflowTodoReconnectTimer);
+    }
+    this.workflowTodoReconnectTimer = setTimeout(() => this.startWorkflowTodoStream(), WORKFLOW_TODO_RECONNECT_MS);
+  }
+
+  private applyWorkflowTodoSnapshot(snapshot: WorkflowTodoSnapshot): void {
+    const workflowItems = snapshot.items.map(item => this.workflowTodoQueueItem(item));
+    this.taskQueue.update(queue => this.mergeWorkflowQueueItems(queue, workflowItems, snapshot.generated_at));
+  }
+
+  private workflowTodoQueueItem(item: DataRecord): OperationsTaskQueueItem {
+    const businessType = String(item['business_type'] ?? '');
+    const businessId = String(item['business_id'] ?? '');
+    const fallbackId = businessId || String(item.id ?? '');
+    const sourcePath = businessType === 'purchase_order' && businessId ? `/app/procurement/orders/${businessId}` : `/app/tasks`;
+    return {
+      id: `workflow-${item.id ?? `${businessType}-${businessId}`}`,
+      source_id: Number(item.id ?? 0) || undefined,
+      source: 'workflow',
+      business_type: businessType || null,
+      business_id: businessId || null,
+      title: String(item['title'] ?? '工作流审批待办'),
+      description: `${String(item['process_key'] ?? 'workflow')} · ${businessType || 'business'} #${fallbackId}`,
+      priority: 'P1',
+      status: 'open',
+      owner: String(item['assignee_name'] ?? 'workflow'),
+      source_path: sourcePath,
+      detail_path: sourcePath,
+      action_label: '查看审批',
+      action_kind: 'navigate',
+      category: 'approval',
+      created_at: typeof item['created_at'] === 'string' ? item['created_at'] : null
+    };
+  }
+
+  private mergeWorkflowQueueItems(queue: OperationsTaskQueuePayload, workflowItems: OperationsTaskQueueItem[], generatedAt?: string): OperationsTaskQueuePayload {
+    const nonWorkflowItems = queue.items.filter(item => item.source !== 'workflow');
+    const items = this.sortQueueItems([...workflowItems, ...nonWorkflowItems]).slice(0, 24);
+    const summary = {
+      ...queue.summary,
+      total: items.length,
+      business_exceptions: Math.max(0, queue.summary.business_exceptions - queue.items.filter(item => item.source === 'workflow').length) + workflowItems.length,
+      p0: items.filter(item => item.priority === 'P0').length,
+      p1: items.filter(item => item.priority === 'P1').length,
+      p2: items.filter(item => item.priority === 'P2').length,
+      generated_at: generatedAt || queue.summary.generated_at,
+      next_action: items.length ? queue.summary.next_action : '当前没有待处理任务。'
+    };
+    return { summary, items };
+  }
+
+  private sortQueueItems(items: OperationsTaskQueueItem[]): OperationsTaskQueueItem[] {
+    const priorityRank: Record<string, number> = { P0: 0, P1: 1, P2: 2 };
+    const actionRank: Record<string, number> = { complete_notification: 0, create_deployment_task: 1, navigate: 2 };
+    const sourceRank: Record<string, number> = { notification: 0, workflow: 1, deployment: 2, stock: 3, purchase: 4 };
+    return [...items].sort((a, b) => {
+      const rankDelta =
+        (a.priority === 'P0' ? 0 : 1) - (b.priority === 'P0' ? 0 : 1) ||
+        (priorityRank[a.priority] ?? 3) - (priorityRank[b.priority] ?? 3) ||
+        (actionRank[a.action_kind] ?? 9) - (actionRank[b.action_kind] ?? 9) ||
+        (sourceRank[a.source] ?? 9) - (sourceRank[b.source] ?? 9);
+      return rankDelta || String(a.created_at || '').localeCompare(String(b.created_at || ''));
     });
   }
 
@@ -379,6 +507,73 @@ export class OperationsTasksPage implements OnInit {
     });
   }
 
+  approveWorkflowQueueTask(item: OperationsTaskQueueItem): void {
+    this.completeWorkflowQueueTask(item, 'approve');
+  }
+
+  rejectWorkflowQueueTask(item: OperationsTaskQueueItem): void {
+    this.completeWorkflowQueueTask(item, 'reject');
+  }
+
+  private completeWorkflowQueueTask(item: OperationsTaskQueueItem, action: 'approve' | 'reject'): void {
+    if (!item.source_id || this.queueBusy()) {
+      return;
+    }
+    const endpoint = this.workflowActionEndpoint(item, action);
+    if (!endpoint) {
+      this.messages.add({ severity: 'warn', summary: '审批失败', detail: '任务缺少可处理的业务标识。' });
+      return;
+    }
+    const actionText = action === 'approve' ? '通过' : '驳回';
+    this.queueWorkflowActionId.set(`${item.id}:${action}`);
+    this.api.post<DataRecord>(endpoint, {
+      remark: `任务中心${actionText}：${item.title}`,
+      comment: `任务中心${actionText}：${item.title}`
+    }).pipe(
+      catchError(error => {
+        this.messages.add({ severity: 'warn', summary: '审批失败', detail: error?.message || '工作流任务未完成。' });
+        return of(null);
+      }),
+      finalize(() => this.queueWorkflowActionId.set(''))
+    ).subscribe(result => {
+      if (!result) {
+        return;
+      }
+      this.removeQueueItem(item.id);
+      this.messages.add({ severity: 'success', summary: `审批已${actionText}`, detail: '业务状态和工作流待办已同步。' });
+      this.load();
+    });
+  }
+
+  private workflowActionEndpoint(item: OperationsTaskQueueItem, action: 'approve' | 'reject'): string | null {
+    const businessType = String(item.business_type ?? '');
+    const businessId = String(item.business_id ?? '');
+    if (businessType === 'purchase_order' && businessId) {
+      return `procurement/orders/${businessId}/${action}`;
+    }
+    return item.source_id ? `workflows/tasks/${item.source_id}/${action}` : null;
+  }
+
+  private removeQueueItem(itemId: string): void {
+    this.taskQueue.update(queue => {
+      const items = queue.items.filter(item => item.id !== itemId);
+      const removed = queue.items.length - items.length;
+      return {
+        ...queue,
+        summary: {
+          ...queue.summary,
+          total: Math.max(0, queue.summary.total - removed),
+          business_exceptions: Math.max(0, queue.summary.business_exceptions - removed),
+          p0: items.filter(item => item.priority === 'P0').length,
+          p1: items.filter(item => item.priority === 'P1').length,
+          p2: items.filter(item => item.priority === 'P2').length,
+          next_action: items.length ? queue.summary.next_action : '当前没有待处理任务。'
+        },
+        items
+      };
+    });
+  }
+
   protected readonly todoChart = computed<EChartsCoreOption>(() => ({
     tooltip: { trigger: 'item' },
     legend: chartLegend('bottom', 'rgba(100,116,139,.95)'),
@@ -422,6 +617,7 @@ export class OperationsTasksPage implements OnInit {
   protected sourceLabel(source: string): string {
     const map: Record<string, string> = {
       notification: '通知',
+      workflow: '审批',
       deployment: '部署',
       stock: '库存',
       purchase: '采购'

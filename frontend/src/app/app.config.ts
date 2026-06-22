@@ -1,10 +1,11 @@
 import { registerLocaleData } from '@angular/common';
 import zh from '@angular/common/locales/zh';
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, ErrorHandler } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import Aura from '@primeng/themes/aura';
+import { provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import * as echarts from 'echarts';
 import { provideEchartsCore } from 'ngx-echarts';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -13,6 +14,8 @@ import { providePrimeNG } from 'primeng/config';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth.interceptor';
 import { configureEchartsLayout } from './core/echarts-layout';
+import { GlobalErrorHandler } from './core/global-error-handler';
+import { createNexusQueryClient } from './core/query-client';
 
 registerLocaleData(zh);
 configureEchartsLayout(echarts);
@@ -25,6 +28,7 @@ export const appConfig: ApplicationConfig = {
       scrollPositionRestoration: 'top'
     })),
     provideHttpClient(withInterceptors([authInterceptor])),
+    provideTanStackQuery(createNexusQueryClient()),
     providePrimeNG({
       ripple: true,
       theme: {
@@ -40,6 +44,7 @@ export const appConfig: ApplicationConfig = {
     }),
     provideEchartsCore({ echarts }),
     MessageService,
-    ConfirmationService
+    ConfirmationService,
+    { provide: ErrorHandler, useClass: GlobalErrorHandler }
   ]
 };

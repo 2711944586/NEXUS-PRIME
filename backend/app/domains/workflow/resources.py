@@ -1,0 +1,66 @@
+from app.models.stocktake import StockTake, StockTakeItem
+from app.models.workflow import WorkflowDefinition, WorkflowInstance, WorkflowLog, WorkflowTask
+
+
+workflow_resources = {
+    "stocktakes": {
+        "model": StockTake,
+        "serializer_extra": "stocktake",
+        "search": ["take_no", "take_type", "status", "remark"],
+        "filterable": ["status", "warehouse_id"],
+        "create": [],
+        "update": ["planned_date", "remark"],
+        "blocked_write_fields": ["status"],
+        "permission": "stocktake.write",
+        "read_permissions": ["stocktake.write"],
+    },
+    "stocktake-items": {
+        "model": StockTakeItem,
+        "serializer_extra": "stocktake_item",
+        "search": ["remark"],
+        "filterable": ["stocktake_id", "product_id"],
+        "create": [],
+        "update": ["remark"],
+        "blocked_write_fields": ["system_qty", "actual_qty", "unit_cost"],
+        "permission": "stocktake.write",
+        "read_permissions": ["stocktake.write"],
+    },
+    "workflow-definitions": {
+        "model": WorkflowDefinition,
+        "search": ["process_key", "name", "description"],
+        "filterable": ["process_key", "is_active"],
+        "create": [],
+        "update": [],
+        "permission": "stocktake.write",
+        "read_permissions": ["stocktake.write"],
+    },
+    "workflow-instances": {
+        "model": WorkflowInstance,
+        "serializer_extra": "workflow_instance",
+        "search": ["business_type", "business_id", "status"],
+        "filterable": ["business_type", "business_id", "status", "applicant_id"],
+        "create": [],
+        "update": [],
+        "permission": "stocktake.write",
+        "read_permissions": ["stocktake.write"],
+    },
+    "workflow-tasks": {
+        "model": WorkflowTask,
+        "serializer_extra": "workflow_task",
+        "search": ["title", "status", "node_key"],
+        "filterable": ["status", "assignee_id", "instance_id"],
+        "create": [],
+        "update": [],
+        "permission": "stocktake.write",
+        "read_permissions": ["stocktake.write"],
+    },
+    "workflow-logs": {
+        "model": WorkflowLog,
+        "search": ["action", "comment"],
+        "filterable": ["instance_id", "task_id", "action", "actor_id"],
+        "create": [],
+        "update": [],
+        "permission": "stocktake.write",
+        "read_permissions": ["stocktake.write"],
+    },
+}

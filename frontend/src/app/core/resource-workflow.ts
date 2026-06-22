@@ -262,7 +262,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
       { label: '生成补货', detail: '低水位物料进入补货建议和采购审批。', path: '/app/inventory/replenishment', tone: 'success' }
     ],
     actions: [
-      { label: '生成补货', icon: 'pi-bolt', description: '扫描低库存并刷新补货建议。', endpoint: 'inventory/replenishment-suggestions/generate', method: 'POST', tone: 'success' },
+      { label: '生成补货', icon: 'pi-bolt', description: '后台扫描低库存并刷新补货建议。', endpoint: 'inventory/replenishment-suggestions/generate-job', method: 'POST', tone: 'success' },
       { label: '盘点复核', icon: 'pi-qrcode', description: '跳转库存盘点中心核对差异。', path: '/app/stocktakes', tone: 'info' }
     ],
     exportable: true
@@ -317,7 +317,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
       { label: '接受转采购', detail: '生成采购草稿并进入审批/收货。', path: '/app/procurement/orders', tone: 'success' }
     ],
     actions: [
-      { label: '重新生成', icon: 'pi-bolt', description: '重新扫描低库存并生成建议。', endpoint: 'inventory/replenishment-suggestions/generate', method: 'POST', tone: 'info' },
+      { label: '重新生成', icon: 'pi-bolt', description: '后台重新扫描低库存并生成建议。', endpoint: 'inventory/replenishment-suggestions/generate-job', method: 'POST', tone: 'info' },
       { label: '接受建议', icon: 'pi-shopping-cart', description: '把选中建议转成采购单。', endpoint: 'inventory/replenishment-suggestions/:id/accept', method: 'POST', requiresRecord: true, tone: 'success' }
     ],
     exportable: true,

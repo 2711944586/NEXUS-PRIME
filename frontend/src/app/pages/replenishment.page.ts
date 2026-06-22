@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
@@ -10,14 +10,33 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
-import { catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
+import { catchError, finalize, forkJoin, of, Subscription } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { DataRecord } from '../core/models';
-import { chartLegend, compactMoneyText, compactNumberText, emptyPageResult, numberOf, statusLabel, statusSeverity, textOf } from './page-utils';
+import {
+  isReplenishmentJobTerminal,
+  replenishmentCreatedCount,
+  ReplenishmentJobRecord,
+  ReplenishmentJobResult,
+  ReplenishmentJobService,
+  ReplenishmentJobStatus
+} from '../core/replenishment-job.service';
+import { chartLegend, compactMoneyText, compactNumberText, dateText, emptyPageResult, numberOf, statusLabel, statusSeverity, TagSeverity, textOf } from './page-utils';
+
+interface ReplenishmentGenerationState {
+  id: string;
+  status: ReplenishmentJobStatus;
+  attempts: number;
+  message: string;
+  job?: ReplenishmentJobRecord;
+  result?: ReplenishmentJobResult['result'];
+  created?: number | null;
+}
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule],
   template: `
     <section class="ops-atlas-page replenishment-console-page">
@@ -27,9 +46,16 @@ import { chartLegend, compactMoneyText, compactNumberText, emptyPageResult, numb
           <h1>采购补货建议</h1>
           <p>从库存预警、供应商交期和安全库存计算建议量，接受后直接生成采购单并进入审批与收货链路。</p>
           <div class="atlas-actions-row">
-            <button pButton type="button" (click)="regenerate()" [loading]="generating()" aria-label="重新生成补货建议">
+            <button
+              pButton
+              type="button"
+              (click)="regenerate()"
+              [loading]="generating()"
+              [disabled]="generating() || generationInFlight()"
+              aria-label="后台重新生成补货建议"
+            >
               <i class="pi pi-bolt"></i>
-              重新计算建议
+              后台计算建议
             </button>
             <button pButton type="button" severity="secondary" (click)="acceptTop()" [loading]="accepting()" aria-label="接受优先补货建议">
               <i class="pi pi-shopping-cart"></i>
@@ -40,6 +66,13 @@ import { chartLegend, compactMoneyText, compactNumberText, emptyPageResult, numb
               采购审批
             </a>
           </div>
+          @if (generationJob(); as job) {
+            <div class="replenishment-job-status" [class.success]="job.status === 'success'" [class.failed]="job.status === 'failed'" aria-live="polite">
+              <p-tag [severity]="jobSeverity(job.status)" [value]="jobStatusLabel(job.status)" />
+              <span>{{ job.message }}</span>
+              <em>{{ job.job?.finished_at ? date(job.job?.finished_at) : job.id }}</em>
+            </div>
+          }
         </div>
 
         <aside class="replenishment-scoreboard">
@@ -164,13 +197,16 @@ import { chartLegend, compactMoneyText, compactNumberText, emptyPageResult, numb
     </section>
   `
 })
-export class ReplenishmentPage implements OnInit {
+export class ReplenishmentPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly replenishmentJobs = inject(ReplenishmentJobService);
   private readonly messages = inject(MessageService);
+  private generationJobSub?: Subscription;
 
   protected readonly loading = signal(false);
   protected readonly generating = signal(false);
   protected readonly accepting = signal(false);
+  protected readonly generationJob = signal<ReplenishmentGenerationState | null>(null);
   protected readonly suggestions = signal<DataRecord[]>([]);
   protected readonly alerts = signal<DataRecord[]>([]);
   protected readonly pageSize = signal(12);
@@ -179,6 +215,10 @@ export class ReplenishmentPage implements OnInit {
   protected pageInput = '1';
   protected query = '';
 
+  protected readonly generationInFlight = computed(() => {
+    const job = this.generationJob();
+    return !!job && !['success', 'failed', 'timeout'].includes(job.status);
+  });
   protected readonly pendingSuggestions = computed(() => this.suggestions().filter(row => String(row['status'] ?? '') === 'pending'));
   protected readonly totalSuggestedQty = computed(() => this.pendingSuggestions().reduce((sum, row) => sum + numberOf(row, 'suggested_qty'), 0));
   protected readonly lowStockRows = computed(() => this.alerts().length ? this.alerts() : this.suggestions().filter(row => numberOf(row, 'current_qty') <= numberOf(row, 'safety_stock', 1)));
@@ -219,6 +259,10 @@ export class ReplenishmentPage implements OnInit {
     this.load();
   }
 
+  ngOnDestroy(): void {
+    this.generationJobSub?.unsubscribe();
+  }
+
   load(): void {
     this.loading.set(true);
     forkJoin({
@@ -232,17 +276,35 @@ export class ReplenishmentPage implements OnInit {
   }
 
   regenerate(): void {
+    if (this.generating()) {
+      return;
+    }
     this.generating.set(true);
-    this.api.post<{ created: number }>('replenishment-suggestions/generate', {}).pipe(
-      switchMap(() => this.api.list<DataRecord>('replenishment-suggestions', { page: 1, page_size: 180, sort: 'created_at', order: 'desc' })),
+    this.generationJobSub?.unsubscribe();
+    this.generationJobSub = this.replenishmentJobs.runGeneration().pipe(
       catchError(error => {
-        this.messages.add({ severity: 'warn', summary: '建议未更新', detail: error?.message || '补货建议生成失败。' });
-        return of(emptyPageResult<DataRecord>());
+        this.messages.add({ severity: 'warn', summary: '建议任务未启动', detail: error?.message || '后台补货任务未创建。' });
+        return of(null);
       }),
       finalize(() => this.generating.set(false))
-    ).subscribe(result => {
-      this.suggestions.set(result.items);
-      this.messages.add({ severity: 'success', summary: '建议已更新', detail: `当前队列 ${result.items.length} 条。` });
+    ).subscribe(event => {
+      if (!event) {
+        return;
+      }
+      const status = this.applyGenerationJobResult(event.result, event.attempts);
+      if (event.attempts === 0 && !event.terminal) {
+        this.messages.add({ severity: 'info', summary: '补货任务已入队', detail: `任务 ${event.result.job_id}` });
+      }
+      if (event.timedOut) {
+        const current = this.generationJob();
+        if (current) {
+          this.generationJob.set({ ...current, status: 'timeout', message: '后台仍在生成补货建议，可稍后刷新队列。' });
+        }
+        this.messages.add({ severity: 'info', summary: '后台仍在生成', detail: '补货任务仍在运行，可稍后刷新队列。' });
+      }
+      if (isReplenishmentJobTerminal(status)) {
+        this.generating.set(false);
+      }
     });
   }
 
@@ -309,6 +371,33 @@ export class ReplenishmentPage implements OnInit {
     return compactNumberText(value);
   }
 
+  protected jobSeverity(status: string): TagSeverity {
+    if (status === 'success') {
+      return 'success';
+    }
+    if (status === 'failed') {
+      return 'danger';
+    }
+    if (status === 'running') {
+      return 'info';
+    }
+    return 'warn';
+  }
+
+  protected jobStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      pending: '排队中',
+      running: '生成中',
+      success: '已完成',
+      failed: '失败'
+    };
+    return map[status] ?? status;
+  }
+
+  protected date(value: unknown): string {
+    return dateText(value);
+  }
+
   private waterfallChart(): EChartsCoreOption {
     const rows = this.pendingSuggestions().slice(0, 12);
     return {
@@ -366,5 +455,46 @@ export class ReplenishmentPage implements OnInit {
         data: data.length ? data : [{ name: '建议队列', value: 1 }]
       }]
     };
+  }
+
+  private applyGenerationJobResult(result: ReplenishmentJobResult, attempts = this.generationJob()?.attempts ?? 0): ReplenishmentJobStatus {
+    const current = this.generationJob();
+    const status = result.job?.status || 'pending';
+    const created = replenishmentCreatedCount(result);
+    this.generationJob.set({
+      id: result.job_id,
+      status,
+      attempts,
+      message: result.job?.error_message || this.generationJobMessage(status, attempts, created),
+      job: result.job,
+      result: result.result,
+      created
+    });
+
+    if (status === 'success') {
+      if (current?.status !== 'success') {
+        this.messages.add({ severity: 'success', summary: '建议已更新', detail: `本次新增 ${created ?? 0} 条，正在刷新补货队列。` });
+      }
+      this.load();
+    } else if (status === 'failed' && current?.status !== 'failed') {
+      this.messages.add({ severity: 'warn', summary: '建议生成失败', detail: result.job?.error_message || '后台补货任务未完成。' });
+    }
+    return status;
+  }
+
+  private generationJobMessage(status: string, attempts: number, created?: number | null): string {
+    if (status === 'success') {
+      return `后台生成已完成，本次新增 ${created ?? 0} 条补货建议。`;
+    }
+    if (status === 'failed') {
+      return '后台生成失败，请查看任务错误并重试。';
+    }
+    if (status === 'running') {
+      return `后台正在扫描库存预警和供应商配置，第 ${attempts + 1} 次检查。`;
+    }
+    if (status === 'timeout') {
+      return '后台仍在生成补货建议，可稍后刷新队列。';
+    }
+    return `补货任务已进入 replenishment 队列，第 ${attempts + 1} 次检查。`;
   }
 }

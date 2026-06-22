@@ -1,0 +1,1 @@
+"""Files schema placeholder."""

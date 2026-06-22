@@ -78,7 +78,7 @@ class StockTakeItem(BaseModel):
     
     system_qty = db.Column(db.Integer, default=0)   # 系统数量
     actual_qty = db.Column(db.Integer)              # 实盘数量（null表示未盘）
-    unit_cost = db.Column(db.Float, default=0.0)    # 单位成本
+    unit_cost = db.Column(db.Numeric(18, 4), default=0)    # 单位成本
     
     shelf_location = db.Column(db.String(32))       # 货位
     counted_at = db.Column(db.DateTime)

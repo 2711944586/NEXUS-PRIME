@@ -1,0 +1,25 @@
+@layer app {
+  html {
+    --motion-duration-1: 140ms;
+    --motion-duration-2: 260ms;
+    --motion-duration-3: 420ms;
+    --motion-stagger-step: 70ms;
+    --motion-reveal-distance: 16px;
+    --scene-grid-size: 80px;
+    --scene-aurora-opacity: .62;
+  }
+
+  html.dark-cockpit {
+    --scene-aurora-opacity: .72;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      --motion-duration-1: 1ms;
+      --motion-duration-2: 1ms;
+      --motion-duration-3: 1ms;
+      --motion-stagger-step: 0ms;
+      --motion-reveal-distance: 0;
+    }
+  }
+}

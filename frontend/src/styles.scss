@@ -1,7 +1,26 @@
+// Foundation
 @use './styles/tokens';
+@use './styles/tokens/motion' as motion-tokens;
 @use './styles/base';
 @use './styles/prime';
+
+// Shell & layout
 @use './styles/shell';
 @use './styles/workbench';
 @use './styles/pages';
 @use './styles/charts';
+
+// Auth entry
+@use './styles/auth-entry';
+
+// Motion system
+@use './styles/effects/scene-background';
+@use './styles/components/motion' as motion-components;
+
+// Extensions (TODO: merge into domain partials above)
+@use './styles/icon-fix';
+@use './styles/quality-enhancements';
+@use './styles/motion-system';
+@use './styles/premium-shell';
+@use './styles/premium-upgrade';
+@use './styles/experience-polish';

@@ -1,12 +1,14 @@
 """财务服务 - 应收账款、信用管理"""
 import uuid
 from datetime import datetime, timedelta
+from decimal import Decimal
 from sqlalchemy import func, and_
 from app.extensions import db
 from app.models.finance import CustomerCredit, Receivable, PaymentRecord, AccountStatement
 from app.models.trade import Order
 from app.models.biz import Partner
 from app.models.notification import Notification
+from app.platform.policy import policy
 from app.utils.time import utcnow
 
 
@@ -15,6 +17,14 @@ def query_with_lock(query):
     if not dialect_name.startswith('sqlite'):
         return query.with_for_update()
     return query
+
+
+def money_value(value):
+    if value is None:
+        return Decimal("0")
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
 
 
 class FinanceService:
@@ -51,9 +61,10 @@ class FinanceService:
         
         if credit.is_frozen:
             return False, f"客户信用已冻结: {credit.frozen_reason}"
-        
-        if credit.available_credit < amount:
-            return False, f"信用额度不足，可用额度: ¥{credit.available_credit:.2f}"
+
+        available_credit = money_value(credit.credit_limit) - money_value(credit.used_credit)
+        if available_credit < money_value(amount):
+            return False, f"信用额度不足，可用额度: ¥{float(max(Decimal('0'), available_credit)):.2f}"
         
         return True, "信用检查通过"
     
@@ -61,7 +72,7 @@ class FinanceService:
     def use_credit(customer_id, amount):
         """使用信用额度"""
         credit = FinanceService.get_or_create_credit(customer_id)
-        credit.used_credit += amount
+        credit.used_credit = money_value(credit.used_credit) + money_value(amount)
         
         # 检查是否需要预警
         if credit.is_warning:
@@ -71,7 +82,7 @@ class FinanceService:
     def release_credit(customer_id, amount):
         """释放信用额度（收款后）"""
         credit = FinanceService.get_or_create_credit(customer_id)
-        credit.used_credit = max(0, credit.used_credit - amount)
+        credit.used_credit = max(Decimal("0"), money_value(credit.used_credit) - money_value(amount))
     
     @staticmethod
     def freeze_credit(customer_id, reason, user):
@@ -144,9 +155,28 @@ class FinanceService:
             due_date=due_date
         )
         db.session.add(receivable)
+        db.session.flush()
         
         # 占用信用额度
         FinanceService.use_credit(order.customer_id, order.total_amount)
+
+        from app.platform.events import outbox
+
+        outbox.add(
+            "ReceivableCreated",
+            "Receivable",
+            receivable.id,
+            {
+                "receivable_id": receivable.id,
+                "receivable_no": receivable.receivable_no,
+                "order_id": order.id,
+                "order_no": order.order_no,
+                "customer_id": order.customer_id,
+                "total_amount": float(receivable.total_amount or 0),
+                "due_date": receivable.due_date.isoformat() if receivable.due_date else None,
+            },
+            created_by=order.seller_id,
+        )
         
         return True, receivable
     
@@ -183,6 +213,7 @@ class FinanceService:
                 remark=remark
             )
             db.session.add(payment)
+            db.session.flush()
             
             receivable.paid_amount += amount
             
@@ -194,6 +225,29 @@ class FinanceService:
             
             # 释放信用额度
             FinanceService.release_credit(receivable.customer_id, amount)
+
+            from app.platform.events import outbox
+
+            outbox.add(
+                "PaymentRecorded",
+                "PaymentRecord",
+                payment.id,
+                {
+                    "payment_id": payment.id,
+                    "payment_no": payment.payment_no,
+                    "receivable_id": receivable.id,
+                    "receivable_no": receivable.receivable_no,
+                    "order_id": receivable.order_id,
+                    "customer_id": receivable.customer_id,
+                    "amount": float(payment.amount or 0),
+                    "payment_method": payment.payment_method,
+                    "payment_date": payment.payment_date.isoformat() if payment.payment_date else None,
+                    "reference_no": payment.reference_no,
+                    "receivable_status": receivable.status,
+                    "unpaid_amount": float(receivable.unpaid_amount),
+                },
+                created_by=user.id if user else None,
+            )
             
             return True, payment
         except Exception as e:
@@ -216,11 +270,13 @@ class FinanceService:
         return len(overdue_receivables)
     
     @staticmethod
-    def get_aging_analysis(customer_id=None):
+    def get_aging_analysis(customer_id=None, user=None):
         """账龄分析"""
         query = Receivable.query.filter(
             Receivable.status.in_([Receivable.STATUS_PENDING, Receivable.STATUS_PARTIAL, Receivable.STATUS_OVERDUE])
         )
+        if user is not None:
+            query = policy.filter_query(query, Receivable, user)
         
         if customer_id:
             query = query.filter_by(customer_id=customer_id)

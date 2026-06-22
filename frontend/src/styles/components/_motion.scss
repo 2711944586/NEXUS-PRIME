@@ -1,0 +1,204 @@
+@layer app {
+  .nexus-reveal {
+    opacity: 0;
+    transform: translateY(var(--motion-reveal-distance));
+    transition:
+      opacity var(--motion-duration-3) var(--ease-emphasis) var(--reveal-delay, 0ms),
+      transform var(--motion-duration-3) var(--ease-emphasis) var(--reveal-delay, 0ms);
+  }
+
+  .nexus-reveal--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .spotlight-active > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .spotlight-active::after {
+    transition: opacity var(--motion-duration-2) var(--ease-standard);
+  }
+
+  .nexus-count-up-number {
+    display: inline-block;
+    min-width: 0;
+    max-width: 100%;
+    font: inherit;
+    color: inherit;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .nexus-workflow-stepper {
+    display: block;
+    min-width: 0;
+  }
+
+  .nexus-workflow-stepper__list {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    counter-reset: workflow-step;
+  }
+
+  .nexus-workflow-stepper__item {
+    position: relative;
+    min-width: 0;
+  }
+
+  .nexus-workflow-stepper__item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 18px;
+    top: calc(100% - 1px);
+    width: 2px;
+    height: var(--space-3);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line) 78%, transparent);
+  }
+
+  .nexus-workflow-stepper__item.is-complete:not(:last-child)::after {
+    background: color-mix(in srgb, var(--success) 58%, var(--line));
+  }
+
+  .nexus-workflow-stepper__surface {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: center;
+    min-width: 0;
+    min-height: 76px;
+    padding: var(--space-3);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--surface-strong) 90%, transparent), color-mix(in srgb, var(--surface-muted) 76%, transparent));
+    box-shadow: var(--shadow-sm);
+    transition:
+      transform var(--motion-duration-2) var(--ease-standard),
+      border-color var(--motion-duration-2) var(--ease-standard),
+      background var(--motion-duration-2) var(--ease-standard);
+  }
+
+  a.nexus-workflow-stepper__surface:hover {
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+    transform: translateY(-1px);
+  }
+
+  .nexus-workflow-stepper__index {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    color: var(--muted-strong);
+    font-size: .82rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  }
+
+  .nexus-workflow-stepper__copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .nexus-workflow-stepper__copy strong {
+    color: var(--ink-strong);
+    font-size: .95rem;
+    line-height: 1.25;
+  }
+
+  .nexus-workflow-stepper__copy span,
+  .nexus-workflow-stepper__surface em {
+    color: var(--muted);
+    font-size: .76rem;
+    font-style: normal;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .nexus-workflow-stepper__surface em {
+    max-width: 10rem;
+    text-align: right;
+  }
+
+  .nexus-workflow-stepper__item.is-active .nexus-workflow-stepper__surface {
+    border-color: color-mix(in srgb, var(--accent) 54%, var(--line));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, var(--surface-strong)), color-mix(in srgb, var(--surface-muted) 82%, transparent));
+  }
+
+  .nexus-workflow-stepper__item.is-active .nexus-workflow-stepper__index {
+    color: #fff;
+    border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+    background: var(--accent);
+  }
+
+  .nexus-workflow-stepper__item.is-complete .nexus-workflow-stepper__index {
+    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 42%, var(--line));
+    background: color-mix(in srgb, var(--success) 13%, var(--surface-raised));
+  }
+
+  .nexus-workflow-stepper__item.is-blocked .nexus-workflow-stepper__surface,
+  .nexus-workflow-stepper__item.tone-danger .nexus-workflow-stepper__surface {
+    border-color: color-mix(in srgb, var(--danger) 48%, var(--line));
+    background: color-mix(in srgb, var(--danger) 7%, var(--surface-strong));
+  }
+
+  .nexus-workflow-stepper__item.tone-warning .nexus-workflow-stepper__surface {
+    border-color: color-mix(in srgb, var(--warning) 44%, var(--line));
+  }
+
+  .nexus-workflow-stepper__item.tone-success .nexus-workflow-stepper__surface {
+    border-color: color-mix(in srgb, var(--success) 38%, var(--line));
+  }
+
+  .nexus-workflow-stepper--compact .nexus-workflow-stepper__surface {
+    min-height: 64px;
+    padding: var(--space-2);
+  }
+
+  .nexus-workflow-stepper__empty {
+    margin: 0;
+    padding: var(--space-4);
+    color: var(--muted);
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nexus-reveal {
+      opacity: 1;
+      transform: none;
+      transition: none !important;
+    }
+
+    .nexus-workflow-stepper__surface {
+      transition: none !important;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .nexus-workflow-stepper__surface {
+      grid-template-columns: 34px minmax(0, 1fr);
+    }
+
+    .nexus-workflow-stepper__surface em {
+      grid-column: 2;
+      max-width: none;
+      text-align: left;
+    }
+  }
+}

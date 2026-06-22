@@ -1,0 +1,1 @@
+"""AI schema placeholder."""

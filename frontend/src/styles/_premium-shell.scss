@@ -1,0 +1,581 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEXUS Prime · Shell & Dock Premium Visual Upgrade
+   Elevated topbar, dock island, and operations page glass effects
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer app {
+
+  /* ─── Premium Shell Tokens ─── */
+  .atlas-shell {
+    --shell-glass: color-mix(in srgb, var(--surface-strong) 72%, transparent);
+    --shell-glass-strong: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+    --shell-glass-border: color-mix(in srgb, var(--line) 52%, rgba(255, 255, 255, .12));
+    --shell-frost: blur(22px) saturate(1.5);
+    --shell-depth-1: 0 2px 8px rgba(0, 0, 0, .04), 0 6px 20px rgba(0, 0, 0, .06);
+    --shell-depth-2: 0 4px 16px rgba(0, 0, 0, .06), 0 12px 40px rgba(0, 0, 0, .08);
+    --shell-depth-3: 0 8px 32px rgba(0, 0, 0, .07), 0 20px 64px rgba(0, 0, 0, .1);
+    --shell-inset: inset 0 1px 0 rgba(255, 255, 255, .16);
+    --shell-shine: linear-gradient(135deg, rgba(255, 255, 255, .08) 0%, transparent 50%);
+    --shell-glow-accent: 0 0 32px -8px color-mix(in srgb, var(--accent) 22%, transparent);
+    --shell-hover-lift: translateY(-2px) scale(1.01);
+  }
+
+  html.dark-cockpit .atlas-shell {
+    --shell-glass: color-mix(in srgb, var(--surface-strong) 52%, transparent);
+    --shell-glass-strong: color-mix(in srgb, var(--surface-strong) 72%, transparent);
+    --shell-glass-border: color-mix(in srgb, var(--line) 44%, rgba(255, 255, 255, .05));
+    --shell-depth-1: 0 2px 8px rgba(0, 0, 0, .14), 0 6px 20px rgba(0, 0, 0, .18);
+    --shell-depth-2: 0 4px 16px rgba(0, 0, 0, .16), 0 12px 40px rgba(0, 0, 0, .24);
+    --shell-depth-3: 0 8px 32px rgba(0, 0, 0, .2), 0 20px 64px rgba(0, 0, 0, .3);
+    --shell-inset: inset 0 1px 0 rgba(255, 255, 255, .04);
+    --shell-shine: linear-gradient(135deg, rgba(255, 255, 255, .03) 0%, transparent 50%);
+  }
+
+  /* ─── Topbar Premium ─── */
+  .atlas-topbar {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass-strong);
+    backdrop-filter: var(--shell-frost);
+    box-shadow: var(--shell-depth-2), var(--shell-inset);
+    border-radius: 18px;
+  }
+
+  .atlas-topbar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--shell-shine);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .atlas-topbar::after {
+    content: "";
+    position: absolute;
+    inset: auto 16px -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 38%, transparent) 30%, color-mix(in srgb, var(--accent-warm) 28%, transparent) 70%, transparent);
+    opacity: .7;
+  }
+
+  /* ─── Topbar Brand Mark Premium ─── */
+  .atlas-brand-mark,
+  .atlas-topbar .brand-mark {
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .28),
+      0 8px 20px color-mix(in srgb, var(--accent) 22%, transparent),
+      0 2px 6px rgba(0, 0, 0, .12);
+    border-radius: 10px;
+  }
+
+  .atlas-brand-mark::after,
+  .atlas-topbar .brand-mark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, .2), transparent 50%);
+    pointer-events: none;
+  }
+
+  /* ─── Topbar Search Premium ─── */
+  .atlas-search {
+    border: 1px solid var(--shell-glass-border);
+    background: color-mix(in srgb, var(--surface-muted) 42%, transparent);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .03);
+    transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+  }
+
+  .atlas-search:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 44%, transparent);
+    background: color-mix(in srgb, var(--surface-strong) 64%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent), inset 0 1px 3px rgba(0, 0, 0, .04);
+  }
+
+  /* ─── Topbar Action Buttons Premium ─── */
+  .atlas-actions .p-button,
+  .icon-action,
+  .create-action,
+  .sync-action {
+    border: 1px solid var(--shell-glass-border);
+    background: color-mix(in srgb, var(--surface-muted) 36%, transparent);
+    backdrop-filter: blur(6px);
+    border-radius: 10px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 220ms cubic-bezier(.16, 1, .3, 1), box-shadow 220ms ease, border-color 220ms ease, background 220ms ease;
+  }
+
+  .atlas-actions .p-button:hover,
+  .icon-action:hover,
+  .create-action:hover,
+  .sync-action:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 26%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+
+  /* ─── Profile Avatar Premium ─── */
+  .profile-avatar-button {
+    position: relative;
+  }
+
+  .profile-avatar-button img,
+  .avatar-initials {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .12), inset 0 0 0 1px rgba(255, 255, 255, .1);
+    border-radius: 8px;
+  }
+
+  /* ─── Service Health Chip Premium ─── */
+  .service-health-chip {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(8px);
+    border-radius: 10px;
+    box-shadow: var(--shell-depth-1);
+  }
+
+  /* ─── Dock Island Premium ─── */
+  .atlas-dock.atlas-dock-island {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass-strong);
+    backdrop-filter: var(--shell-frost);
+    box-shadow: var(--shell-depth-2), var(--shell-inset);
+    border-radius: 18px;
+  }
+
+  .atlas-dock.atlas-dock-island::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--shell-shine);
+    pointer-events: none;
+  }
+
+  /* ─── Dock Capsule Premium ─── */
+  .dock-capsule {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: border-color 240ms ease, background 240ms ease, box-shadow 240ms ease;
+  }
+
+  .dock-capsule.contains-active {
+    border-color: color-mix(in srgb, var(--dock-group-tone, var(--accent)) 18%, transparent);
+    background: color-mix(in srgb, var(--dock-group-tone, var(--accent)) 6%, transparent);
+    box-shadow: inset 0 0 16px -6px color-mix(in srgb, var(--dock-group-tone, var(--accent)) 10%, transparent);
+  }
+
+  /* ─── Dock Items Premium ─── */
+  .dock-item {
+    position: relative;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: transform 200ms cubic-bezier(.16, 1, .3, 1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
+  }
+
+  .dock-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--shell-glass-border);
+    background: color-mix(in srgb, var(--dock-tone, var(--accent)) 8%, transparent);
+    box-shadow: var(--shell-depth-1), 0 0 16px -6px color-mix(in srgb, var(--dock-tone, var(--accent)) 16%, transparent);
+  }
+
+  .dock-item.active {
+    border-color: color-mix(in srgb, var(--dock-tone, var(--accent)) 32%, transparent);
+    background: color-mix(in srgb, var(--dock-tone, var(--accent)) 12%, var(--shell-glass));
+    box-shadow: var(--shell-depth-1), 0 0 24px -6px color-mix(in srgb, var(--dock-tone, var(--accent)) 22%, transparent);
+  }
+
+  /* ─── Dock Active Line Premium ─── */
+  .dock-active-line {
+    transition: opacity 200ms ease, transform 200ms cubic-bezier(.16, 1, .3, 1);
+  }
+
+  .dock-item.active .dock-active-line {
+    background: linear-gradient(180deg, var(--dock-tone, var(--accent)), color-mix(in srgb, var(--dock-tone, var(--accent)) 40%, transparent));
+    box-shadow: 0 0 8px 1px color-mix(in srgb, var(--dock-tone, var(--accent)) 30%, transparent);
+    border-radius: 2px;
+  }
+
+  /* ─── Dock Icon Premium ─── */
+  .dock-icon {
+    transition: transform 200ms cubic-bezier(.16, 1, .3, 1), color 200ms ease;
+  }
+
+  .dock-item:hover .dock-icon {
+    transform: scale(1.08);
+    color: var(--dock-tone, var(--accent));
+  }
+
+  .dock-item.active .dock-icon {
+    color: var(--dock-tone, var(--accent));
+    filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--dock-tone, var(--accent)) 24%, transparent));
+  }
+
+  /* ─── Dock Popover Premium ─── */
+  .dock-popover {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass-strong);
+    backdrop-filter: var(--shell-frost);
+    box-shadow: var(--shell-depth-2);
+    border-radius: 10px;
+  }
+
+  /* ─── Dock More Button Premium ─── */
+  .atlas-dock-more {
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: transform 200ms cubic-bezier(.16, 1, .3, 1), box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
+  }
+
+  .atlas-dock-more:hover {
+    transform: translateY(-2px);
+    border-color: var(--shell-glass-border);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    box-shadow: var(--shell-depth-1);
+  }
+
+  .atlas-dock-more.active {
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--shell-glass));
+    box-shadow: var(--shell-depth-1), 0 0 20px -6px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* ─── Search Popover Premium ─── */
+  .search-popover,
+  .atlas-search-popover {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass-strong);
+    backdrop-filter: var(--shell-frost);
+    box-shadow: var(--shell-depth-3);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  /* ─── Quick Create Popover Premium ─── */
+  .quick-create-popover {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass-strong);
+    backdrop-filter: var(--shell-frost);
+    box-shadow: var(--shell-depth-3);
+    border-radius: 14px;
+  }
+
+  .quick-create-popover a {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    transition: transform 200ms cubic-bezier(.16, 1, .3, 1), background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  }
+
+  .quick-create-popover a:hover {
+    transform: translateX(3px);
+    border-color: var(--shell-glass-border);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    box-shadow: var(--shell-depth-1);
+  }
+
+  /* ─── Module Map Panel Premium ─── */
+  .module-panel {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass-strong);
+    backdrop-filter: var(--shell-frost);
+    box-shadow: var(--shell-depth-3);
+    border-radius: var(--radius-lg);
+  }
+
+  .module-card-link {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease, border-color 260ms ease;
+  }
+
+  .module-card-link:hover {
+    transform: var(--shell-hover-lift);
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2), var(--shell-glow-accent);
+  }
+
+  /* ─── Page Evidence Strip Premium ─── */
+  .page-evidence-strip {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: var(--shell-depth-1);
+  }
+
+  .page-evidence-grid a {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--shell-glass-border);
+    box-shadow: var(--shell-depth-1);
+    transition: transform 320ms cubic-bezier(.16, 1, .3, 1), box-shadow 320ms ease;
+  }
+
+  .page-evidence-grid a:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shell-depth-2), 0 0 40px -10px rgba(0, 0, 0, .16);
+  }
+
+  /* ─── Context Panel Premium ─── */
+  .atlas-context-panel {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(14px);
+    border-radius: 14px;
+    box-shadow: var(--shell-depth-1), var(--shell-inset);
+  }
+
+  .context-block {
+    border: 1px solid var(--shell-glass-border);
+    background: color-mix(in srgb, var(--surface-muted) 34%, transparent);
+    border-radius: 10px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 240ms cubic-bezier(.16, 1, .3, 1), box-shadow 240ms ease, border-color 240ms ease;
+  }
+
+  .context-block:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+
+  /* ─── Atlas Panel (Command Center cards) Premium ─── */
+  .atlas-panel {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border-radius: 14px;
+    box-shadow: var(--shell-depth-1), var(--shell-inset);
+    transition: transform 320ms cubic-bezier(.16, 1, .3, 1), box-shadow 320ms ease, border-color 320ms ease;
+  }
+
+  .atlas-panel:hover {
+    border-color: color-mix(in srgb, var(--accent) 14%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+
+  .atlas-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--shell-shine);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── Command Center Hero Premium ─── */
+  .command-hero {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: var(--shell-frost);
+    border-radius: 18px;
+    box-shadow: var(--shell-depth-2), var(--shell-inset);
+    overflow: hidden;
+  }
+
+  .command-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 40%),
+      radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--accent-warm) 6%, transparent), transparent 40%),
+      var(--shell-shine);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .command-control-score {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: var(--shell-depth-1);
+  }
+
+  .command-control-score strong {
+    text-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  /* ─── Command Snapshot Row Premium ─── */
+  .command-snapshot-row button {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(8px);
+    border-radius: 10px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 240ms cubic-bezier(.16, 1, .3, 1), box-shadow 240ms ease, border-color 240ms ease;
+  }
+
+  .command-snapshot-row button:hover {
+    transform: var(--shell-hover-lift);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+
+  /* ─── Command Photo Board Premium ─── */
+  .command-visual-board figure {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--shell-glass-border);
+    box-shadow: var(--shell-depth-2);
+  }
+
+  .command-visual-board figcaption {
+    backdrop-filter: blur(12px) saturate(1.4);
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .5) 30%, rgba(0, 0, 0, .72));
+  }
+
+  /* ─── Operations Ledger Strip Premium ─── */
+  .operations-ledger-strip button {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: var(--shell-depth-1), var(--shell-inset);
+    transition: transform 280ms cubic-bezier(.16, 1, .3, 1), box-shadow 280ms ease, border-color 280ms ease;
+  }
+
+  .operations-ledger-strip button:hover {
+    transform: var(--shell-hover-lift);
+    border-color: color-mix(in srgb, var(--tile-accent, var(--accent)) 28%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2), 0 0 24px -8px color-mix(in srgb, var(--tile-accent, var(--accent)) 18%, transparent);
+  }
+
+  /* ─── Hero Ledger Row Premium ─── */
+  .hero-command-ledger {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: var(--shell-depth-1), var(--shell-inset);
+  }
+
+  .ledger-row {
+    border-radius: 8px;
+    transition: background 200ms ease;
+  }
+
+  .ledger-row:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+
+  .ledger-row.warning strong {
+    color: var(--warning);
+    text-shadow: 0 1px 6px color-mix(in srgb, var(--warning) 20%, transparent);
+  }
+
+  .ledger-row.danger strong {
+    color: var(--danger);
+    text-shadow: 0 1px 6px color-mix(in srgb, var(--danger) 20%, transparent);
+  }
+
+  /* ─── Hero Chart Section Premium ─── */
+  .command-hero-chart {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    box-shadow: var(--shell-depth-1);
+  }
+
+  /* ─── Mode Switch Premium ─── */
+  .mode-switch,
+  .metric-mode-switch,
+  .shift-lens-switch {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .04);
+  }
+
+  .mode-switch button.active,
+  .metric-mode-switch button.active,
+  .shift-lens-switch button.active {
+    background: var(--shell-glass-strong);
+    box-shadow: var(--shell-depth-1), inset 0 1px 0 rgba(255, 255, 255, .1);
+    border-radius: 8px;
+  }
+
+  /* ─── Chart Insights Premium ─── */
+  .ops-chart-insights button {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(6px);
+    border-radius: 10px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 220ms cubic-bezier(.16, 1, .3, 1), box-shadow 220ms ease, border-color 220ms ease;
+  }
+
+  .ops-chart-insights button:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+
+  /* ─── Resource Workbench Premium ─── */
+  .resource-workbench-host {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: var(--shell-depth-1), var(--shell-inset);
+  }
+
+  /* ─── Atlas Record Rows Premium ─── */
+  .atlas-record-row,
+  .business-data-row {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: transform 200ms cubic-bezier(.16, 1, .3, 1), background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  }
+
+  .atlas-record-row:hover,
+  .business-data-row:hover {
+    border-color: var(--shell-glass-border);
+    background: color-mix(in srgb, var(--accent) 4%, var(--shell-glass));
+    box-shadow: var(--shell-depth-1);
+  }
+
+  /* ─── Shift Stage Cards Premium ─── */
+  .shift-stage-card {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease, border-color 260ms ease;
+  }
+
+  .shift-stage-card:hover {
+    transform: var(--shell-hover-lift);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+
+  /* ─── Procurement Task Cards Premium ─── */
+  .procurement-task-card {
+    border: 1px solid var(--shell-glass-border);
+    background: var(--shell-glass);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: var(--shell-depth-1);
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease, border-color 260ms ease;
+  }
+
+  .procurement-task-card:hover {
+    transform: var(--shell-hover-lift);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--shell-glass-border));
+    box-shadow: var(--shell-depth-2);
+  }
+}

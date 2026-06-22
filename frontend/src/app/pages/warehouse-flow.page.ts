@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
@@ -14,7 +14,9 @@ import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { DataRecord, ManufacturingCommandCenter } from '../core/models';
+import { CountUpNumberComponent, NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent } from '../motion';
 import { compactNumberText, dateText, emptyPageResult, numberOf, statusSeverity, textOf } from './page-utils';
+import { buildWarehouseNetwork } from './warehouse-flow-network';
 
 const EMPTY_COMMAND: ManufacturingCommandCenter = {
   kpis: { order_amount: 0, stock_quantity: 0, low_stock_products: 0, pending_purchase: 0, overdue_amount: 0 },
@@ -25,14 +27,72 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    NgxEchartsDirective,
+    ButtonModule,
+    InputTextModule,
+    ProgressBarModule,
+    SkeletonModule,
+    TagModule,
+    SceneBackgroundComponent,
+    NexusRevealDirective,
+    NexusSpotlightDirective,
+    CountUpNumberComponent
+  ],
   template: `
     <section class="ops-atlas-page flow-console-page">
-      <header class="flow-hero">
+      <nexus-scene-background image="/images/warehouse-wide.jpg"></nexus-scene-background>
+
+      <header class="flow-hero" nexusReveal [nexusRevealDelay]="60">
         <div class="hero-narrative">
           <span class="atlas-kicker">仓配流向</span>
           <h1>仓配流向图</h1>
           <p>把供应商到货、工厂仓入库、区域仓调拨、客户发货和库存流水放在同一张运营地图里追踪。</p>
+          <div class="flow-hero-stats" aria-label="仓配网络概览">
+            <span>
+              <i class="pi pi-sitemap"></i>
+              <strong>
+                <nexus-count-up-number
+                  [value]="network().summary.warehouseCount"
+                  [compact]="false"
+                  [maximumFractionDigits]="0"
+                  suffix=" 座"
+                  ariaLabel="覆盖仓库"
+                ></nexus-count-up-number>
+              </strong>
+              覆盖仓库
+            </span>
+            <span class="warning">
+              <i class="pi pi-bolt"></i>
+              <strong>
+                <nexus-count-up-number
+                  [value]="network().summary.lowStockCount"
+                  [compact]="false"
+                  [maximumFractionDigits]="0"
+                  suffix=" 项"
+                  ariaLabel="低水位物料"
+                ></nexus-count-up-number>
+              </strong>
+              低水位物料
+            </span>
+            <span>
+              <i class="pi pi-sync"></i>
+              <strong>
+                <nexus-count-up-number
+                  [value]="network().summary.totalThroughput"
+                  [compact]="false"
+                  [maximumFractionDigits]="0"
+                  suffix=" 批"
+                  ariaLabel="当班吞吐"
+                ></nexus-count-up-number>
+              </strong>
+              当班吞吐
+            </span>
+          </div>
           <div class="atlas-actions-row">
             <button pButton type="button" (click)="createDispatchTask()" [loading]="taskCreating()" aria-label="创建仓配调度任务">
               <i class="pi pi-send"></i>
@@ -49,7 +109,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           </div>
         </div>
 
-        <div class="flow-hero-map" aria-label="仓配链路">
+        <div class="flow-hero-map" aria-label="仓配链路" nexusReveal [nexusRevealDelay]="130" nexusSpotlight>
           @for (node of flowNodes(); track node.label) {
             <a [routerLink]="node.path" [class.warning]="node.tone === 'warning'">
               <span>{{ node.kicker }}</span>
@@ -64,7 +124,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
       </header>
 
       <section class="flow-grid">
-        <article class="atlas-panel flow-network-panel">
+        <article class="atlas-panel flow-network-panel" nexusReveal [nexusRevealDelay]="160" nexusSpotlight>
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">实时网络</span>
@@ -76,10 +136,51 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
               <button type="button" [class.active]="chartMode() === 'movement'" (click)="chartMode.set('movement')">流水</button>
             </div>
           </div>
+          <div class="warehouse-network-map" aria-label="仓配节点网络">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="供应商、仓库、区域仓和客户之间的仓配流向">
+              <defs>
+                <linearGradient id="warehouse-network-flow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="currentColor" stop-opacity=".12"></stop>
+                  <stop offset="48%" stop-color="currentColor" stop-opacity=".9"></stop>
+                  <stop offset="100%" stop-color="currentColor" stop-opacity=".12"></stop>
+                </linearGradient>
+              </defs>
+              @for (link of network().links; track link.id) {
+                <line
+                  class="warehouse-network-link"
+                  [class.warning]="link.tone === 'warning'"
+                  [class.danger]="link.tone === 'danger'"
+                  [attr.x1]="link.x1"
+                  [attr.y1]="link.y1"
+                  [attr.x2]="link.x2"
+                  [attr.y2]="link.y2"
+                  [attr.stroke-width]="link.width"
+                ></line>
+                <text class="warehouse-network-link-label" [attr.x]="link.midX" [attr.y]="link.midY - 3">{{ link.value }}</text>
+              }
+            </svg>
+            @for (node of network().nodes; track node.id) {
+              <a
+                class="warehouse-network-node"
+                [class.warning]="node.tone === 'warning'"
+                [class.danger]="node.tone === 'danger'"
+                [class.supplier]="node.kind === 'supplier'"
+                [class.customer]="node.kind === 'customer'"
+                [routerLink]="node.path"
+                [style.--node-x]="node.x + '%'"
+                [style.--node-y]="node.y + '%'"
+              >
+                <span>{{ node.kicker }}</span>
+                <strong>{{ node.label }}</strong>
+                <em>{{ node.metric }}</em>
+                <small>{{ node.detail }}</small>
+              </a>
+            }
+          </div>
           <div class="flow-main-chart" echarts [options]="activeChart()"></div>
         </article>
 
-        <aside class="atlas-panel flow-warehouse-panel">
+        <aside class="atlas-panel flow-warehouse-panel" nexusReveal [nexusRevealDelay]="210" nexusSpotlight>
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">仓库</span>
@@ -98,7 +199,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           </div>
         </aside>
 
-        <article class="atlas-panel flow-ledger-wide">
+        <article class="atlas-panel flow-ledger-wide" nexusReveal [nexusRevealDelay]="240">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">库存账本</span>
@@ -146,7 +247,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           }
         </article>
 
-        <aside class="atlas-panel flow-risk-panel">
+        <aside class="atlas-panel flow-risk-panel" nexusReveal [nexusRevealDelay]="280" nexusSpotlight>
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">调度队列</span>
@@ -181,6 +282,7 @@ export class WarehouseFlowPage implements OnInit {
   protected readonly page = signal(1);
   protected pageInput = '1';
   protected query = '';
+  protected readonly network = computed(() => buildWarehouseNetwork(this.command(), this.stock()));
 
   protected readonly filteredStock = computed(() => {
     const q = this.query.trim().toLowerCase();

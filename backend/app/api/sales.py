@@ -5,7 +5,7 @@ from app.services.audit_service import AuditService
 from . import api_bp
 from .auth import current_api_user, jwt_required
 from .responses import api_error, api_success
-from .routes import order_extra, require_permission, serialize_model
+from .routes import order_extra, require_permission, require_resource_access, resource_config, serialize_model
 
 
 ALLOWED_TRANSITIONS = {
@@ -30,6 +30,9 @@ def sales_order_transition(order_id):
     order = db.session.get(Order, order_id)
     if not order or order.is_deleted:
         return api_error('订单不存在', status=404, error='not_found')
+    denied = require_resource_access(resource_config('orders'), 'update', order)
+    if denied:
+        return denied
     if status not in {Order.STATUS_PENDING, Order.STATUS_PAID, Order.STATUS_SHIPPED, Order.STATUS_DONE, Order.STATUS_CANCEL}:
         return api_error('不支持的订单状态', status=400, error='invalid_status')
     if status != order.status and status not in ALLOWED_TRANSITIONS.get(order.status, set()):

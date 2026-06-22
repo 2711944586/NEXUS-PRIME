@@ -2,9 +2,11 @@
 import uuid
 from datetime import datetime, timedelta
 from app.extensions import db
+from app.domains.inventory.application import InventoryApplicationService
+from app.domains.procurement.application import purchase_approval_workflow
 from app.models.notification import Notification, ReplenishmentSuggestion, StockAlert
 from app.models.purchase import PurchaseOrder, PurchaseOrderItem, PurchasePriceHistory, SupplierPerformance
-from app.models.stock import Stock, InventoryLog, Warehouse
+from app.models.stock import Warehouse
 from app.models.biz import Product, Partner
 from app.utils.time import utcnow
 
@@ -14,6 +16,27 @@ def query_with_lock(query):
     if not dialect_name.startswith('sqlite'):
         return query.with_for_update()
     return query
+
+
+def purchase_order_event_payload(po):
+    return {
+        "purchase_order_id": po.id,
+        "po_no": po.po_no,
+        "supplier_id": po.supplier_id,
+        "warehouse_id": po.warehouse_id,
+        "status": po.status,
+        "total_amount": float(po.total_amount or 0),
+        "items": [
+            {
+                "item_id": item.id,
+                "product_id": item.product_id,
+                "quantity": int(item.quantity or 0),
+                "received_qty": int(item.received_qty or 0),
+                "unit_price": float(item.unit_price or 0),
+            }
+            for item in po.items
+        ],
+    }
 
 
 class PurchaseService:
@@ -79,13 +102,28 @@ class PurchaseService:
                 )
             
             po.total_amount = total
+            db.session.flush()
+            from app.platform.events import outbox
+
+            outbox.add(
+                "PurchaseOrderCreated",
+                "PurchaseOrder",
+                po.id,
+                {
+                    **purchase_order_event_payload(po),
+                    "created_by": user.id if user else None,
+                    "expected_date": po.expected_date.isoformat() if po.expected_date else None,
+                    "remark": po.remark,
+                },
+                created_by=user.id if user else None,
+            )
             return True, po
         except Exception as e:
             db.session.rollback()
             return False, str(e)
     
     @staticmethod
-    def submit_for_approval(po_id, user):
+    def submit_for_approval(po_id, user, assignee_id=None):
         """提交审批"""
         po = db.session.get(PurchaseOrder, po_id)
         if not po:
@@ -93,6 +131,10 @@ class PurchaseService:
         if po.status != PurchaseOrder.STATUS_DRAFT:
             return False, "只有草稿状态可以提交审批"
         
+        try:
+            purchase_approval_workflow.start_for_purchase_order(po, user, assignee_id=assignee_id)
+        except ValueError as exc:
+            return False, str(exc)
         po.status = PurchaseOrder.STATUS_PENDING
         po.submitted_at = utcnow()
         po.submitted_by = user.id
@@ -107,6 +149,18 @@ class PurchaseService:
         if po.status != PurchaseOrder.STATUS_PENDING:
             return False, "只有待审批状态可以审批"
         
+        try:
+            purchase_approval_workflow.complete_for_purchase_order(
+                po,
+                user,
+                approved=approved,
+                comment=remark,
+            )
+        except PermissionError as exc:
+            return False, str(exc)
+        except ValueError as exc:
+            return False, str(exc)
+
         if approved:
             po.status = PurchaseOrder.STATUS_APPROVED
         else:
@@ -115,6 +169,21 @@ class PurchaseService:
         
         po.approved_at = utcnow()
         po.approved_by = user.id
+        if approved:
+            from app.platform.events import outbox
+
+            outbox.add(
+                "PurchaseOrderApproved",
+                "PurchaseOrder",
+                po.id,
+                {
+                    **purchase_order_event_payload(po),
+                    "approved_by": user.id,
+                    "approved_at": po.approved_at.isoformat() if po.approved_at else None,
+                    "remark": remark,
+                },
+                created_by=user.id,
+            )
         return True, "审批完成"
     
     @staticmethod
@@ -133,6 +202,7 @@ class PurchaseService:
         
         try:
             all_received = True
+            received_lines = []
             for data in receive_data:
                 receive_qty_raw = data.get('receive_qty')
                 if receive_qty_raw is None:
@@ -147,36 +217,25 @@ class PurchaseService:
                 if receive_qty > item.pending_qty:
                     return False, f"收货数量超过待收数量，当前待收 {item.pending_qty}"
                 
-                item.received_qty += receive_qty
-                
-                # 更新库存
-                stock = query_with_lock(Stock.query.filter_by(
-                    product_id=item.product_id,
-                    warehouse_id=po.warehouse_id
-                )).first()
-                
-                if not stock:
-                    stock = Stock(
-                        product_id=item.product_id,
-                        warehouse_id=po.warehouse_id,
-                        quantity=0
-                    )
-                    db.session.add(stock)
-                
-                stock.quantity += receive_qty
-                
-                # 记录库存流水
-                log = InventoryLog(
-                    transaction_code=po.po_no,
-                    move_type=InventoryLog.TYPE_IN,
-                    product_id=item.product_id,
-                    warehouse_id=po.warehouse_id,
-                    qty_change=receive_qty,
-                    balance_after=stock.quantity,
-                    operator_id=user.id,
-                    remark=f"采购入库 - {po.po_no}"
+                new_received_qty = item.received_qty + receive_qty
+                InventoryApplicationService().receive_stock(
+                    "purchase_order",
+                    po.id,
+                    [{"product_id": item.product_id, "warehouse_id": po.warehouse_id, "quantity": receive_qty}],
+                    f"purchase-order:{po.id}:item:{item.id}:received:{new_received_qty}",
+                    created_by=user,
+                    reason=f"采购入库 - {po.po_no}",
+                    legacy_transaction_code=po.po_no,
                 )
-                db.session.add(log)
+                item.received_qty = new_received_qty
+                received_lines.append({
+                    "item_id": item.id,
+                    "product_id": item.product_id,
+                    "warehouse_id": po.warehouse_id,
+                    "receive_qty": receive_qty,
+                    "received_qty": new_received_qty,
+                    "pending_qty": max(0, int(item.quantity or 0) - int(new_received_qty or 0)),
+                })
                 
                 if item.pending_qty > 0:
                     all_received = False
@@ -190,6 +249,22 @@ class PurchaseService:
                 PurchaseService.update_supplier_performance(po)
             else:
                 po.status = PurchaseOrder.STATUS_PARTIAL
+
+            from app.platform.events import outbox
+
+            outbox.add(
+                "PurchaseGoodsReceived",
+                "PurchaseOrder",
+                po.id,
+                {
+                    **purchase_order_event_payload(po),
+                    "received_by": user.id,
+                    "received_lines": received_lines,
+                    "all_received": all_received,
+                    "actual_receive_date": po.actual_receive_date.isoformat() if po.actual_receive_date else None,
+                },
+                created_by=user.id,
+            )
             
             return True, "收货成功"
         except Exception as e:
@@ -214,19 +289,19 @@ class PurchaseService:
             perf = SupplierPerformance(supplier_id=po.supplier_id)
             db.session.add(perf)
         
-        perf.total_orders += 1
-        perf.total_amount += po.total_amount
+        perf.total_orders = int(perf.total_orders or 0) + 1
+        perf.total_amount = (perf.total_amount or 0) + (po.total_amount or 0)
         perf.last_order_date = utcnow()
         
         # 判断是否准时
         if po.expected_date and po.actual_receive_date:
             if po.actual_receive_date.date() <= po.expected_date:
-                perf.on_time_orders += 1
+                perf.on_time_orders = int(perf.on_time_orders or 0) + 1
         else:
-            perf.on_time_orders += 1  # 无预期日期默认准时
+            perf.on_time_orders = int(perf.on_time_orders or 0) + 1  # 无预期日期默认准时
         
         # 默认质量合格
-        perf.quality_pass_orders += 1
+        perf.quality_pass_orders = int(perf.quality_pass_orders or 0) + 1
     
     @staticmethod
     def get_supplier_price(product_id, supplier_id):

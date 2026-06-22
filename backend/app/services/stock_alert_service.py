@@ -59,12 +59,35 @@ class StockAlertService:
                     suggested_qty=suggested_qty
                 )
                 db.session.add(alert)
+                db.session.flush()
+                StockAlertService.record_stock_below_safety_event(product, alert)
                 alerts_created += 1
                 
                 # 发送通知
                 StockAlertService.send_alert_notification(product, alert_level, total_stock, min_stock)
         
         return alerts_created
+
+    @staticmethod
+    def record_stock_below_safety_event(product, alert):
+        """记录库存低于安全线领域事件"""
+        from app.platform.events import outbox
+
+        outbox.add(
+            "StockBelowSafetyLine",
+            "StockAlert",
+            alert.id,
+            {
+                "alert_id": alert.id,
+                "product_id": product.id,
+                "product_sku": product.sku,
+                "product_name": product.name,
+                "current_qty": int(alert.current_qty or 0),
+                "min_qty": int(alert.min_qty or 0),
+                "suggested_qty": int(alert.suggested_qty or 0),
+                "alert_level": alert.alert_level,
+            },
+        )
     
     @staticmethod
     def resolve_alerts_for_product(product_id):

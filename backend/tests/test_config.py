@@ -113,6 +113,38 @@ def test_cache_config_promotes_redis_url_to_shared_cache(monkeypatch):
     assert module.is_shared_cache_configured() is True
 
 
+def test_celery_config_defaults_to_redis_url(monkeypatch):
+    monkeypatch.setenv('REDIS_URL', 'redis://cache.example.com:6379/0')
+    monkeypatch.delenv('CELERY_BROKER_URL', raising=False)
+    monkeypatch.delenv('CELERY_RESULT_BACKEND', raising=False)
+
+    module = reload_config()
+
+    assert module.celery_config_from_env()['CELERY_BROKER_URL'] == 'redis://cache.example.com:6379/0'
+    assert module.celery_config_from_env()['CELERY_RESULT_BACKEND'] == 'redis://cache.example.com:6379/0'
+
+
+def test_testing_config_uses_eager_in_memory_celery():
+    module = reload_config()
+
+    assert module.TestingConfig.CELERY_BROKER_URL == 'memory://'
+    assert module.TestingConfig.CELERY_RESULT_BACKEND == 'cache+memory://'
+    assert module.TestingConfig.CELERY_TASK_ALWAYS_EAGER is True
+    assert module.TestingConfig.CELERY_TASK_EAGER_PROPAGATES is True
+
+
+def test_otel_tracing_config_from_env(monkeypatch):
+    monkeypatch.setenv('OTEL_TRACES_ENABLED', 'true')
+    monkeypatch.setenv('OTEL_SERVICE_NAME', 'nexus-prime-test')
+    monkeypatch.setenv('OTEL_EXPORTER_OTLP_ENDPOINT', 'http://collector:4318/v1/traces')
+
+    module = reload_config()
+
+    assert module.Config.OTEL_TRACES_ENABLED is True
+    assert module.Config.OTEL_SERVICE_NAME == 'nexus-prime-test'
+    assert module.Config.OTEL_EXPORTER_OTLP_ENDPOINT == 'http://collector:4318/v1/traces'
+
+
 def test_ai_timeout_parser_bounds_values():
     module = reload_config()
 

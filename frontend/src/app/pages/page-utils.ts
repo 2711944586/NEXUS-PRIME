@@ -1,4 +1,6 @@
-import { DataRecord, PageResult, RecordValue } from '../core/models';
+import { DataRecord, OperationsTodoPayload, PageResult, RecordValue } from '../core/models';
+
+export const EMPTY_TODO: OperationsTodoPayload = { items: [], stock_quantity: 0 };
 
 export type TagSeverity = 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast';
 export type ChartLegendPosition = 'top' | 'bottom';

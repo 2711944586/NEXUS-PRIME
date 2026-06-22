@@ -36,7 +36,13 @@ export const OPERATIONS_VISUALS = {
   dataQuality: '/images/data-quality-wide.jpg',
   serviceWorkorders: '/images/service-workorders-wide.jpg',
   budgetPlanning: '/images/budget-planning-wide.jpg',
-  mobileScanner: '/images/mobile-scanner-wide.jpg'
+  mobileScanner: '/images/mobile-scanner-wide.jpg',
+  automatedProductionLine: '/images/automated-production-line-wide.jpg',
+  warehouseOperatorAisle: '/images/warehouse-operator-aisle-wide.jpg',
+  factoryQualityControl: '/images/factory-quality-control-wide.jpg',
+  technicianRepair: '/images/technician-repair-wide.jpg',
+  controlPanel: '/images/control-panel-wide.jpg',
+  factorySafetyHelmet: '/images/factory-safety-helmet-wide.jpg'
 } as const;
 
 export const COMMAND_CENTER_PHOTOS: VisualAsset[] = [
@@ -207,5 +213,41 @@ export const COMMAND_CENTER_PHOTOS: VisualAsset[] = [
     alt: '制造设备和产线细节真实现场',
     label: '制造细节',
     caption: '设备、工艺和质量复核'
+  },
+  {
+    src: OPERATIONS_VISUALS.automatedProductionLine,
+    alt: '自动化制造产线与工业设备',
+    label: '自动化产线',
+    caption: '产线节拍、设备状态和工单执行'
+  },
+  {
+    src: OPERATIONS_VISUALS.warehouseOperatorAisle,
+    alt: '仓库作业人员在货架通道处理库存',
+    label: '仓储作业',
+    caption: '拣货、扫码和库位复核'
+  },
+  {
+    src: OPERATIONS_VISUALS.factoryQualityControl,
+    alt: '工厂质量控制和部件检查现场',
+    label: '质量复核',
+    caption: '来料检验、放行和异常判定'
+  },
+  {
+    src: OPERATIONS_VISUALS.technicianRepair,
+    alt: '维修技术员检查工业设备',
+    label: '维修执行',
+    caption: '设备维修、备件消耗和停机窗口'
+  },
+  {
+    src: OPERATIONS_VISUALS.controlPanel,
+    alt: '工业控制面板与监控仪表',
+    label: '控制面板',
+    caption: '设备信号、接口状态和现场监控'
+  },
+  {
+    src: OPERATIONS_VISUALS.factorySafetyHelmet,
+    alt: '佩戴安全帽的工厂现场协作人员',
+    label: '现场协作',
+    caption: '班组协同、责任交接和安全巡检'
   }
 ];

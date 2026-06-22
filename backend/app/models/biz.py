@@ -1,3 +1,5 @@
+from sqlalchemy import select, func
+from sqlalchemy.ext.hybrid import hybrid_property
 from app.extensions import db
 from .base import BaseModel
 
@@ -8,59 +10,54 @@ product_tags = db.Table('biz_product_tags',
 )
 
 class Tag(BaseModel):
-    """通用标签"""
     __tablename__ = 'biz_tags'
     name = db.Column(db.String(32), unique=True)
-    color = db.Column(db.String(16), default='blue') # 标签颜色(Bootstrap类名或Hex)
+    color = db.Column(db.String(16), default='blue')
 
 class Category(BaseModel):
-    """产品分类"""
     __tablename__ = 'biz_categories'
     name = db.Column(db.String(64))
-    icon = db.Column(db.String(64), default='box') # FontAwesome 图标名
-    
+    icon = db.Column(db.String(64), default='box')
     products = db.relationship('Product', backref='category', lazy='dynamic')
 
 class Partner(BaseModel):
-    """业务伙伴 (客户/供应商)"""
     __tablename__ = 'biz_partners'
     TYPE_CUSTOMER = 'customer'
     TYPE_SUPPLIER = 'supplier'
-
     name = db.Column(db.String(128), index=True)
-    type = db.Column(db.String(20), index=True) # customer/supplier
+    type = db.Column(db.String(20), index=True)
     contact_person = db.Column(db.String(64))
     phone = db.Column(db.String(32))
     email = db.Column(db.String(128))
     address = db.Column(db.String(256))
-    credit_score = db.Column(db.Integer, default=100) # 信用分
+    credit_score = db.Column(db.Integer, default=100)
 
 class Product(BaseModel):
-    """产品主表"""
     __tablename__ = 'biz_products'
-    
-    sku = db.Column(db.String(64), unique=True, index=True) # 唯一货号
+    sku = db.Column(db.String(64), unique=True, index=True)
     name = db.Column(db.String(128), index=True)
-    price = db.Column(db.Float, default=0.0) # 建议零售价
-    cost = db.Column(db.Float, default=0.0)  # 成本价
-    
-    description = db.Column(db.Text) # 富文本描述
-    ai_summary = db.Column(db.Text) # 经营分析摘要
-    
-    specs = db.Column(db.JSON) # JSON 字段：存储规格参数 {"weight": "1kg", "color": "red"}
-    
-    # 库存设置
-    min_stock = db.Column(db.Integer, default=10)  # 最小库存（低于预警）
-    max_stock = db.Column(db.Integer, default=1000)  # 最大库存
-    
+    price = db.Column(db.Numeric(18, 4), default=0)
+    cost = db.Column(db.Numeric(18, 4), default=0)
+    description = db.Column(db.Text)
+    ai_summary = db.Column(db.Text)
+    specs = db.Column(db.JSON)
+    min_stock = db.Column(db.Integer, default=10)
+    max_stock = db.Column(db.Integer, default=1000)
     category_id = db.Column(db.Integer, db.ForeignKey('biz_categories.id'))
-    supplier_id = db.Column(db.Integer, db.ForeignKey('biz_partners.id')) # 默认供应商
-    
-    # 关系
+    supplier_id = db.Column(db.Integer, db.ForeignKey('biz_partners.id'))
     tags = db.relationship('Tag', secondary=product_tags, backref='products')
     supplier = db.relationship('Partner', foreign_keys=[supplier_id])
-    
-    # 动态属性：计算当前总库存 (需结合 stock 模块)
-    @property
+
+    @hybrid_property
     def total_stock(self):
-        return sum([s.quantity for s in self.stocks])
+        return sum(s.quantity for s in self.stocks)
+
+    @total_stock.expression
+    def total_stock(cls):
+        from app.models.stock import Stock  # local import avoids potential init-order issues
+        return (
+            select(func.coalesce(func.sum(Stock.quantity), 0))
+            .where(Stock.product_id == cls.id)
+            .correlate(cls)
+            .scalar_subquery()
+        )

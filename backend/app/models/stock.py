@@ -56,3 +56,54 @@ class InventoryLog(BaseModel):
     operator = db.relationship('User')
     product = db.relationship('Product')
     warehouse = db.relationship('Warehouse')
+
+
+class StockBalance(BaseModel):
+    __tablename__ = 'stock_balances'
+    __table_args__ = (
+        db.UniqueConstraint('tenant_id', 'product_id', 'warehouse_id', name='uq_stock_balance_tenant_product_warehouse'),
+    )
+
+    tenant_id = db.Column(db.String(128), nullable=False, default='default')
+    product_id = db.Column(db.Integer, db.ForeignKey('biz_products.id'), nullable=False)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('stock_warehouses.id'), nullable=False)
+    available_qty = db.Column(db.Integer, nullable=False, default=0)
+    locked_qty = db.Column(db.Integer, nullable=False, default=0)
+    damaged_qty = db.Column(db.Integer, nullable=False, default=0)
+    in_transit_qty = db.Column(db.Integer, nullable=False, default=0)
+    version = db.Column(db.Integer, nullable=False, default=1)
+
+    product = db.relationship('Product')
+    warehouse = db.relationship('Warehouse')
+
+
+class StockMovement(BaseModel):
+    __tablename__ = 'stock_movements'
+    __table_args__ = (
+        db.UniqueConstraint('idempotency_key', name='uq_stock_movements_idempotency_key'),
+    )
+
+    DIRECTION_RESERVE = 'reserve'
+    DIRECTION_RELEASE = 'release'
+    DIRECTION_DEDUCT = 'deduct'
+    DIRECTION_RECEIVE = 'receive'
+    DIRECTION_ADJUST = 'adjust'
+
+    tenant_id = db.Column(db.String(128), nullable=False, default='default')
+    product_id = db.Column(db.Integer, db.ForeignKey('biz_products.id'), nullable=False)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('stock_warehouses.id'), nullable=False)
+    direction = db.Column(db.String(32), nullable=False, index=True)
+    quantity = db.Column(db.Integer, nullable=False)
+    before_available_qty = db.Column(db.Integer, nullable=False, default=0)
+    after_available_qty = db.Column(db.Integer, nullable=False, default=0)
+    before_locked_qty = db.Column(db.Integer, nullable=False, default=0)
+    after_locked_qty = db.Column(db.Integer, nullable=False, default=0)
+    source_type = db.Column(db.String(128), nullable=False)
+    source_id = db.Column(db.String(128), nullable=False)
+    idempotency_key = db.Column(db.String(255), nullable=False)
+    reason = db.Column(db.String(255))
+    created_by = db.Column(db.Integer, db.ForeignKey('auth_users.id'))
+
+    product = db.relationship('Product')
+    warehouse = db.relationship('Warehouse')
+    creator = db.relationship('User')

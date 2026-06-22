@@ -1,17 +1,19 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
 import { ApiEnvelope, LookupItem, PageResult, UserPreferences } from './models';
 import { apiUrl } from './api-url';
 
+const SILENT_REQUEST_HEADER = 'X-Nexus-Silent';
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
 
-  get<T>(path: string, params?: Record<string, unknown>): Observable<T> {
+  get<T>(path: string, params?: Record<string, unknown>, options: { silent?: boolean } = {}): Observable<T> {
     return this.http
-      .get<ApiEnvelope<T>>(this.url(path), { params: this.toParams(params), withCredentials: true })
+      .get<ApiEnvelope<T>>(this.url(path), { params: this.toParams(params), headers: this.headers(options), withCredentials: true })
       .pipe(map(unwrapEnvelope));
   }
 
@@ -63,6 +65,10 @@ export class ApiService {
       }
     });
     return httpParams;
+  }
+
+  private headers(options: { silent?: boolean }): HttpHeaders | undefined {
+    return options.silent ? new HttpHeaders({ [SILENT_REQUEST_HEADER]: '1' }) : undefined;
   }
 }
 

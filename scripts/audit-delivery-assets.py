@@ -36,6 +36,7 @@ REQUIRED_FILES = [
     'scripts/preflight.ps1',
     'scripts/deploy-supabase-vercel.ps1',
     'scripts/audit-api-contracts.py',
+    'scripts/check-openapi-sync.py',
     'scripts/generate_final_report_docx.py',
     'frontend/src/app/core/visual-assets.ts',
     'legacy/monolith-flask',
@@ -415,12 +416,20 @@ def check_repository_hygiene(audit: Audit) -> None:
             audit.fail('quality-gate.ps1 must force-restore runtime-config.js before delivery asset audit')
         if 'audit-api-contracts.py' not in quality_text or 'SkipApiContractAudit' not in quality_text:
             audit.fail('quality-gate.ps1 must run frontend/backend API contract audit by default')
+        if 'check-openapi-sync.py' not in quality_text:
+            audit.fail('quality-gate.ps1 must check generated OpenAPI artifacts stay synchronized')
 
     ci_workflow = ROOT / '.github' / 'workflows' / 'ci.yml'
     if ci_workflow.exists():
         ci_text = ci_workflow.read_text(encoding='utf-8')
         if 'audit-api-contracts.py' not in ci_text:
             audit.fail('CI delivery hygiene must run API contract audit')
+        if 'check-openapi-sync.py' not in ci_text:
+            audit.fail('CI delivery hygiene must check generated OpenAPI artifacts stay synchronized')
+        if 'actions/upload-artifact@v4' not in ci_text or 'delivery-hygiene-reports' not in ci_text:
+            audit.fail('CI delivery hygiene must upload audit reports as artifacts')
+        if 'output/*.json' not in ci_text or 'frontend/output/**/*.json' not in ci_text:
+            audit.fail('CI delivery hygiene artifact upload must include backend and frontend JSON reports')
 
 
 def write_json_report(audit: Audit, output: Path | None) -> None:

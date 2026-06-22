@@ -47,12 +47,16 @@ def normalize_database_url(url):
 def engine_options_for(url):
     if str(url or '').startswith('sqlite'):
         return {
-            'connect_args': {
-                'timeout': 30,
-                'check_same_thread': False,
-            }
+            'connect_args': {'timeout': 30, 'check_same_thread': False}
         }
-    return {}
+    return {
+        'pool_size': int(os.environ.get('DB_POOL_SIZE', 5)),
+        'max_overflow': int(os.environ.get('DB_MAX_OVERFLOW', 10)),
+        'pool_timeout': 30,
+        'pool_pre_ping': True,
+        'pool_recycle': 1800,
+        'connect_args': {'sslmode': os.environ.get('DB_SSL_MODE', 'prefer')},
+    }
 
 
 def parse_cors_origins(value):
@@ -107,6 +111,23 @@ def is_shared_cache_configured(env=None):
     if redis_url:
         return True
     return False
+
+
+def parse_bool(value, default=False):
+    if value is None:
+        return default
+    return str(value).lower() in ('1', 'true', 'yes', 'on')
+
+
+def celery_config_from_env(env=None):
+    source = env or os.environ
+    redis_url = source.get('REDIS_URL') or source.get('CACHE_REDIS_URL') or source.get('UPSTASH_REDIS_URL') or ''
+    return {
+        'CELERY_BROKER_URL': source.get('CELERY_BROKER_URL') or redis_url or 'redis://localhost:6379/0',
+        'CELERY_RESULT_BACKEND': source.get('CELERY_RESULT_BACKEND') or redis_url or 'redis://localhost:6379/1',
+        'CELERY_TASK_ALWAYS_EAGER': parse_bool(source.get('CELERY_TASK_ALWAYS_EAGER'), False),
+        'CELERY_TASK_EAGER_PROPAGATES': parse_bool(source.get('CELERY_TASK_EAGER_PROPAGATES'), False),
+    }
 
 
 def resolve_ai_provider_config(env=None):
@@ -173,10 +194,14 @@ def resolve_ai_provider_config(env=None):
 class Config:
     """基础配置类"""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard-to-guess-string'
+
+    # JWT — RS256 when keys are set, HS256 fallback for dev
+    JWT_PRIVATE_KEY = os.environ.get('JWT_PRIVATE_KEY') or ''
+    JWT_PUBLIC_KEY = os.environ.get('JWT_PUBLIC_KEY') or ''
     
     # 数据库配置
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_RECORD_QUERIES = True
+    SQLALCHEMY_RECORD_QUERIES = False
     
     # OpenAI-compatible AI provider. Resolve key/base/model as one provider tuple
     # so OpenAI and DeepSeek credentials are never accidentally mixed.
@@ -190,6 +215,13 @@ class Config:
     AI_CONNECT_TIMEOUT_SECONDS = parse_ai_timeout(os.environ.get('AI_CONNECT_TIMEOUT_SECONDS'), 5.0)
     AI_DIAGNOSTICS_TIMEOUT_SECONDS = parse_ai_timeout(os.environ.get('AI_DIAGNOSTICS_TIMEOUT_SECONDS'), 2.0, min_value=0.5)
     AI_DIAGNOSTICS_CACHE_SECONDS = int(os.environ.get('AI_DIAGNOSTICS_CACHE_SECONDS', 60))
+    AI_RAG_CONTEXT_LIMIT = int(os.environ.get('AI_RAG_CONTEXT_LIMIT', 4))
+    AI_EMBEDDING_PROVIDER = os.environ.get('AI_EMBEDDING_PROVIDER', 'local')
+    AI_EMBEDDING_MODEL = os.environ.get('AI_EMBEDDING_MODEL', 'local-hash-v1')
+    AI_EMBEDDING_DIMENSIONS = int(os.environ.get('AI_EMBEDDING_DIMENSIONS', 32))
+    AI_EMBEDDING_API_KEY = os.environ.get('AI_EMBEDDING_API_KEY', '')
+    AI_EMBEDDING_BASE_URL = os.environ.get('AI_EMBEDDING_BASE_URL', '')
+    AI_EMBEDDING_TIMEOUT_SECONDS = parse_ai_timeout(os.environ.get('AI_EMBEDDING_TIMEOUT_SECONDS'), 20.0)
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
     OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL', '')
     OPENAI_MODEL = os.environ.get('OPENAI_MODEL', '')
@@ -220,6 +252,13 @@ class Config:
     CACHE_TYPE = CACHE_SETTINGS['CACHE_TYPE']
     CACHE_DEFAULT_TIMEOUT = CACHE_SETTINGS['CACHE_DEFAULT_TIMEOUT']
     CACHE_REDIS_URL = CACHE_SETTINGS.get('CACHE_REDIS_URL')
+
+    # 异步任务配置。默认复用 Redis；测试环境使用内存 broker 和 eager 模式。
+    CELERY_SETTINGS = celery_config_from_env()
+    CELERY_BROKER_URL = CELERY_SETTINGS['CELERY_BROKER_URL']
+    CELERY_RESULT_BACKEND = CELERY_SETTINGS['CELERY_RESULT_BACKEND']
+    CELERY_TASK_ALWAYS_EAGER = CELERY_SETTINGS['CELERY_TASK_ALWAYS_EAGER']
+    CELERY_TASK_EAGER_PROPAGATES = CELERY_SETTINGS['CELERY_TASK_EAGER_PROPAGATES']
     
     # API/CORS/JWT 配置
     DEV_CORS_PORTS = list(range(4200, 4231)) + list(range(4300, 4311))
@@ -234,6 +273,10 @@ class Config:
     LOGIN_RATE_LIMIT_ATTEMPTS = int(os.environ.get('LOGIN_RATE_LIMIT_ATTEMPTS', 8))
     LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get('LOGIN_RATE_LIMIT_WINDOW_SECONDS', 10 * 60))
     DISABLE_API_CSRF = False
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+    OTEL_TRACES_ENABLED = parse_bool(os.environ.get('OTEL_TRACES_ENABLED'), False)
+    OTEL_SERVICE_NAME = os.environ.get('OTEL_SERVICE_NAME', 'nexus-prime-backend')
+    OTEL_EXPORTER_OTLP_ENDPOINT = os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT', '')
 
     @staticmethod
     def init_app(app):
@@ -328,6 +371,10 @@ class TestingConfig(Config):
     SQLALCHEMY_ENGINE_OPTIONS = engine_options_for(SQLALCHEMY_DATABASE_URI)
     CACHE_TYPE = 'SimpleCache'
     CACHE_REDIS_URL = None
+    CELERY_BROKER_URL = 'memory://'
+    CELERY_RESULT_BACKEND = 'cache+memory://'
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
     WTF_CSRF_ENABLED = False
     DISABLE_API_CSRF = False
 

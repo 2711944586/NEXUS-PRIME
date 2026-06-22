@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
@@ -13,16 +13,29 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
-import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { catchError, finalize, firstValueFrom, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
+import { AiChatStreamError, streamAiChat } from '../core/ai-chat-stream';
 import {
+  AiActionDraft,
   AiDiagnostics,
+  AiDraftConfirmResult,
+  AiDraftRejectResult,
   AiSettings,
   ExecutiveAnalytics,
   ManufacturingCommandCenter,
   StructuredOperationsAnalysis
 } from '../core/models';
+import { NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent } from '../motion';
+import type { AiGuardrailTone } from './ai-guardrails';
+import {
+  aiDraftStatusLabel,
+  aiDraftStatusTone,
+  buildAiDraftActions,
+  buildAiGuardrails,
+  summarizeAiActionDraft
+} from './ai-guardrails';
 import { chartLegend, compactMoneyText, compactNumberText, dateText } from './page-utils';
 
 interface AiSession {
@@ -133,6 +146,7 @@ const EMPTY_STRUCTURED: StructuredOperationsAnalysis = {
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -143,13 +157,18 @@ const EMPTY_STRUCTURED: StructuredOperationsAnalysis = {
     InputTextModule,
     ProgressBarModule,
     SkeletonModule,
+    SceneBackgroundComponent,
     TabsModule,
     TagModule,
-    TextareaModule
+    TextareaModule,
+    NexusRevealDirective,
+    NexusSpotlightDirective
   ],
   template: `
     <section class="ops-atlas-page ai-command-page ai-command-studio">
-      <header class="ai-command-hero refined-ai-hero">
+      <nexus-scene-background image="/images/control-panel-wide.jpg"></nexus-scene-background>
+
+      <header class="ai-command-hero refined-ai-hero" nexusReveal nexusSpotlight>
         <div class="hero-narrative">
           <span class="atlas-kicker">经营分析</span>
           <h1>经营分析台</h1>
@@ -293,6 +312,98 @@ const EMPTY_STRUCTURED: StructuredOperationsAnalysis = {
               </a>
             }
           </div>
+        </article>
+
+        <article class="atlas-panel ai-guardrail-panel" nexusReveal [nexusRevealDelay]="120" nexusSpotlight>
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">安全边界</span>
+              <h2>AI 决策护栏</h2>
+            </div>
+            <p-tag [severity]="tagSeverity(trustGuardrail().tone)" [value]="trustGuardrail().title" />
+          </div>
+
+          <div class="ai-guardrail-list" aria-label="AI 决策护栏">
+            @for (guardrail of guardrails(); track guardrail.key) {
+              <div class="ai-guardrail-row" [class.warning]="guardrail.tone === 'warning'" [class.danger]="guardrail.tone === 'danger'" [class.success]="guardrail.tone === 'success'">
+                <span>{{ guardrail.label }}</span>
+                <strong>{{ guardrail.title }}</strong>
+                <p>{{ guardrail.detail }}</p>
+              </div>
+            }
+          </div>
+
+          <div class="ai-draft-action-list" aria-label="AI 草稿动作">
+            @for (action of draftActions(); track action.id) {
+              <div class="ai-draft-action-row" [class.high]="action.priority === 'high'">
+                <span>{{ action.controlLabel }}</span>
+                <strong>{{ action.title }}</strong>
+                <p>{{ action.description }}</p>
+                <div class="ai-draft-action-controls">
+                  <button pButton type="button" [text]="true" severity="secondary" (click)="loadDraftPrompt(action.prompt)" aria-label="将 AI 草稿动作写入提问框">
+                    <i class="pi pi-pencil"></i>
+                    写入提问
+                  </button>
+                  <a pButton [text]="true" [routerLink]="action.path" aria-label="进入对应业务页面确认动作">
+                    <i class="pi pi-arrow-right"></i>
+                    进入确认页
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="ai-draft-review-head">
+            <div>
+              <span class="atlas-kicker">人工确认</span>
+              <h3>待确认草稿</h3>
+            </div>
+            <div class="ai-draft-review-meta">
+              <p-tag [severity]="pendingDraftCount() ? 'warn' : 'success'" [value]="pendingDraftCount() + ' 项'" />
+              <button pButton type="button" [text]="true" severity="secondary" (click)="loadAiDrafts()" [loading]="draftsLoading()" aria-label="刷新 AI 待确认草稿">
+                <i class="pi pi-refresh"></i>
+              </button>
+            </div>
+          </div>
+
+          @if (draftsLoading()) {
+            <div class="ai-draft-action-list ai-draft-review-list" aria-busy="true" aria-label="AI 待确认草稿加载中">
+              <p-skeleton height="82px" />
+              <p-skeleton height="82px" />
+            </div>
+          } @else if (visibleAiDrafts().length) {
+            <div class="ai-draft-action-list ai-draft-review-list" aria-label="AI 待确认草稿">
+              @for (draftItem of visibleAiDrafts(); track draftItem.id) {
+                <div class="ai-draft-action-row ai-draft-review-row" [class.high]="draftItem.status === 'draft'">
+                  <div class="ai-draft-review-title">
+                    <p-tag [severity]="tagSeverity(draftStatusTone(draftItem.status))" [value]="draftStatusLabel(draftItem.status)" />
+                    <strong>{{ draftItem.title }}</strong>
+                  </div>
+                  <p>{{ draftSummary(draftItem) }}</p>
+                  <span>{{ date(draftItem.created_at) }}</span>
+                  <div class="ai-draft-action-controls">
+                    <button pButton type="button" size="small" severity="success" (click)="confirmAiDraft(draftItem)" [loading]="draftReviewing() === draftActionKey(draftItem, 'confirm')" [disabled]="draftReviewing() !== null" aria-label="确认 AI 草稿并生成补货建议">
+                      <i class="pi pi-check"></i>
+                      确认
+                    </button>
+                    <button pButton type="button" size="small" severity="secondary" [text]="true" (click)="rejectAiDraft(draftItem)" [loading]="draftReviewing() === draftActionKey(draftItem, 'reject')" [disabled]="draftReviewing() !== null" aria-label="驳回 AI 草稿">
+                      <i class="pi pi-times"></i>
+                      驳回
+                    </button>
+                    <a pButton size="small" [text]="true" routerLink="/app/inventory/replenishment" aria-label="进入补货建议中心">
+                      <i class="pi pi-arrow-right"></i>
+                      补货中心
+                    </a>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-state compact ai-draft-review-empty" role="status">
+              <i class="pi pi-check-circle"></i>
+              <strong>暂无待确认草稿</strong>
+            </div>
+          }
         </article>
 
         <article class="atlas-panel ai-settings-inline-panel">
@@ -732,10 +843,13 @@ export class AiPage implements OnInit {
   protected readonly structuredLoading = signal(false);
   protected readonly diagnosticsLoading = signal(false);
   protected readonly settingsSaving = signal(false);
+  protected readonly draftsLoading = signal(false);
+  protected readonly draftReviewing = signal<string | null>(null);
   protected readonly command = signal<ManufacturingCommandCenter>(EMPTY_COMMAND_CENTER);
   protected readonly analytics = signal<ExecutiveAnalytics>(EMPTY_ANALYTICS);
   protected readonly sessions = signal<AiSession[]>([]);
   protected readonly messages = signal<AiMessage[]>([]);
+  protected readonly aiDrafts = signal<AiActionDraft[]>([]);
   protected readonly settings = signal<AiSettings>(EMPTY_SETTINGS);
   protected readonly diagnostics = signal<AiDiagnostics>(EMPTY_DIAGNOSTICS);
   protected readonly structured = signal<StructuredOperationsAnalysis>(EMPTY_STRUCTURED);
@@ -762,6 +876,8 @@ export class AiPage implements OnInit {
   ];
   protected readonly activeSession = computed(() => this.sessions().find(item => item.id === this.activeSessionId()) ?? null);
   protected readonly actionQueue = computed(() => this.analytics().action_queue ?? []);
+  protected readonly guardrails = computed(() => buildAiGuardrails(this.settings(), this.diagnostics()));
+  protected readonly trustGuardrail = computed(() => this.guardrails().find(item => item.key === 'trust-posture') ?? this.guardrails()[0]);
   protected readonly aiEndpointLabel = computed(() => {
     const settings = this.settings();
     if (settings.analysis_mode === 'local') {
@@ -839,6 +955,9 @@ export class AiPage implements OnInit {
     }
     return actions.length < 3 ? [...actions, ...operationalActions].slice(0, 3) : actions;
   });
+  protected readonly draftActions = computed(() => buildAiDraftActions(this.briefActions()));
+  protected readonly pendingDraftCount = computed(() => this.aiDrafts().filter(item => item.status === 'draft').length);
+  protected readonly visibleAiDrafts = computed(() => this.aiDrafts().slice(0, 4));
   protected readonly relatedLowStock = computed(() => {
     const rows = this.structured().related_records.low_stock;
     if (rows.length) {
@@ -891,12 +1010,14 @@ export class AiPage implements OnInit {
       analytics: this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(catchError(() => of(EMPTY_ANALYTICS))),
       settings: this.api.get<AiSettings>('ai/settings').pipe(catchError(() => of(EMPTY_SETTINGS))),
       diagnostics: this.api.post<AiDiagnostics>('ai/diagnostics', {}).pipe(catchError(() => of(EMPTY_DIAGNOSTICS))),
-      structured: this.api.post<StructuredOperationsAnalysis>('ai/analyze/structured', { scenario: 'daily_brief', limit: 8 }).pipe(catchError(() => of(EMPTY_STRUCTURED)))
-    }).pipe(finalize(() => this.loading.set(false))).subscribe(({ sessions, command, analytics, settings, diagnostics, structured }) => {
+      structured: this.api.post<StructuredOperationsAnalysis>('ai/analyze/structured', { scenario: 'daily_brief', limit: 8 }).pipe(catchError(() => of(EMPTY_STRUCTURED))),
+      drafts: this.api.get<{ items: AiActionDraft[] }>('ai/drafts', { status: 'draft' }).pipe(catchError(() => of({ items: [] })))
+    }).pipe(finalize(() => this.loading.set(false))).subscribe(({ sessions, command, analytics, settings, diagnostics, structured, drafts }) => {
       this.sessions.set(sessions.items);
       this.setSessionPage(1);
       this.command.set(command);
       this.analytics.set(analytics);
+      this.aiDrafts.set(drafts.items);
       this.settings.set(settings);
       this.diagnostics.set(diagnostics);
       this.structured.set(structured);
@@ -1012,23 +1133,7 @@ export class AiPage implements OnInit {
     const pending: AiMessage = { role: 'assistant', content: '经营数据分析中...', pending: true };
     this.messages.set([...this.messages(), optimistic, pending]);
     this.scrollMessagesToBottom();
-    this.api.post<AiChatResult>('ai/chat', { message: text, session_id: this.activeSessionId() }).pipe(
-      catchError(error => {
-        this.messagesService.add({ severity: 'warn', summary: '分析失败', detail: error?.message || '分析请求未完成。' });
-        return of(null);
-      }),
-      finalize(() => this.chatLoading.set(false))
-    ).subscribe(result => {
-      const withoutPending = this.messages().filter(item => !item.pending);
-      if (!result) {
-        this.messages.set(withoutPending);
-        return;
-      }
-      this.activeSessionId.set(result.session.id);
-      this.messages.set([...withoutPending, { ...result.message, source: result.source, provider_warning: result.provider_warning }]);
-      this.scrollMessagesToBottom();
-      this.upsertSession(result.session);
-    });
+    void this.sendMessageWithStream(text, this.activeSessionId());
   }
 
   runAiSmokeTest(): void {
@@ -1072,6 +1177,84 @@ export class AiPage implements OnInit {
     }
   }
 
+  loadDraftPrompt(prompt: string): void {
+    this.draft = prompt;
+    this.selectedPreset.set(null);
+    if (typeof document !== 'undefined') {
+      document.querySelector('.ai-chat-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  loadAiDrafts(): void {
+    this.draftsLoading.set(true);
+    this.api.get<{ items: AiActionDraft[] }>('ai/drafts', { status: 'draft' }).pipe(
+      catchError(error => {
+        this.messagesService.add({ severity: 'warn', summary: '草稿读取失败', detail: error?.message || '无法读取 AI 待确认草稿。' });
+        return of({ items: [] });
+      }),
+      finalize(() => this.draftsLoading.set(false))
+    ).subscribe(result => {
+      this.aiDrafts.set(result.items);
+    });
+  }
+
+  confirmAiDraft(draft: AiActionDraft): void {
+    const key = this.draftActionKey(draft, 'confirm');
+    this.draftReviewing.set(key);
+    this.api.post<AiDraftConfirmResult>(`ai/drafts/${draft.id}/confirm`, {}).pipe(
+      catchError(error => {
+        this.messagesService.add({ severity: 'warn', summary: '草稿未确认', detail: error?.message || 'AI 草稿没有转入补货建议。' });
+        return of(null);
+      }),
+      finalize(() => this.draftReviewing.set(null))
+    ).subscribe(result => {
+      if (!result) {
+        return;
+      }
+      this.removeAiDraft(result.draft.id);
+      const count = result.replenishment_suggestion_ids?.length ?? 0;
+      this.messagesService.add({
+        severity: 'success',
+        summary: '草稿已确认',
+        detail: count ? `已转入 ${count} 条补货建议。` : '已转入补货建议中心。'
+      });
+    });
+  }
+
+  rejectAiDraft(draft: AiActionDraft): void {
+    const key = this.draftActionKey(draft, 'reject');
+    this.draftReviewing.set(key);
+    this.api.post<AiDraftRejectResult>(`ai/drafts/${draft.id}/reject`, {}).pipe(
+      catchError(error => {
+        this.messagesService.add({ severity: 'warn', summary: '草稿未驳回', detail: error?.message || 'AI 草稿状态未更新。' });
+        return of(null);
+      }),
+      finalize(() => this.draftReviewing.set(null))
+    ).subscribe(result => {
+      if (!result) {
+        return;
+      }
+      this.removeAiDraft(result.draft.id);
+      this.messagesService.add({ severity: 'success', summary: '草稿已驳回', detail: result.draft.title });
+    });
+  }
+
+  draftSummary(draft: AiActionDraft): string {
+    return summarizeAiActionDraft(draft);
+  }
+
+  draftStatusLabel(status: AiActionDraft['status']): string {
+    return aiDraftStatusLabel(status);
+  }
+
+  draftStatusTone(status: AiActionDraft['status']): AiGuardrailTone {
+    return aiDraftStatusTone(status);
+  }
+
+  draftActionKey(draft: AiActionDraft, action: 'confirm' | 'reject'): string {
+    return `${action}:${draft.id}`;
+  }
+
   private scrollMessagesToBottom(): void {
     if (typeof queueMicrotask === 'undefined') {
       return;
@@ -1082,6 +1265,96 @@ export class AiPage implements OnInit {
         element.scrollTop = element.scrollHeight;
       }
     });
+  }
+
+  private async sendMessageWithStream(text: string, sessionId: number | null): Promise<void> {
+    let streamedContent = '';
+    let streamAccepted = false;
+    try {
+      const result = await streamAiChat(
+        { message: text, session_id: sessionId },
+        {
+          onStatus: status => {
+            streamAccepted = true;
+            if (status.session?.id) {
+              this.activeSessionId.set(status.session.id);
+              this.upsertSession(status.session);
+            }
+          },
+          onChunk: content => {
+            streamedContent += content;
+            this.replacePendingMessage({
+              role: 'assistant',
+              content: streamedContent || '经营数据分析中...',
+              pending: true
+            });
+          }
+        }
+      );
+      this.applyAiChatResult(result);
+    } catch (error) {
+      if (this.canFallbackToPlainChat(error, streamedContent, streamAccepted)) {
+        await this.sendMessageWithoutStream(text, sessionId);
+        return;
+      }
+      this.messagesService.add({ severity: 'warn', summary: '分析失败', detail: errorMessage(error) || '分析请求未完成。' });
+      this.removePendingMessage();
+    } finally {
+      this.chatLoading.set(false);
+    }
+  }
+
+  private async sendMessageWithoutStream(text: string, sessionId: number | null): Promise<void> {
+    const result = await firstValueFrom(this.api.post<AiChatResult>('ai/chat', { message: text, session_id: sessionId }).pipe(
+      catchError(error => {
+        this.messagesService.add({ severity: 'warn', summary: '分析失败', detail: error?.message || '分析请求未完成。' });
+        return of(null);
+      })
+    ));
+    if (!result) {
+      this.removePendingMessage();
+      return;
+    }
+    this.applyAiChatResult(result);
+  }
+
+  private canFallbackToPlainChat(error: unknown, streamedContent: string, streamAccepted: boolean): boolean {
+    if (streamedContent || streamAccepted) {
+      return false;
+    }
+    if (error instanceof AiChatStreamError) {
+      return !error.status || error.status === 404 || error.status === 405 || error.status >= 500;
+    }
+    return true;
+  }
+
+  private applyAiChatResult(result: AiChatResult): void {
+    this.activeSessionId.set(result.session.id);
+    const assistantMessage = {
+      ...result.message,
+      source: result.source,
+      provider_warning: result.provider_warning
+    };
+    this.replacePendingMessage(assistantMessage);
+    this.scrollMessagesToBottom();
+    this.upsertSession(result.session);
+  }
+
+  private replacePendingMessage(message: AiMessage): void {
+    let replaced = false;
+    const next = this.messages().map(item => {
+      if (!item.pending) {
+        return item;
+      }
+      replaced = true;
+      return message;
+    });
+    this.messages.set(replaced ? next : [...next, message]);
+    this.scrollMessagesToBottom();
+  }
+
+  private removePendingMessage(): void {
+    this.messages.set(this.messages().filter(item => !item.pending));
   }
 
   setSessionPage(page: number): void {
@@ -1124,6 +1397,19 @@ export class AiPage implements OnInit {
 
   sourceLabel(source: string): string {
     return source === 'analysis_provider' ? '外部模型已响应' : '本地经营引擎响应';
+  }
+
+  tagSeverity(tone: AiGuardrailTone): 'success' | 'warn' | 'danger' | 'info' {
+    if (tone === 'warning') {
+      return 'warn';
+    }
+    if (tone === 'danger') {
+      return 'danger';
+    }
+    if (tone === 'success') {
+      return 'success';
+    }
+    return 'info';
   }
 
   compactMoney(value: unknown): string {
@@ -1269,4 +1555,12 @@ export class AiPage implements OnInit {
     const next = [session, ...this.sessions().filter(item => item.id !== session.id)];
     this.sessions.set(next);
   }
+
+  private removeAiDraft(draftId: number): void {
+    this.aiDrafts.set(this.aiDrafts().filter(item => item.id !== draftId));
+  }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : '';
 }

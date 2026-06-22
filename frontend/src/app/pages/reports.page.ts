@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgxEchartsDirective } from 'ngx-echarts';
@@ -13,6 +13,7 @@ import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { DataRecord } from '../core/models';
+import { ReportJobRecord, ReportJobStatus, ReportJobStreamResult, streamReportJob } from '../core/report-job-stream';
 import { chartLegend, compactMoneyText, dateText, emptyPageResult, recordTitle, textOf } from './page-utils';
 
 interface ReportType {
@@ -22,8 +23,30 @@ interface ReportType {
   default_frequency?: string;
 }
 
+interface ReportJobState {
+  id: string;
+  reportType: string;
+  label: string;
+  status: ReportJobStatus;
+  attempts: number;
+  message: string;
+  job?: ReportJobRecord;
+}
+
+interface ReportGenerateResult {
+  report?: DataRecord;
+  data?: unknown;
+  job_id?: string;
+  job?: ReportJobRecord;
+  status?: ReportJobStatus;
+}
+
+const REPORT_JOB_POLL_MS = 2400;
+const REPORT_JOB_MAX_ATTEMPTS = 25;
+
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, ProgressBarModule, SkeletonModule, TagModule],
   template: `
     <section class="ops-atlas-page report-studio-page">
@@ -166,6 +189,14 @@ interface ReportType {
             </div>
           </div>
           <div class="report-queue-list">
+            @for (job of activeReportJobs(); track job.id) {
+              <article class="report-job-row" [class.failed]="job.status === 'failed'" [class.success]="job.status === 'success'">
+                <p-tag [severity]="jobSeverity(job.status)" [value]="jobStatusLabel(job.status)" />
+                <strong>{{ job.label }}</strong>
+                <span>{{ job.message }}</span>
+                <em>{{ job.job?.finished_at ? date(job.job?.finished_at) : job.id }}</em>
+              </article>
+            }
             @for (report of pagedQueueReports(); track report.id) {
               <a [routerLink]="['/app/reports', report.id]">
                 <p-tag severity="success" value="已归档" />
@@ -253,12 +284,14 @@ interface ReportType {
     </section>
   `
 })
-export class ReportsPage implements OnInit {
+export class ReportsPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
+  private readonly reportJobTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   protected readonly loading = signal(false);
   protected readonly generating = signal(false);
+  protected readonly activeReportJobs = signal<ReportJobState[]>([]);
   protected readonly reportTypes = signal<ReportType[]>([]);
   protected readonly reports = signal<DataRecord[]>([]);
   protected readonly selectedTypeKey = signal('inventory_summary');
@@ -424,6 +457,10 @@ export class ReportsPage implements OnInit {
     this.load();
   }
 
+  ngOnDestroy(): void {
+    this.clearReportJobTimers();
+  }
+
   load(): void {
     this.loading.set(true);
     forkJoin({
@@ -450,7 +487,7 @@ export class ReportsPage implements OnInit {
       return;
     }
     this.generating.set(true);
-    this.api.post<{ report: DataRecord; data: unknown }>(`reports/generate/${type}`, { params: {} }).pipe(
+    this.api.post<ReportGenerateResult>(`reports/generate/${type}`, { params: {} }).pipe(
       catchError(error => {
         this.messages.add({ severity: 'warn', summary: '报表生成失败', detail: error?.message || '生成服务未返回结果。' });
         return of(null);
@@ -458,12 +495,153 @@ export class ReportsPage implements OnInit {
       finalize(() => this.generating.set(false))
     ).subscribe(result => {
       if (result) {
-        this.messages.add({ severity: 'success', summary: '报表已生成', detail: recordTitle(result.report) });
-        this.reports.set([result.report, ...this.reports()]);
-        this.setPage(1);
-        this.setQueuePage(1);
+        if (result.report) {
+          this.messages.add({ severity: 'success', summary: '报表已生成', detail: recordTitle(result.report) });
+          this.reports.set([result.report, ...this.reports()]);
+          this.setPage(1);
+          this.setQueuePage(1);
+        } else {
+          this.messages.add({ severity: 'info', summary: '报表生成已入队', detail: result.job_id ? `任务 ${result.job_id}` : '后台任务已创建。' });
+          if (result.job_id) {
+            this.trackReportJob(result.job_id, type, result.job);
+          }
+        }
       }
     });
+  }
+
+  private trackReportJob(jobId: string, reportType: string, job?: ReportJobRecord): void {
+    const label = this.reportTypeLabel(reportType);
+    const status = job?.status || 'pending';
+    this.activeReportJobs.update(items => {
+      const next: ReportJobState = {
+        id: jobId,
+        reportType,
+        label,
+        status,
+        attempts: 0,
+        message: this.jobMessage(status, 0),
+        job
+      };
+      return [next, ...items.filter(item => item.id !== jobId)].slice(0, 6);
+    });
+    this.streamReportJob(jobId);
+  }
+
+  private streamReportJob(jobId: string): void {
+    streamReportJob(jobId, {
+      onStatus: result => this.applyReportJobResult(jobId, result),
+      onDone: result => this.applyReportJobResult(jobId, result),
+      onFailed: result => this.applyReportJobResult(jobId, result)
+    }).then(result => {
+      this.applyReportJobResult(jobId, result);
+    }).catch(() => {
+      const current = this.activeReportJobs().find(item => item.id === jobId);
+      if (current && current.status !== 'success' && current.status !== 'failed') {
+        this.scheduleReportJobPoll(jobId);
+      }
+    });
+  }
+
+  private scheduleReportJobPoll(jobId: string): void {
+    this.clearReportJobTimer(jobId);
+    const timer = setTimeout(() => this.pollReportJob(jobId), REPORT_JOB_POLL_MS);
+    this.reportJobTimers.set(jobId, timer);
+  }
+
+  private pollReportJob(jobId: string): void {
+    const current = this.activeReportJobs().find(item => item.id === jobId);
+    if (!current || current.status === 'success' || current.status === 'failed') {
+      this.clearReportJobTimer(jobId);
+      return;
+    }
+    if (current.attempts >= REPORT_JOB_MAX_ATTEMPTS) {
+      this.markReportJobTimeout(jobId);
+      return;
+    }
+
+    this.api.get<ReportJobStreamResult>(`reports/jobs/${jobId}`, undefined, { silent: true }).pipe(
+      catchError(error => {
+        this.updateReportJob(jobId, {
+          attempts: current.attempts + 1,
+          message: error?.message || '暂时无法读取任务状态，稍后自动重试。'
+        });
+        return of(null);
+      })
+    ).subscribe(result => {
+      if (!result) {
+        this.scheduleReportJobPoll(jobId);
+        return;
+      }
+
+      const status = this.applyReportJobResult(jobId, result, current.attempts + 1);
+      if (status === 'success' || status === 'failed') {
+        this.clearReportJobTimer(jobId);
+      } else {
+        this.scheduleReportJobPoll(jobId);
+      }
+    });
+  }
+
+  private applyReportJobResult(jobId: string, result: ReportJobStreamResult, attempts?: number): ReportJobStatus {
+    const current = this.activeReportJobs().find(item => item.id === jobId);
+    const status = result.job?.status || 'pending';
+    this.updateReportJob(jobId, {
+      status,
+      attempts: attempts ?? current?.attempts ?? 0,
+      message: result.job?.error_message || this.jobMessage(status, attempts ?? current?.attempts ?? 0),
+      job: result.job
+    });
+
+    if (status === 'success') {
+      this.clearReportJobTimer(jobId);
+      if (result.report) {
+        this.upsertReport(result.report);
+      }
+      if (current?.status !== 'success') {
+        this.messages.add({ severity: 'success', summary: '报表已归档', detail: `${this.reportTypeLabel(current?.reportType || '')} 已生成完成。` });
+      }
+    } else if (status === 'failed') {
+      this.clearReportJobTimer(jobId);
+      if (current?.status !== 'failed') {
+        this.messages.add({ severity: 'warn', summary: '报表生成失败', detail: result.job?.error_message || `${current?.label || '报表'} 生成失败。` });
+      }
+    }
+
+    return status;
+  }
+
+  private updateReportJob(jobId: string, patch: Partial<ReportJobState>): void {
+    this.activeReportJobs.update(items => items.map(item => item.id === jobId ? { ...item, ...patch } : item));
+  }
+
+  private markReportJobTimeout(jobId: string): void {
+    this.clearReportJobTimer(jobId);
+    this.updateReportJob(jobId, {
+      status: 'pending',
+      message: '后台仍在处理，可稍后刷新归档记录查看结果。'
+    });
+  }
+
+  private upsertReport(report: DataRecord): void {
+    this.reports.set([report, ...this.reports().filter(item => item.id !== report.id)]);
+    this.setPage(1);
+    this.setQueuePage(1);
+  }
+
+  private clearReportJobTimer(jobId: string): void {
+    const timer = this.reportJobTimers.get(jobId);
+    if (timer) {
+      clearTimeout(timer);
+      this.reportJobTimers.delete(jobId);
+    }
+  }
+
+  private clearReportJobTimers(): void {
+    for (const timer of this.reportJobTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.reportJobTimers.clear();
   }
 
   onQueryChange(value: string): void {
@@ -513,6 +691,42 @@ export class ReportsPage implements OnInit {
       quarterly: '每季'
     };
     return map[String(value || 'manual')] || String(value || '手动');
+  }
+
+  jobStatusLabel(status: ReportJobStatus | undefined): string {
+    const map: Record<string, string> = {
+      pending: '排队中',
+      running: '生成中',
+      success: '已归档',
+      failed: '失败'
+    };
+    return map[String(status || 'pending')] || String(status || '排队中');
+  }
+
+  jobSeverity(status: ReportJobStatus | undefined): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
+    if (status === 'success') {
+      return 'success';
+    }
+    if (status === 'failed') {
+      return 'danger';
+    }
+    if (status === 'running') {
+      return 'info';
+    }
+    return 'warn';
+  }
+
+  private jobMessage(status: ReportJobStatus | undefined, attempts: number): string {
+    if (status === 'success') {
+      return '后台任务已完成，报表已写入归档。';
+    }
+    if (status === 'failed') {
+      return '后台任务失败，请查看错误信息后重试。';
+    }
+    if (status === 'running') {
+      return '后台正在生成报表，完成后会自动加入归档。';
+    }
+    return attempts > 0 ? '任务仍在队列中，正在持续跟踪。' : '任务已提交到后台队列。';
   }
 
   reportName(row: DataRecord | null | undefined): string {

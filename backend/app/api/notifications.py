@@ -1,9 +1,11 @@
-from datetime import datetime
+import json
+import time
 
-from flask import request
+from flask import Response, current_app, request, stream_with_context
 
 from app.extensions import db
 from app.models.notification import Notification
+from app.platform.policy import filter_fields, filter_query
 from app.services.audit_service import AuditService
 from app.utils.time import utcnow
 
@@ -11,6 +13,59 @@ from . import api_bp
 from .auth import current_api_user, jwt_required
 from .responses import api_error, api_success
 from .routes import is_admin_user, notification_extra, serialize_model
+
+
+def _sse_event(event: str, data: dict) -> str:
+    payload = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+def _notification_stream_payload(user, limit: int) -> dict:
+    query = Notification.query.filter(Notification.is_deleted == False)
+    query = filter_query(query, Notification, user)
+    rows = (
+        query.order_by(Notification.created_at.desc(), Notification.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return {
+        'items': [
+            filter_fields(user, Notification, serialize_model(item, notification_extra))
+            for item in rows
+        ],
+        'unread': query.filter(Notification.is_read == False).count(),
+        'generated_at': utcnow().isoformat(),
+    }
+
+
+@api_bp.get('/notifications/unread-count')
+@jwt_required
+def notifications_unread_count():
+    user = current_api_user()
+    q = Notification.query.filter_by(is_deleted=False, is_read=False)
+    if not is_admin_user(user):
+        q = q.filter_by(user_id=user.id)
+    return api_success({'unread': q.count()}, '未读通知数')
+
+
+@api_bp.get('/notifications/stream')
+@jwt_required
+def notifications_stream():
+    user = current_api_user()
+    max_events = max(1, int(current_app.config.get('NOTIFICATION_STREAM_MAX_EVENTS', 25)))
+    interval_seconds = max(0.0, float(current_app.config.get('NOTIFICATION_STREAM_INTERVAL_SECONDS', 2.0)))
+    limit = min(200, max(1, int(current_app.config.get('NOTIFICATION_STREAM_LIMIT', 100))))
+
+    def generate():
+        for index in range(max_events):
+            yield _sse_event('snapshot', _notification_stream_payload(user, limit))
+            if index < max_events - 1 and interval_seconds:
+                time.sleep(interval_seconds)
+
+    response = Response(stream_with_context(generate()), mimetype='text/event-stream')
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no'
+    return response
 
 
 @api_bp.post('/notifications/mark-read')

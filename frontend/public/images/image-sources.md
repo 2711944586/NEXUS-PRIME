@@ -38,3 +38,9 @@ Local frontend images are stored under `frontend/public/images` so deployed page
 - `service-workorders-wide.jpg`: Unsplash service team collaboration scene, downloaded locally from `https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1800&q=82`.
 - `budget-planning-wide.jpg`: Pexels budget planning and finance desk, downloaded locally from `https://images.pexels.com/photos/6693655/pexels-photo-6693655.jpeg?auto=compress&cs=tinysrgb&w=1800`.
 - `mobile-scanner-wide.jpg`: Pexels handheld scanning workflow scene, downloaded locally from `https://images.pexels.com/photos/4481259/pexels-photo-4481259.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+- `automated-production-line-wide.jpg`: Pexels automated manufacturing production line, downloaded locally from `https://images.pexels.com/photos/34222005/pexels-photo-34222005.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+- `warehouse-operator-aisle-wide.jpg`: Pexels warehouse operator aisle workflow, downloaded locally from `https://images.pexels.com/photos/4483942/pexels-photo-4483942.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+- `factory-quality-control-wide.jpg`: Pexels factory quality control scene, downloaded locally from `https://images.pexels.com/photos/31091547/pexels-photo-31091547.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+- `technician-repair-wide.jpg`: Pexels industrial technician repair scene, downloaded locally from `https://images.pexels.com/photos/34054468/pexels-photo-34054468.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+- `control-panel-wide.jpg`: Pexels industrial control panel scene, downloaded locally from `https://images.pexels.com/photos/3582392/pexels-photo-3582392.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+- `factory-safety-helmet-wide.jpg`: Pexels factory safety helmet collaboration scene, downloaded locally from `https://images.pexels.com/photos/19895881/pexels-photo-19895881.jpeg?auto=compress&cs=tinysrgb&w=1800`.

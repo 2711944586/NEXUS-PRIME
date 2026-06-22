@@ -117,6 +117,8 @@ export interface OperationsTaskQueueItem {
   id: string;
   source_id?: number;
   source: 'notification' | 'deployment' | 'stock' | 'purchase' | string;
+  business_type?: string | null;
+  business_id?: string | number | null;
   title: string;
   description: string;
   priority: 'P0' | 'P1' | 'P2' | string;
@@ -1315,6 +1317,62 @@ export interface UserPreferences {
   charts_motion?: 'standard' | 'reduced';
   dock_labels?: 'hover' | 'always';
   context_panel?: 'visible' | 'compact';
+}
+
+export type AiActionDraftStatus = 'draft' | 'confirmed' | 'rejected' | string;
+
+export interface AiActionDraftLine {
+  product_id?: number | string | null;
+  product_name?: string | null;
+  name?: string | null;
+  sku?: string | null;
+  warehouse_id?: number | string | null;
+  warehouse_name?: string | null;
+  supplier_id?: number | string | null;
+  supplier_name?: string | null;
+  current_qty?: number | string | null;
+  suggested_qty?: number | string | null;
+  min_stock?: number | string | null;
+  [key: string]: unknown;
+}
+
+export interface AiActionDraftPayload {
+  type?: string;
+  status?: string;
+  requires_human_confirmation?: boolean;
+  params?: Record<string, unknown>;
+  lines?: AiActionDraftLine[];
+  [key: string]: unknown;
+}
+
+export interface AiActionDraft {
+  id: number;
+  draft_type: string;
+  status: AiActionDraftStatus;
+  title: string;
+  source_tool?: string | null;
+  payload?: AiActionDraftPayload | null;
+  result_type?: string | null;
+  result_id?: string | null;
+  note?: string | null;
+  created_by?: number | null;
+  confirmed_by?: number | null;
+  confirmed_at?: string | null;
+  rejected_by?: number | null;
+  rejected_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AiDraftConfirmResult {
+  draft: AiActionDraft;
+  replenishment_suggestion_ids?: Array<number | string>;
+  created_purchase_order?: boolean;
+  requires_next_human_confirmation?: boolean;
+}
+
+export interface AiDraftRejectResult {
+  draft: AiActionDraft;
 }
 
 export interface AiSettings {

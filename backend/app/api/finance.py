@@ -2,10 +2,11 @@ from sqlalchemy import func
 
 from app.extensions import db
 from app.models.finance import Receivable
+from app.platform.policy import policy
 from app.services.finance_service import FinanceService
 
 from . import api_bp
-from .auth import jwt_required
+from .auth import current_api_user, jwt_required
 from .responses import api_success
 
 
@@ -14,10 +15,13 @@ from .responses import api_success
 def receivables_aging():
     FinanceService.update_overdue_status()
     db.session.commit()
-    aging = FinanceService.get_aging_analysis()
+    aging = FinanceService.get_aging_analysis(user=current_api_user())
     total_amount = (
-        db.session.query(func.coalesce(func.sum(Receivable.total_amount), 0))
-        .filter(Receivable.is_deleted == False)
+        policy.filter_query(
+            db.session.query(func.coalesce(func.sum(Receivable.total_amount), 0)).select_from(Receivable).filter(Receivable.is_deleted == False),
+            Receivable,
+            current_api_user(),
+        )
         .scalar()
     )
     unpaid_amount = sum(bucket['amount'] for bucket in aging.values())

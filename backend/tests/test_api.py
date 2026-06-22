@@ -9,11 +9,12 @@ from app import create_app
 from app.extensions import db
 from app.models.auth import Permission, Role, User
 from app.models.biz import Category, Partner, Product
-from app.models.content import Attachment
-from app.models.finance import Receivable
+from app.models.content import Article, ArticleComment, Attachment
+from app.models.events import DomainEvent
+from app.models.finance import AccountStatement, CustomerCredit, PaymentRecord, Receivable
 from app.models.notification import GeneratedReport, Notification, ReplenishmentSuggestion, ReportSubscription, StockAlert
-from app.models.purchase import PurchaseOrder, SupplierPerformance
-from app.models.stock import Stock, Warehouse
+from app.models.purchase import PurchaseOrder, PurchaseOrderItem, SupplierPerformance
+from app.models.stock import InventoryLog, Stock, StockBalance, StockMovement, Warehouse
 from app.models.stocktake import StockTake, StockTakeItem
 from app.models.sys import AuditLog
 from app.models.trade import Order
@@ -373,6 +374,50 @@ def test_admin_only_resource_rejects_normal_user(client):
     assert client.delete('/api/v1/users/1', headers=headers).status_code == 403
     assert User.query.filter_by(email='member@nexus.com').first().is_admin is False
     assert User.query.filter_by(email='admin@nexus.com').first().is_deleted is False
+
+
+def test_field_policy_hides_product_cost_for_non_privileged_user(client):
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    product_id = Product.query.filter_by(sku='MFG-T-001').first().id
+    partner_id = Partner.query.filter_by(type='supplier').first().id
+    category_id = Category.query.first().id
+
+    for resource, item_id in (('products', product_id), ('partners', partner_id), ('categories', category_id)):
+        denied_list = client.get(f'/api/v1/{resource}?page=1&page_size=5', headers=member_headers)
+        assert denied_list.status_code == 403
+        assert denied_list.json['error'] == 'permission_denied'
+        denied_detail = client.get(f'/api/v1/{resource}/{item_id}', headers=member_headers)
+        assert denied_detail.status_code == 403
+        assert denied_detail.json['error'] == 'permission_denied'
+
+    read_permission = Permission.query.filter_by(name='sales.write').first()
+    member.role.permissions.append(read_permission)
+    db.session.commit()
+
+    products = client.get('/api/v1/products?page=1&page_size=5', headers=member_headers)
+    assert products.status_code == 200
+    item = products.json['data']['items'][0]
+    assert item['sku'] == 'MFG-T-001'
+    assert 'cost' not in item
+    assert 'supplier_id' not in item
+    assert 'price' in item
+
+    detail = client.get(f'/api/v1/products/{product_id}', headers=member_headers)
+    assert detail.status_code == 200
+    assert 'cost' not in detail.json['data']
+    partner_detail = client.get(f'/api/v1/partners/{partner_id}', headers=member_headers)
+    assert partner_detail.status_code == 200
+    assert 'credit_score' not in partner_detail.json['data']
+    category_detail = client.get(f'/api/v1/categories/{category_id}', headers=member_headers)
+    assert category_detail.status_code == 200
+    assert category_detail.json['data']['id'] == category_id
+
+    export = client.get('/api/v1/export/products/csv', headers=member_headers)
+    assert export.status_code == 200
+    exported = export.get_data(as_text=True)
+    assert 'cost' not in exported.splitlines()[0]
+    assert 'supplier_id' not in exported.splitlines()[0]
 
 
 def test_login_failures_lock_account(client):
@@ -870,6 +915,7 @@ def test_competitive_experience_api_paths(client):
         'evidence': quality_item['evidence'],
         'action': quality_item['action'],
         'path': quality_item['path'],
+        'result': 'passed',
     })
     assert quality_task.status_code == 201
     quality_notification = quality_task.json['data']
@@ -880,6 +926,48 @@ def test_competitive_experience_api_paths(client):
     inspection_audit = AuditLog.query.filter_by(module='operations', action='quality_inspection').order_by(AuditLog.id.desc()).first()
     assert inspection_audit is not None
     assert quality_item['id'] in inspection_audit.details
+    passed_event = DomainEvent.query.filter_by(event_type='QualityInspectionPassed').one()
+    assert passed_event.status == DomainEvent.STATUS_PENDING
+    assert passed_event.aggregate_type == 'QualityInspectionTask'
+    assert passed_event.aggregate_id == str(quality_notification['id'])
+    assert passed_event.created_by == str(admin.id)
+    assert passed_event.payload['notification_id'] == quality_notification['id']
+    assert passed_event.payload['queue_item_id'] == quality_item['id']
+    assert passed_event.payload['product_id'] == quality_item['product_id']
+    assert passed_event.payload['supplier_id'] == quality_item['supplier_id']
+    assert passed_event.payload['purchase_id'] == quality_item['purchase_id']
+    assert passed_event.payload['title'] == quality_item['title']
+    assert passed_event.payload['owner'] == quality_item['owner']
+    assert passed_event.payload['priority'] == quality_item['priority']
+    assert passed_event.payload['sla'] == quality_item['sla']
+    assert passed_event.payload['path'] == quality_item['path']
+    assert passed_event.payload['risk_score'] == quality_item['risk_score']
+    assert passed_event.payload['decision'] == quality_item['decision']
+    assert passed_event.payload['result'] == 'passed'
+    assert passed_event.payload['evidence'] == quality_item['evidence']
+    assert passed_event.payload['action'] == quality_item['action']
+    failed_quality_task = client.post('/api/v1/operations/quality-inspection', headers=headers, json={
+        'queue_item_id': quality_item['id'],
+        'product_id': quality_item['product_id'],
+        'supplier_id': quality_item['supplier_id'],
+        'purchase_id': quality_item['purchase_id'],
+        'title': quality_item['title'],
+        'owner': quality_item['owner'],
+        'priority': quality_item['priority'],
+        'sla': quality_item['sla'],
+        'evidence': quality_item['evidence'],
+        'action': quality_item['action'],
+        'path': quality_item['path'],
+        'result': 'failed',
+    })
+    assert failed_quality_task.status_code == 201
+    failed_event = DomainEvent.query.filter_by(event_type='QualityInspectionFailed').one()
+    assert failed_event.status == DomainEvent.STATUS_PENDING
+    assert failed_event.aggregate_type == 'QualityInspectionTask'
+    assert failed_event.aggregate_id == str(failed_quality_task.json['data']['id'])
+    assert failed_event.payload['queue_item_id'] == quality_item['id']
+    assert failed_event.payload['result'] == 'failed'
+    assert DomainEvent.query.filter_by(event_type='QualityInspectionPassed').count() == 1
     inspection_queue = client.get('/api/v1/operations/task-queue', headers=headers)
     assert any(item['source'] == 'notification' and item['source_path'] == '/app/quality' for item in inspection_queue.json['data']['items'])
 
@@ -1548,6 +1636,505 @@ def test_sensitive_business_actions_require_permissions(client):
     assert reminder.status_code == 403
 
 
+def test_object_authorization_scopes_sales_and_receivables(client):
+    admin_headers = login(client)
+    member = User.query.filter_by(email='member@nexus.com').first()
+    sales_permission = Permission.query.filter_by(name='sales.write').first()
+    member.role.permissions.append(sales_permission)
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    customer_id = Partner.query.filter_by(type='customer').first().id
+
+    admin_order_response = client.post('/api/v1/sales/orders', headers=admin_headers, json={
+        'customer_id': customer_id,
+        'items': [{'product_id': product.id, 'quantity': 1}],
+        'status': 'pending'
+    })
+    assert admin_order_response.status_code == 201
+    admin_order_id = admin_order_response.json['data']['id']
+    admin_order = db.session.get(Order, admin_order_id)
+    db.session.add(Receivable(
+        receivable_no='AR-ADMIN-ONLY',
+        order_id=admin_order.id,
+        customer_id=customer_id,
+        total_amount=100,
+        paid_amount=0,
+        status=Receivable.STATUS_PENDING,
+    ))
+    db.session.commit()
+
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    member_order_response = client.post('/api/v1/sales/orders', headers=member_headers, json={
+        'customer_id': customer_id,
+        'items': [{'product_id': product.id, 'quantity': 1}],
+        'status': 'pending'
+    })
+    assert member_order_response.status_code == 201
+    member_order_id = member_order_response.json['data']['id']
+
+    listing = client.get('/api/v1/orders?page=1&page_size=20', headers=member_headers)
+    assert listing.status_code == 200
+    listed_ids = {item['id'] for item in listing.json['data']['items']}
+    assert member_order_id in listed_ids
+    assert admin_order_id not in listed_ids
+
+    assert client.get(f'/api/v1/orders/{admin_order_id}', headers=member_headers).status_code == 403
+    transition = client.post(f'/api/v1/sales/orders/{admin_order_id}/transition', headers=member_headers, json={'status': 'paid'})
+    assert transition.status_code == 403
+
+    receivables = client.get('/api/v1/receivables?page=1&page_size=20', headers=member_headers)
+    assert receivables.status_code == 200
+    assert all(item['receivable_no'] != 'AR-ADMIN-ONLY' for item in receivables.json['data']['items'])
+
+
+def test_finance_read_permissions_match_object_authorization(client):
+    admin_headers = login(client)
+    admin = User.query.filter_by(email='admin@nexus.com').first()
+    member = User.query.filter_by(email='member@nexus.com').first()
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    customer_id = Partner.query.filter_by(type='customer').first().id
+
+    admin_order_response = client.post('/api/v1/sales/orders', headers=admin_headers, json={
+        'customer_id': customer_id,
+        'items': [{'product_id': product.id, 'quantity': 1}],
+        'status': 'pending'
+    })
+    assert admin_order_response.status_code == 201
+    admin_order_id = admin_order_response.json['data']['id']
+    receivable = Receivable(
+        receivable_no='AR-FINANCE-DETAIL',
+        order_id=admin_order_id,
+        customer_id=customer_id,
+        total_amount=100,
+        paid_amount=20,
+        status=Receivable.STATUS_PARTIAL,
+    )
+    db.session.add(receivable)
+    db.session.flush()
+    payment = PaymentRecord(
+        payment_no='PAY-FINANCE-DETAIL',
+        receivable_id=receivable.id,
+        customer_id=customer_id,
+        amount=20,
+        operator_id=admin.id,
+    )
+    statement = AccountStatement(
+        statement_no='ST-FINANCE-DETAIL',
+        customer_id=customer_id,
+        generated_by=admin.id,
+    )
+    credit = CustomerCredit(
+        customer_id=customer_id,
+        credit_limit=1000,
+        used_credit=100,
+    )
+    db.session.add_all([payment, statement, credit])
+    db.session.commit()
+
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    for resource, item_id in (
+        ('receivables', receivable.id),
+        ('payments', payment.id),
+        ('statements', statement.id),
+        ('credits', credit.id),
+    ):
+        blocked = client.get(f'/api/v1/{resource}/{item_id}', headers=member_headers)
+        assert blocked.status_code == 403
+        assert blocked.json['error'] in {'permission_denied', 'forbidden'}
+        blocked_list = client.get(f'/api/v1/{resource}?page=1&page_size=20', headers=member_headers)
+        assert blocked_list.status_code == 403
+        assert blocked_list.json['error'] == 'permission_denied'
+
+    sales_permission = Permission.query.filter_by(name='sales.write').first()
+    member.role.permissions.append(sales_permission)
+    db.session.commit()
+
+    member_order_response = client.post('/api/v1/sales/orders', headers=member_headers, json={
+        'customer_id': customer_id,
+        'items': [{'product_id': product.id, 'quantity': 1}],
+        'status': 'pending'
+    })
+    assert member_order_response.status_code == 201
+    own_receivable = Receivable(
+        receivable_no='AR-FINANCE-OWN',
+        order_id=member_order_response.json['data']['id'],
+        customer_id=customer_id,
+        total_amount=60,
+        paid_amount=0,
+        status=Receivable.STATUS_PENDING,
+    )
+    db.session.add(own_receivable)
+    db.session.flush()
+    own_payment = PaymentRecord(
+        payment_no='PAY-FINANCE-OWN',
+        receivable_id=own_receivable.id,
+        customer_id=customer_id,
+        amount=5,
+        operator_id=member.id,
+    )
+    db.session.add(own_payment)
+    db.session.commit()
+
+    scoped_receivables = client.get('/api/v1/receivables?page=1&page_size=20', headers=member_headers)
+    assert scoped_receivables.status_code == 200
+    scoped_receivable_numbers = {item['receivable_no'] for item in scoped_receivables.json['data']['items']}
+    assert 'AR-FINANCE-OWN' in scoped_receivable_numbers
+    assert 'AR-FINANCE-DETAIL' not in scoped_receivable_numbers
+    scoped_payments = client.get('/api/v1/payments?page=1&page_size=20', headers=member_headers)
+    assert scoped_payments.status_code == 200
+    scoped_payment_numbers = {item['payment_no'] for item in scoped_payments.json['data']['items']}
+    assert 'PAY-FINANCE-OWN' in scoped_payment_numbers
+    assert 'PAY-FINANCE-DETAIL' not in scoped_payment_numbers
+    still_blocked_statement = client.get(f'/api/v1/statements/{statement.id}', headers=member_headers)
+    assert still_blocked_statement.status_code == 403
+    assert still_blocked_statement.json['error'] == 'forbidden'
+    still_blocked_statement_list = client.get('/api/v1/statements?page=1&page_size=20', headers=member_headers)
+    assert still_blocked_statement_list.status_code == 403
+    assert still_blocked_statement_list.json['error'] == 'permission_denied'
+
+    finance_permission = Permission.query.filter_by(name='finance.payment').first()
+    report_permission = Permission.query.filter_by(name='reports.generate').first()
+    credit_permission = Permission.query.filter_by(name='finance.credit.write').first()
+    member.role.permissions.extend([finance_permission, report_permission, credit_permission])
+    db.session.commit()
+
+    allowed_receivable = client.get(f'/api/v1/receivables/{receivable.id}', headers=member_headers)
+    assert allowed_receivable.status_code == 200
+    assert allowed_receivable.json['data']['receivable_no'] == 'AR-FINANCE-DETAIL'
+    allowed_payment = client.get(f'/api/v1/payments/{payment.id}', headers=member_headers)
+    assert allowed_payment.status_code == 200
+    assert allowed_payment.json['data']['payment_no'] == 'PAY-FINANCE-DETAIL'
+    allowed_statement = client.get(f'/api/v1/statements/{statement.id}', headers=member_headers)
+    assert allowed_statement.status_code == 200
+    assert allowed_statement.json['data']['statement_no'] == 'ST-FINANCE-DETAIL'
+    allowed_credit = client.get(f'/api/v1/credits/{credit.id}', headers=member_headers)
+    assert allowed_credit.status_code == 200
+    assert allowed_credit.json['data']['credit_limit'] == 1000
+
+
+def test_sales_resources_require_sales_read_permission(client):
+    admin_headers = login(client)
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    customer_id = Partner.query.filter_by(type='customer').first().id
+    order_response = client.post('/api/v1/sales/orders', headers=admin_headers, json={
+        'customer_id': customer_id,
+        'items': [{'product_id': product.id, 'quantity': 1}],
+        'status': 'pending'
+    })
+    assert order_response.status_code == 201
+    order_id = order_response.json['data']['id']
+    item_id = order_response.json['data']['items'][0]['id']
+
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    for resource, item_id_ in (('orders', order_id), ('order-items', item_id)):
+        denied_list = client.get(f'/api/v1/{resource}?page=1&page_size=20', headers=member_headers)
+        assert denied_list.status_code == 403
+        assert denied_list.json['error'] == 'permission_denied'
+        denied_detail = client.get(f'/api/v1/{resource}/{item_id_}', headers=member_headers)
+        assert denied_detail.status_code == 403
+        assert denied_detail.json['error'] in {'permission_denied', 'forbidden'}
+
+    sales_permission = Permission.query.filter_by(name='sales.write').first()
+    member.role.permissions.append(sales_permission)
+    db.session.commit()
+    allowed_list = client.get('/api/v1/orders?page=1&page_size=20', headers=member_headers)
+    assert allowed_list.status_code == 200
+    assert all(item['id'] != order_id for item in allowed_list.json['data']['items'])
+    blocked_detail = client.get(f'/api/v1/orders/{order_id}', headers=member_headers)
+    assert blocked_detail.status_code == 403
+    assert blocked_detail.json['error'] == 'forbidden'
+
+
+def test_stock_movement_api_scopes_rows_to_creator(client):
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    warehouse = Warehouse.query.first()
+    admin = User.query.filter_by(email='admin@nexus.com').first()
+    member = User.query.filter_by(email='member@nexus.com').first()
+    own_movement = StockMovement(
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        direction=StockMovement.DIRECTION_RECEIVE,
+        quantity=2,
+        source_type='api-policy',
+        source_id='member',
+        idempotency_key='api-policy:member',
+        created_by=member.id,
+    )
+    other_movement = StockMovement(
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        direction=StockMovement.DIRECTION_RECEIVE,
+        quantity=3,
+        source_type='api-policy',
+        source_id='admin',
+        idempotency_key='api-policy:admin',
+        created_by=admin.id,
+    )
+    db.session.add_all([own_movement, other_movement])
+    db.session.commit()
+
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    listing = client.get('/api/v1/stock-movements?page=1&page_size=20', headers=member_headers)
+    assert listing.status_code == 200
+    listed_ids = {item['id'] for item in listing.json['data']['items']}
+    assert own_movement.id in listed_ids
+    assert other_movement.id not in listed_ids
+
+    own_detail = client.get(f'/api/v1/stock-movements/{own_movement.id}', headers=member_headers)
+    assert own_detail.status_code == 200
+    assert own_detail.json['data']['source_id'] == 'member'
+
+    blocked_detail = client.get(f'/api/v1/stock-movements/{other_movement.id}', headers=member_headers)
+    assert blocked_detail.status_code == 403
+    assert blocked_detail.json['error'] == 'forbidden'
+
+
+def test_inventory_log_api_scopes_rows_to_operator(client):
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    warehouse = Warehouse.query.first()
+    admin = User.query.filter_by(email='admin@nexus.com').first()
+    member = User.query.filter_by(email='member@nexus.com').first()
+    own_log = InventoryLog(
+        transaction_code='INV-MEMBER-ONLY',
+        move_type=InventoryLog.TYPE_IN,
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        qty_change=2,
+        balance_after=22,
+        operator_id=member.id,
+        remark='member visible log',
+    )
+    other_log = InventoryLog(
+        transaction_code='INV-ADMIN-ONLY',
+        move_type=InventoryLog.TYPE_IN,
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        qty_change=3,
+        balance_after=23,
+        operator_id=admin.id,
+        remark='admin private log',
+    )
+    db.session.add_all([own_log, other_log])
+    db.session.commit()
+
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    listing = client.get('/api/v1/inventory-logs?page=1&page_size=20', headers=member_headers)
+    assert listing.status_code == 200
+    listed_codes = {item['transaction_code'] for item in listing.json['data']['items']}
+    assert 'INV-MEMBER-ONLY' in listed_codes
+    assert 'INV-ADMIN-ONLY' not in listed_codes
+
+    own_detail = client.get(f'/api/v1/inventory-logs/{own_log.id}', headers=member_headers)
+    assert own_detail.status_code == 200
+    assert own_detail.json['data']['transaction_code'] == 'INV-MEMBER-ONLY'
+
+    blocked_detail = client.get(f'/api/v1/inventory-logs/{other_log.id}', headers=member_headers)
+    assert blocked_detail.status_code == 403
+    assert blocked_detail.json['error'] == 'forbidden'
+
+
+def test_inventory_catalog_resources_require_domain_read_permissions(client):
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    warehouse = Warehouse.query.first()
+    stock = Stock.query.filter_by(product_id=product.id, warehouse_id=warehouse.id).first()
+
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    for resource, item_id in (('warehouses', warehouse.id), ('stock', stock.id)):
+        denied_list = client.get(f'/api/v1/{resource}?page=1&page_size=20', headers=member_headers)
+        assert denied_list.status_code == 403
+        assert denied_list.json['error'] == 'permission_denied'
+        denied_detail = client.get(f'/api/v1/{resource}/{item_id}', headers=member_headers)
+        assert denied_detail.status_code == 403
+        assert denied_detail.json['error'] == 'permission_denied'
+
+    sales_permission = Permission.query.filter_by(name='sales.write').first()
+    member.role.permissions.append(sales_permission)
+    db.session.commit()
+
+    allowed_warehouses = client.get('/api/v1/warehouses?page=1&page_size=20', headers=member_headers)
+    assert allowed_warehouses.status_code == 200
+    assert {item['id'] for item in allowed_warehouses.json['data']['items']} == {warehouse.id}
+    allowed_warehouse_detail = client.get(f'/api/v1/warehouses/{warehouse.id}', headers=member_headers)
+    assert allowed_warehouse_detail.status_code == 200
+    assert allowed_warehouse_detail.json['data']['name'] == warehouse.name
+
+    allowed_stock = client.get('/api/v1/stock?page=1&page_size=20', headers=member_headers)
+    assert allowed_stock.status_code == 200
+    assert {item['id'] for item in allowed_stock.json['data']['items']} == {stock.id}
+    allowed_stock_detail = client.get(f'/api/v1/stock/{stock.id}', headers=member_headers)
+    assert allowed_stock_detail.status_code == 200
+    assert allowed_stock_detail.json['data']['product_name'] == product.name
+
+
+def test_stock_balance_api_requires_inventory_read_permission(client):
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    warehouse = Warehouse.query.first()
+    balance = StockBalance(
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        available_qty=20,
+        locked_qty=1,
+    )
+    db.session.add(balance)
+    db.session.commit()
+
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    denied_list = client.get('/api/v1/stock-balances?page=1&page_size=20', headers=member_headers)
+    assert denied_list.status_code == 403
+    assert denied_list.json['error'] == 'permission_denied'
+    denied_detail = client.get(f'/api/v1/stock-balances/{balance.id}', headers=member_headers)
+    assert denied_detail.status_code == 403
+    assert denied_detail.json['error'] == 'permission_denied'
+
+    report_permission = Permission.query.filter_by(name='reports.generate').first()
+    member.role.permissions.append(report_permission)
+    db.session.commit()
+    allowed_list = client.get('/api/v1/stock-balances?page=1&page_size=20', headers=member_headers)
+    assert allowed_list.status_code == 200
+    assert {item['id'] for item in allowed_list.json['data']['items']} == {balance.id}
+    allowed_detail = client.get(f'/api/v1/stock-balances/{balance.id}', headers=member_headers)
+    assert allowed_detail.status_code == 200
+    assert allowed_detail.json['data']['available_qty'] == 20
+
+
+def test_inventory_risk_resources_require_domain_read_permissions(client):
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    warehouse = Warehouse.query.first()
+    supplier = Partner.query.filter_by(type='supplier').first()
+    alert = StockAlert(
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        alert_level=StockAlert.LEVEL_RED,
+        status=StockAlert.STATUS_ACTIVE,
+        current_qty=1,
+        min_qty=5,
+        suggested_qty=12,
+    )
+    suggestion = ReplenishmentSuggestion(
+        product_id=product.id,
+        warehouse_id=warehouse.id,
+        supplier_id=supplier.id,
+        current_qty=1,
+        suggested_qty=12,
+        avg_daily_sales=2.5,
+        lead_time_days=5,
+        safety_stock=8,
+        status=ReplenishmentSuggestion.STATUS_PENDING,
+    )
+    db.session.add_all([alert, suggestion])
+    db.session.commit()
+
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    for resource, item_id in (('stock-alerts', alert.id), ('replenishment-suggestions', suggestion.id)):
+        denied_list = client.get(f'/api/v1/{resource}?page=1&page_size=20', headers=member_headers)
+        assert denied_list.status_code == 403
+        assert denied_list.json['error'] == 'permission_denied'
+        denied_detail = client.get(f'/api/v1/{resource}/{item_id}', headers=member_headers)
+        assert denied_detail.status_code == 403
+        assert denied_detail.json['error'] == 'permission_denied'
+
+    inventory_permission = Permission.query.filter_by(name='inventory.adjust').first()
+    member.role.permissions.append(inventory_permission)
+    db.session.commit()
+    allowed_alerts = client.get('/api/v1/stock-alerts?page=1&page_size=20', headers=member_headers)
+    assert allowed_alerts.status_code == 200
+    assert {item['id'] for item in allowed_alerts.json['data']['items']} == {alert.id}
+    allowed_alert_detail = client.get(f'/api/v1/stock-alerts/{alert.id}', headers=member_headers)
+    assert allowed_alert_detail.status_code == 200
+    assert allowed_alert_detail.json['data']['current_qty'] == 1
+
+    purchase_permission = Permission.query.filter_by(name='purchase.write').first()
+    member.role.permissions.remove(inventory_permission)
+    member.role.permissions.append(purchase_permission)
+    db.session.commit()
+    allowed_suggestions = client.get('/api/v1/replenishment-suggestions?page=1&page_size=20', headers=member_headers)
+    assert allowed_suggestions.status_code == 200
+    assert {item['id'] for item in allowed_suggestions.json['data']['items']} == {suggestion.id}
+    allowed_suggestion_detail = client.get(f'/api/v1/replenishment-suggestions/{suggestion.id}', headers=member_headers)
+    assert allowed_suggestion_detail.status_code == 200
+    assert allowed_suggestion_detail.json['data']['suggested_qty'] == 12
+
+
+def test_procurement_resources_require_domain_read_permissions(client):
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    supplier = Partner.query.filter_by(type='supplier').first()
+    warehouse = Warehouse.query.first()
+    purchase = PurchaseOrder(
+        po_no='PO-READ-PERM',
+        supplier_id=supplier.id,
+        warehouse_id=warehouse.id,
+        status=PurchaseOrder.STATUS_PENDING,
+        total_amount=80,
+    )
+    db.session.add(purchase)
+    db.session.flush()
+    order_item = PurchaseOrderItem(
+        order_id=purchase.id,
+        product_id=product.id,
+        quantity=2,
+        unit_price=40,
+    )
+    performance = SupplierPerformance(
+        supplier_id=supplier.id,
+        total_orders=4,
+        on_time_orders=3,
+        quality_pass_orders=3,
+        total_amount=320,
+    )
+    db.session.add_all([order_item, performance])
+    db.session.commit()
+
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    protected_resources = (
+        ('purchase-orders', purchase.id),
+        ('purchase-order-items', order_item.id),
+        ('supplier-performance', performance.id),
+    )
+    for resource, item_id in protected_resources:
+        denied_list = client.get(f'/api/v1/{resource}?page=1&page_size=20', headers=member_headers)
+        assert denied_list.status_code == 403
+        assert denied_list.json['error'] == 'permission_denied'
+        denied_detail = client.get(f'/api/v1/{resource}/{item_id}', headers=member_headers)
+        assert denied_detail.status_code == 403
+        assert denied_detail.json['error'] == 'permission_denied'
+
+    purchase_permission = Permission.query.filter_by(name='purchase.write').first()
+    member.role.permissions.append(purchase_permission)
+    db.session.commit()
+    allowed_purchase = client.get('/api/v1/purchase-orders?page=1&page_size=20', headers=member_headers)
+    assert allowed_purchase.status_code == 200
+    assert {row['id'] for row in allowed_purchase.json['data']['items']} == {purchase.id}
+    allowed_item = client.get(f'/api/v1/purchase-order-items/{order_item.id}', headers=member_headers)
+    assert allowed_item.status_code == 200
+    assert allowed_item.json['data']['product_id'] == product.id
+    allowed_performance = client.get(f'/api/v1/supplier-performance/{performance.id}', headers=member_headers)
+    assert allowed_performance.status_code == 200
+    assert allowed_performance.json['data']['supplier_id'] == supplier.id
+
+
+def test_read_permission_does_not_bypass_object_authorization(client):
+    admin = User.query.filter_by(email='admin@nexus.com').first()
+    member = User.query.filter_by(email='member@nexus.com').first()
+    report = GeneratedReport(
+        report_type='sales',
+        report_name='Admin private report',
+        generated_by=admin.id,
+    )
+    db.session.add(report)
+    report_permission = Permission.query.filter_by(name='reports.generate').first()
+    member.role.permissions.append(report_permission)
+    db.session.commit()
+
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    blocked = client.get(f'/api/v1/generated-reports/{report.id}', headers=member_headers)
+    assert blocked.status_code == 403
+    assert blocked.json['error'] == 'forbidden'
+
+
 def test_generic_dangerous_business_writes_are_rejected(client):
     headers = login(client)
     product_id = Product.query.filter_by(sku='MFG-T-001').first().id
@@ -1583,6 +2170,73 @@ def test_generic_dangerous_business_writes_are_rejected(client):
         json={'items': [{'item_id': item_id, 'receive_qty': 99}]}
     )
     assert over_receive.status_code == 400
+
+
+def test_purchase_receive_records_stock_balance_and_movements(client):
+    headers = login(client)
+    product = Product.query.filter_by(sku='MFG-T-001').first()
+    supplier_id = Partner.query.filter_by(type='supplier').first().id
+    warehouse = Warehouse.query.first()
+    stock = Stock.query.filter_by(product_id=product.id, warehouse_id=warehouse.id).first()
+    before_qty = stock.quantity
+
+    purchase = client.post('/api/v1/procurement/orders', headers=headers, json={
+        'supplier_id': supplier_id,
+        'warehouse_id': warehouse.id,
+        'items': [{'product_id': product.id, 'quantity': 5, 'unit_price': 40}]
+    })
+    assert purchase.status_code == 201
+    po_id = purchase.json['data']['id']
+    assert client.post(f'/api/v1/procurement/orders/{po_id}/submit', headers=headers, json={}).status_code == 200
+    assert client.post(f'/api/v1/procurement/orders/{po_id}/approve', headers=headers, json={}).status_code == 200
+
+    po = db.session.get(PurchaseOrder, po_id)
+    item = po.items[0]
+    first_receive = client.post(
+        f'/api/v1/procurement/orders/{po_id}/receive',
+        headers=headers,
+        json={'items': [{'item_id': item.id, 'receive_qty': 2}]}
+    )
+    assert first_receive.status_code == 200
+
+    balance = StockBalance.query.filter_by(product_id=product.id, warehouse_id=warehouse.id).one()
+    assert balance.available_qty == before_qty + 2
+    assert balance.locked_qty == 0
+    assert Stock.query.filter_by(product_id=product.id, warehouse_id=warehouse.id).one().quantity == before_qty + 2
+    assert StockMovement.query.filter_by(
+        source_type='purchase_order',
+        source_id=str(po_id),
+        direction=StockMovement.DIRECTION_RECEIVE,
+    ).count() == 1
+    legacy_logs = InventoryLog.query.filter_by(transaction_code=po.po_no, move_type=InventoryLog.TYPE_IN).all()
+    assert len(legacy_logs) == 1
+    assert legacy_logs[0].qty_change == 2
+    assert legacy_logs[0].balance_after == before_qty + 2
+
+    db.session.refresh(item)
+    assert item.received_qty == 2
+    assert db.session.get(PurchaseOrder, po_id).status == PurchaseOrder.STATUS_PARTIAL
+
+    second_receive = client.post(
+        f'/api/v1/procurement/orders/{po_id}/receive',
+        headers=headers,
+        json={'items': [{'item_id': item.id, 'receive_qty': 3}]}
+    )
+    assert second_receive.status_code == 200
+
+    balance = StockBalance.query.filter_by(product_id=product.id, warehouse_id=warehouse.id).one()
+    assert balance.available_qty == before_qty + 5
+    assert balance.locked_qty == 0
+    assert Stock.query.filter_by(product_id=product.id, warehouse_id=warehouse.id).one().quantity == before_qty + 5
+    movements = StockMovement.query.filter_by(
+        source_type='purchase_order',
+        source_id=str(po_id),
+        direction=StockMovement.DIRECTION_RECEIVE,
+    ).order_by(StockMovement.id.asc()).all()
+    assert [movement.quantity for movement in movements] == [2, 3]
+    assert len({movement.idempotency_key for movement in movements}) == 2
+    assert InventoryLog.query.filter_by(transaction_code=po.po_no, move_type=InventoryLog.TYPE_IN).count() == 2
+    assert db.session.get(PurchaseOrder, po_id).status == PurchaseOrder.STATUS_RECEIVED
 
 
 def test_sales_order_requires_valid_items_and_deducts_stock_on_ship(client):
@@ -1694,6 +2348,72 @@ def test_user_scoped_files_and_reports_are_not_exposed_cross_account(client):
 
     admin_headers = login(client)
     assert client.get(f'/api/v1/generated-reports/{admin_report.id}', headers=admin_headers).status_code == 200
+
+
+def test_content_drafts_are_hidden_from_non_content_users(client):
+    admin = User.query.filter_by(email='admin@nexus.com').first()
+    published = Article(
+        title='已发布公告',
+        content='全员可见公告',
+        content_raw='全员可见公告',
+        category='运营公告',
+        status='published',
+        author_id=admin.id,
+    )
+    draft = Article(
+        title='草稿公告',
+        content='仅内容管理员可见',
+        content_raw='仅内容管理员可见',
+        category='运营公告',
+        status='draft',
+        author_id=admin.id,
+    )
+    db.session.add_all([published, draft])
+    db.session.flush()
+    published_comment = ArticleComment(article_id=published.id, author_id=admin.id, content='公开讨论')
+    draft_comment = ArticleComment(article_id=draft.id, author_id=admin.id, content='草稿讨论')
+    db.session.add_all([published_comment, draft_comment])
+    db.session.commit()
+
+    member = User.query.filter_by(email='member@nexus.com').first()
+    member_headers = login(client, 'member@nexus.com', 'member123')
+    listing = client.get('/api/v1/articles?page=1&page_size=20', headers=member_headers)
+    assert listing.status_code == 200
+    titles = {item['title'] for item in listing.json['data']['items']}
+    assert '已发布公告' in titles
+    assert '草稿公告' not in titles
+
+    visible_detail = client.get(f'/api/v1/articles/{published.id}', headers=member_headers)
+    assert visible_detail.status_code == 200
+    assert visible_detail.json['data']['title'] == '已发布公告'
+    hidden_detail = client.get(f'/api/v1/articles/{draft.id}', headers=member_headers)
+    assert hidden_detail.status_code == 403
+    assert hidden_detail.json['error'] == 'forbidden'
+
+    published_comments = client.get(f'/api/v1/articles/{published.id}/comments', headers=member_headers)
+    assert published_comments.status_code == 200
+    assert {item['content'] for item in published_comments.json['data']['items']} == {'公开讨论'}
+    draft_comments = client.get(f'/api/v1/articles/{draft.id}/comments', headers=member_headers)
+    assert draft_comments.status_code == 403
+    assert draft_comments.json['error'] == 'forbidden'
+    draft_comment_detail = client.get(f'/api/v1/article-comments/{draft_comment.id}', headers=member_headers)
+    assert draft_comment_detail.status_code == 403
+    assert draft_comment_detail.json['error'] == 'forbidden'
+
+    content_permission = Permission.query.filter_by(name='content.write').first()
+    member.role.permissions.append(content_permission)
+    db.session.commit()
+
+    content_listing = client.get('/api/v1/articles?page=1&page_size=20', headers=member_headers)
+    assert content_listing.status_code == 200
+    content_titles = {item['title'] for item in content_listing.json['data']['items']}
+    assert {'已发布公告', '草稿公告'} <= content_titles
+    content_draft_detail = client.get(f'/api/v1/articles/{draft.id}', headers=member_headers)
+    assert content_draft_detail.status_code == 200
+    assert content_draft_detail.json['data']['title'] == '草稿公告'
+    content_draft_comments = client.get(f'/api/v1/articles/{draft.id}/comments', headers=member_headers)
+    assert content_draft_comments.status_code == 200
+    assert {item['content'] for item in content_draft_comments.json['data']['items']} == {'草稿讨论'}
 
 
 def test_operations_exceptions_preferences_and_audit(client):

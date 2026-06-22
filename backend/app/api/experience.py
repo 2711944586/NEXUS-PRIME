@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import request
+from flask import current_app, request
 from sqlalchemy import func, or_
 
 from app.extensions import db
@@ -14,8 +14,15 @@ from app.models.stock import InventoryLog, Stock
 from app.models.stocktake import StockTake, StockTakeItem
 from app.models.sys import AiChatMessage, AiChatSession, AuditLog
 from app.models.trade import Order
+from app.models.workflow import WorkflowTask
+from app.models.jobs import BackgroundJob
+from app.platform.jobs import create_background_job, get_background_job, serialize_background_job
+from app.platform.jobs.data_quality import run_data_quality_scan
+from app.platform.jobs.replenishment import run_replenishment_generation
+from app.platform.policy import policy
+from app.platform.search import search_service
 from app.services.analytics_service import executive_analytics_payload
-from app.services.ai_service import ai_service
+from app.services.ai_service import ai_service  # kept for local_ai_reply usage in ops
 from app.services.capacity_service import capacity_governance_payload, select_capacity_review_context
 from app.services.cost_service import cost_governance_payload, select_cost_review_context
 from app.services.data_quality_service import data_quality_payload
@@ -144,6 +151,33 @@ def current_preferences():
     return prefs if isinstance(prefs, dict) else {}
 
 
+def require_policy_decision(decision):
+    if not decision.allowed:
+        return api_error(decision.reason or '权限不足', status=403, error=decision.error or 'forbidden')
+    return None
+
+
+def can_access_background_job(job, user):
+    return bool(job and (job.created_by == user.id or is_admin(user)))
+
+
+def data_quality_job_payload(job):
+    return {
+        'job_id': job.job_id,
+        'job': serialize_background_job(job),
+        'result': job.result or None,
+    }
+
+
+def replenishment_job_payload(job):
+    return {
+        'job_id': job.job_id,
+        'job': serialize_background_job(job),
+        'result': job.result or None,
+        'created': (job.result or {}).get('created') if job.result else None,
+    }
+
+
 @api_bp.get('/overview/summary')
 @jwt_required
 def overview_summary():
@@ -156,185 +190,8 @@ def overview_charts():
     return dashboard_charts()
 
 
-def serialize_ai_session(session):
-    return {
-        'id': session.id,
-        'title': session.title,
-        'last_message_at': session.last_message_at.isoformat() if session.last_message_at else None,
-        'created_at': session.created_at.isoformat() if session.created_at else None,
-        'message_count': session.messages.count(),
-    }
-
-
-def serialize_ai_message(message):
-    return {
-        'id': message.id,
-        'role': message.role,
-        'content': message.content,
-        'tokens': message.tokens or 0,
-        'created_at': message.created_at.isoformat() if message.created_at else None,
-    }
-
-
-def local_ai_reply(message):
-    order_amount = db.session.query(func.coalesce(func.sum(Order.total_amount), 0)).scalar()
-    low_stock_count = (
-        db.session.query(Product.id)
-        .outerjoin(Stock, Stock.product_id == Product.id)
-        .filter(Product.is_deleted == False)
-        .group_by(Product.id)
-        .having(func.coalesce(func.sum(Stock.quantity), 0) <= func.coalesce(Product.min_stock, 0))
-        .count()
-    )
-    overdue_count = Receivable.query.filter(
-        Receivable.is_deleted == False,
-        Receivable.status.in_([Receivable.STATUS_OVERDUE, Receivable.STATUS_BAD_DEBT])
-    ).count()
-    pending_purchase = PurchaseOrder.query.filter_by(status=PurchaseOrder.STATUS_PENDING, is_deleted=False).count()
-    return (
-        '当前经营分析结果如下：\n\n'
-        f'- 当前销售金额约为 {float(order_amount or 0):,.2f} 元。\n'
-        f'- 低库存或接近下限的商品有 {low_stock_count} 个。\n'
-        f'- 逾期或坏账应收有 {overdue_count} 笔。\n'
-        f'- 待审批采购单有 {pending_purchase} 张。\n\n'
-        f'针对你的问题“{message[:80]}”，当前优先检查补货建议、采购审批队列和逾期应收，'
-        '并在处理完成后复核库存流水、收款记录和审计日志。'
-    )
-
-
-@api_bp.get('/ai/sessions')
-@jwt_required
-def ai_sessions():
-    sessions = (
-        AiChatSession.query
-        .filter_by(user_id=current_api_user().id, is_archived=False)
-        .order_by(AiChatSession.last_message_at.desc())
-        .limit(50)
-        .all()
-    )
-    return api_success({'items': [serialize_ai_session(item) for item in sessions]}, '分析会话')
-
-
-@api_bp.post('/ai/sessions')
-@jwt_required
-def ai_create_session():
-    payload = request.get_json(silent=True) or {}
-    title = (payload.get('title') or '新对话').strip()[:128]
-    session = AiChatSession(user_id=current_api_user().id, title=title or '新对话')
-    db.session.add(session)
-    db.session.commit()
-    return api_success(serialize_ai_session(session), '分析会话已创建', status=201)
-
-
-@api_bp.get('/ai/sessions/<int:session_id>/messages')
-@jwt_required
-def ai_session_messages(session_id):
-    session = AiChatSession.query.filter_by(id=session_id, user_id=current_api_user().id).first()
-    if not session:
-        return api_error('会话不存在', status=404, error='not_found')
-    messages = session.messages.order_by(AiChatMessage.created_at.asc()).all()
-    return api_success({'session': serialize_ai_session(session), 'items': [serialize_ai_message(item) for item in messages]}, '分析消息')
-
-
-@api_bp.post('/ai/chat')
-@jwt_required
-def ai_chat():
-    payload = request.get_json(silent=True) or {}
-    message = (payload.get('message') or '').strip()
-    session_id = payload.get('session_id')
-    if not message:
-        return api_error('消息不能为空', status=400, error='empty_message')
-
-    session = None
-    if session_id:
-        session = AiChatSession.query.filter_by(id=session_id, user_id=current_api_user().id).first()
-    if not session:
-        session = AiChatSession(user_id=current_api_user().id, title=(message[:24] + ('...' if len(message) > 24 else '')))
-        db.session.add(session)
-        db.session.flush()
-
-    user_message = AiChatMessage(session_id=session.id, role='user', content=message)
-    db.session.add(user_message)
-    history = session.messages.order_by(AiChatMessage.created_at.asc()).limit(20).all()
-    context = [{'role': item.role, 'content': item.content} for item in history if item.id != user_message.id]
-    result = ai_service.chat(message=message, user=current_api_user(), context=context)
-    if result.get('success'):
-        answer = result.get('content') or ''
-        usage = result.get('usage') or {}
-        source = result.get('source') or 'analysis_provider'
-        provider_warning = result.get('provider_warning')
-    else:
-        db.session.rollback()
-        if result.get('source') == 'analysis_provider':
-            return api_error(result.get('error') or '外部分析服务不可用，请检查 AI 设置。', status=502, error='ai_provider_unavailable')
-        answer = ai_service.local_operations_reply(message, user=current_api_user())
-        usage = {}
-        source = 'operations_engine'
-        provider_warning = result.get('error')
-
-    assistant_message = AiChatMessage(
-        session_id=session.id,
-        role='assistant',
-        content=answer,
-        tokens=int(usage.get('total_tokens') or 0)
-    )
-    db.session.add(assistant_message)
-    session.last_message_at = utcnow()
-    db.session.commit()
-    return api_success({
-        'session': serialize_ai_session(session),
-        'message': serialize_ai_message(assistant_message),
-        'usage': usage,
-        'source': source,
-        'provider_warning': provider_warning,
-    }, '分析完成')
-
-
-@api_bp.post('/ai/analyze/inventory')
-@jwt_required
-def ai_inventory_analysis():
-    limit = int((request.get_json(silent=True) or {}).get('limit') or 10)
-    result = ai_service.analyze_inventory(limit=limit, user=current_api_user())
-    if not result or result.startswith('库存分析失败'):
-        result = ai_service.local_operations_reply('请分析当前库存风险', user=current_api_user())
-    return api_success({'content': result}, '库存分析')
-
-
-@api_bp.get('/ai/settings')
-@jwt_required
-def ai_settings():
-    return api_success(ai_service.get_settings(current_api_user()), '分析服务设置')
-
-
-@api_bp.put('/ai/settings')
-@jwt_required
-def ai_update_settings():
-    payload = request.get_json(silent=True) or {}
-    try:
-        settings = ai_service.update_settings(current_api_user(), payload)
-    except ValueError as exc:
-        return api_error(str(exc), status=400, error='invalid_ai_settings')
-    AuditService.record('ai', 'update_settings', current_api_user(), {'keys': list(payload.keys())})
-    db.session.commit()
-    return api_success(settings, '分析服务设置已保存')
-
-
-@api_bp.post('/ai/diagnostics')
-@jwt_required
-def ai_diagnostics():
-    result = ai_service.run_diagnostics(current_api_user())
-    return api_success(result, '分析服务诊断')
-
-
-@api_bp.post('/ai/analyze/structured')
-@jwt_required
-def ai_structured_analysis():
-    payload = request.get_json(silent=True) or {}
-    scenario = str(payload.get('scenario') or 'daily_brief').strip()
-    limit = int(payload.get('limit') or 8)
-    result = ai_service.structured_operations_analysis(scenario=scenario, limit=limit, user=current_api_user())
-    return api_success(result, '结构化经营分析')
-
+# AI routes moved to app/api/ai.py
+# Operations routes: see individual @api_bp handlers below
 
 @api_bp.post('/operations/dispatch-task')
 @jwt_required
@@ -500,6 +357,58 @@ def operations_supplier_collaboration_task():
 @jwt_required
 def operations_data_quality():
     return api_success(data_quality_payload(), '数据质量治理')
+
+
+@api_bp.post('/operations/data-quality/scan')
+@jwt_required
+def operations_data_quality_scan():
+    user = current_api_user()
+    job = create_background_job(
+        'data_quality.scan',
+        {'source': 'operations.data_quality'},
+        created_by=user,
+        queue='data-quality',
+        task_name='nexus.data_quality.scan',
+    )
+    db.session.commit()
+    job_id = job.job_id
+
+    try:
+        if current_app.config.get('CELERY_TASK_ALWAYS_EAGER', False):
+            run_data_quality_scan(job_id=job_id, celery_task_id=f'eager-{job_id}')
+        else:
+            from app.platform.jobs.tasks.data_quality import data_quality_scan_task
+
+            async_result = data_quality_scan_task.apply_async(kwargs={'job_id': job_id}, queue='data-quality')
+            job.celery_task_id = async_result.id
+            db.session.add(job)
+            db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        job = get_background_job(job_id)
+        if job and job.status != BackgroundJob.STATUS_FAILED:
+            job.mark_failed(exc)
+            db.session.add(job)
+            db.session.commit()
+        return api_error(str(exc), status=500, error='data_quality_job_failed', job=serialize_background_job(job) if job else None)
+
+    job = get_background_job(job_id)
+    if job.status == BackgroundJob.STATUS_SUCCESS:
+        return api_success(data_quality_job_payload(job), '数据质量扫描完成')
+    if job.status == BackgroundJob.STATUS_FAILED:
+        return api_error(job.error_message or '数据质量扫描失败', status=500, error='data_quality_job_failed', job=serialize_background_job(job))
+    return api_success(data_quality_job_payload(job), '数据质量扫描任务已入队', status=202)
+
+
+@api_bp.get('/operations/data-quality/jobs/<job_id>')
+@jwt_required
+def operations_data_quality_job(job_id):
+    job = get_background_job(job_id)
+    if not job or job.job_type != 'data_quality.scan':
+        return api_error('数据质量扫描任务不存在', status=404, error='job_not_found')
+    if not can_access_background_job(job, current_api_user()):
+        return api_error('权限不足', status=403, error='permission_denied')
+    return api_success(data_quality_job_payload(job), '数据质量扫描任务状态')
 
 
 @api_bp.post('/operations/data-quality/remediation')
@@ -734,6 +643,14 @@ def operations_quality_inspection():
     )
     db.session.add(notification)
     db.session.flush()
+    result = (payload.get('result') or payload.get('inspection_result') or '').strip().lower()
+    quality_event_type = None
+    if result in {'passed', 'pass', 'qualified', 'ok'}:
+        result = 'passed'
+        quality_event_type = 'QualityInspectionPassed'
+    elif result in {'failed', 'fail', 'rejected', 'ng'}:
+        result = 'failed'
+        quality_event_type = 'QualityInspectionFailed'
     AuditService.record('operations', 'quality_inspection', current_api_user(), {
         'notification_id': notification.id,
         'queue_item_id': queue_item_id or (item or {}).get('id'),
@@ -750,6 +667,32 @@ def operations_quality_inspection():
         'evidence': evidence,
         'action': action,
     })
+    if quality_event_type:
+        from app.platform.events import outbox
+
+        outbox.add(
+            quality_event_type,
+            "QualityInspectionTask",
+            notification.id,
+            {
+                "notification_id": notification.id,
+                "queue_item_id": queue_item_id or (item or {}).get('id'),
+                "product_id": product.id if product else None,
+                "supplier_id": supplier_id or (item or {}).get('supplier_id'),
+                "purchase_id": purchase_id or (item or {}).get('purchase_id'),
+                "title": title,
+                "owner": owner,
+                "priority": priority,
+                "sla": sla,
+                "path": path,
+                "risk_score": (item or {}).get('risk_score'),
+                "decision": (item or {}).get('decision'),
+                "result": result,
+                "evidence": evidence,
+                "action": action,
+            },
+            created_by=current_api_user().id,
+        )
     db.session.commit()
     return api_success(serialize_model(notification, notification_extra), '质量检验任务已创建', status=201)
 
@@ -892,6 +835,70 @@ def replenishment_generate():
     return api_generate_replenishment()
 
 
+@api_bp.post('/inventory/replenishment-suggestions/generate-job')
+@jwt_required
+def replenishment_generate_job():
+    denied = require_permission('purchase.write', '需要采购创建权限')
+    if denied:
+        return denied
+    user = current_api_user()
+    job = create_background_job(
+        'replenishment.generate',
+        {'source': 'inventory.replenishment'},
+        created_by=user,
+        queue='replenishment',
+        task_name='nexus.replenishment.generate',
+    )
+    db.session.commit()
+    job_id = job.job_id
+
+    try:
+        if current_app.config.get('CELERY_TASK_ALWAYS_EAGER', False):
+            run_replenishment_generation(job_id=job_id, user_id=user.id, celery_task_id=f'eager-{job_id}')
+        else:
+            from app.platform.jobs.tasks.replenishment import replenishment_generate_task
+
+            async_result = replenishment_generate_task.apply_async(
+                kwargs={'job_id': job_id, 'user_id': user.id},
+                queue='replenishment',
+            )
+            job.celery_task_id = async_result.id
+            db.session.add(job)
+            db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        job = get_background_job(job_id)
+        if job and job.status != BackgroundJob.STATUS_FAILED:
+            job.mark_failed(exc)
+            db.session.add(job)
+            db.session.commit()
+        return api_error(str(exc), status=500, error='replenishment_job_failed', job=serialize_background_job(job) if job else None)
+
+    job = get_background_job(job_id)
+    if job.status == BackgroundJob.STATUS_SUCCESS:
+        return api_success(replenishment_job_payload(job), '补货建议生成完成')
+    if job.status == BackgroundJob.STATUS_FAILED:
+        return api_error(job.error_message or '补货建议生成失败', status=500, error='replenishment_job_failed', job=serialize_background_job(job))
+    return api_success(replenishment_job_payload(job), '补货建议生成任务已入队', status=202)
+
+
+@api_bp.get('/inventory/replenishment-suggestions/jobs/<job_id>')
+@jwt_required
+def replenishment_generation_job(job_id):
+    job = get_background_job(job_id)
+    if not job or job.job_type != 'replenishment.generate':
+        return api_error('补货建议生成任务不存在', status=404, error='job_not_found')
+    if not can_access_background_job(job, current_api_user()):
+        return api_error('权限不足', status=403, error='permission_denied')
+    return api_success(replenishment_job_payload(job), '补货建议生成任务状态')
+
+
+@api_bp.post('/replenishment-suggestions/<int:suggestion_id>/generate')
+@jwt_required
+def api_generate_single_replenishment(suggestion_id):
+    return api_generate_replenishment()
+
+
 @api_bp.post('/inventory/replenishment-suggestions/<int:suggestion_id>/accept')
 @jwt_required
 def replenishment_accept(suggestion_id):
@@ -963,28 +970,7 @@ def update_preferences():
 @jwt_required
 def global_search():
     term = (request.args.get('q') or '').strip()
-    if len(term) < 2:
-        return api_success({'items': []}, '搜索结果')
-    like = f'%{term}%'
-    items = []
-    user = current_api_user()
-
-    for item in Product.query.filter(Product.is_deleted == False, or_(Product.name.ilike(like), Product.sku.ilike(like))).limit(5):
-        items.append({'type': 'product', 'label': item.name, 'description': item.sku, 'path': f'/app/inventory/products/{item.id}'})
-    for item in Order.query.filter(Order.is_deleted == False, Order.order_no.ilike(like)).limit(5):
-        items.append({'type': 'order', 'label': item.order_no, 'description': item.status, 'path': f'/app/sales/orders/{item.id}'})
-    for item in PurchaseOrder.query.filter(PurchaseOrder.is_deleted == False, PurchaseOrder.po_no.ilike(like)).limit(5):
-        items.append({'type': 'purchase', 'label': item.po_no, 'description': item.status, 'path': f'/app/procurement/orders/{item.id}'})
-    for item in Receivable.query.filter(Receivable.is_deleted == False, Receivable.receivable_no.ilike(like)).limit(5):
-        items.append({'type': 'receivable', 'label': item.receivable_no, 'description': item.status, 'path': f'/app/finance/receivables/{item.id}'})
-    for item in Article.query.filter(Article.is_deleted == False, Article.title.ilike(like)).limit(5):
-        items.append({'type': 'article', 'label': item.title, 'description': item.category, 'path': f'/app/content/articles/{item.id}'})
-    attachment_query = Attachment.query.filter(Attachment.is_deleted == False, Attachment.filename.ilike(like))
-    if not is_admin(user):
-        attachment_query = attachment_query.filter(Attachment.uploader_id == user.id)
-    for item in attachment_query.limit(5):
-        items.append({'type': 'file', 'label': item.filename, 'description': item.mimetype, 'path': f'/app/files/{item.id}'})
-    return api_success({'items': items[:20]}, '搜索结果')
+    return api_success({'items': search_service.search(term, user=current_api_user())}, '搜索结果')
 
 
 def bulk_query(resource, ids):
@@ -1277,8 +1263,11 @@ def stocktake_count_input(take_id):
     if not items:
         return api_error('请提供录入数据', status=400)
     stocktake = db.session.get(StockTake, take_id)
-    if not stocktake:
+    if not stocktake or stocktake.is_deleted:
         return api_error('盘点单不存在', status=404)
+    denied = require_policy_decision(policy.can(current_api_user(), 'update', resource=stocktake))
+    if denied:
+        return denied
     if stocktake.status != StockTake.STATUS_IN_PROGRESS:
         return api_error('盘点单不在进行中状态', status=400)
     normalized_items = []
@@ -1312,6 +1301,15 @@ def stocktake_count_input(take_id):
 @jwt_required
 def stocktake_variance(take_id):
     from app.services.stocktake_service import StockTakeService
+    denied = require_permission('stocktake.write', '需要盘点管理权限')
+    if denied:
+        return denied
+    stocktake = db.session.get(StockTake, take_id)
+    if not stocktake or stocktake.is_deleted:
+        return api_error('盘点单不存在', status=404)
+    denied = require_policy_decision(policy.can(current_api_user(), 'get', resource=stocktake))
+    if denied:
+        return denied
     summary = StockTakeService.get_variance_summary(take_id)
     return api_success(summary, '差异汇总')
 
@@ -1437,6 +1435,42 @@ def notification_source_path(item):
     return f'/app/notifications/{item.id}'
 
 
+def workflow_task_source_path(item):
+    instance = item.instance
+    if instance and instance.business_type == 'purchase_order' and instance.business_id:
+        return f'/app/procurement/orders/{instance.business_id}'
+    return f'/app/tasks?workflow_task={item.id}'
+
+
+def workflow_task_queue_item(item):
+    instance = item.instance
+    definition = instance.definition if instance else None
+    source_path = workflow_task_source_path(item)
+    business_type = instance.business_type if instance else None
+    business_id = instance.business_id if instance else None
+    return {
+        'id': f'workflow-{item.id}',
+        'source_id': item.id,
+        'source': 'workflow',
+        'business_type': business_type,
+        'business_id': business_id,
+        'title': item.title or '工作流审批待办',
+        'description': (
+            f'{definition.name if definition else "工作流"} · '
+            f'{business_type if business_type else "business"} #{business_id if business_id else item.id}'
+        ),
+        'priority': 'P1',
+        'status': 'open',
+        'owner': item.assignee.username if item.assignee else 'workflow',
+        'source_path': source_path,
+        'detail_path': source_path,
+        'action_label': '查看审批',
+        'action_kind': 'navigate',
+        'category': 'approval',
+        'created_at': serialize_value(item.created_at),
+    }
+
+
 @api_bp.get('/operations/task-queue')
 @jwt_required
 def operations_task_queue():
@@ -1464,6 +1498,15 @@ def operations_task_queue():
         }
         for item in notifications
     ]
+
+    workflow_tasks = (
+        WorkflowTask.query
+        .filter_by(assignee_id=user.id, status=WorkflowTask.STATUS_PENDING, is_deleted=False)
+        .order_by(WorkflowTask.created_at.asc())
+        .limit(8)
+        .all()
+    )
+    items.extend(workflow_task_queue_item(item) for item in workflow_tasks)
 
     readiness = deployment_readiness_payload()
     deployment_attention = [item for item in readiness.get('checks', []) if item.get('status') in {'attention', 'blocked'}]
@@ -1537,7 +1580,7 @@ def operations_task_queue():
 
     priority_rank = {'P0': 0, 'P1': 1, 'P2': 2}
     action_rank = {'complete_notification': 0, 'create_deployment_task': 1, 'navigate': 2}
-    source_rank = {'notification': 0, 'deployment': 1, 'stock': 2, 'purchase': 3}
+    source_rank = {'notification': 0, 'workflow': 1, 'deployment': 2, 'stock': 3, 'purchase': 4}
     items.sort(key=lambda item: (
         0 if item.get('priority') == 'P0' else 1,
         priority_rank.get(item.get('priority'), 3),
@@ -1549,7 +1592,7 @@ def operations_task_queue():
         'total': len(items),
         'open_notifications': len(notifications),
         'deployment_attention': len(deployment_attention),
-        'business_exceptions': len(stock_alerts) + pending_purchase.count(),
+        'business_exceptions': len(workflow_tasks) + len(stock_alerts) + pending_purchase.count(),
         'p0': sum(1 for item in items if item['priority'] == 'P0'),
         'p1': sum(1 for item in items if item['priority'] == 'P1'),
         'p2': sum(1 for item in items if item['priority'] == 'P2'),

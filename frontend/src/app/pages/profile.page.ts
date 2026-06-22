@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
@@ -15,7 +15,7 @@ import { catchError, finalize, forkJoin, of, Subscription } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { ExecutiveAnalytics, ManufacturingCommandCenter, OperationsTodoPayload, User } from '../core/models';
-import { chartLegend, compactMoneyText, compactNumberText } from './page-utils';
+import { chartLegend, compactMoneyText, compactNumberText, EMPTY_TODO } from './page-utils';
 
 const AVATAR_MAX_BYTES = 3 * 1024 * 1024;
 const AVATAR_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif']);
@@ -45,13 +45,10 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
   risks: []
 };
 
-const EMPTY_TODO: OperationsTodoPayload = {
-  items: [],
-  stock_quantity: 0
-};
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, SkeletonModule, TagModule, TextareaModule],
   template: `
     <section class="ops-atlas-page profile-console-page">

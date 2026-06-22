@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
@@ -13,6 +13,9 @@ import { catchError, finalize, of } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { DataQualityIssue, DataQualityPayload } from '../core/models';
 import { compactNumberText, compactRadar, dateText, TagSeverity } from './page-utils';
+
+const DATA_QUALITY_JOB_POLL_MS = 2200;
+const DATA_QUALITY_JOB_MAX_ATTEMPTS = 25;
 
 const EMPTY_DATA_QUALITY: DataQualityPayload = {
   generated_at: '',
@@ -37,8 +40,43 @@ const EMPTY_DATA_QUALITY: DataQualityPayload = {
   runbook: []
 };
 
+type DataQualityJobStatus = 'pending' | 'running' | 'success' | 'failed' | string;
+
+interface DataQualityJobRecord {
+  id: string;
+  job_id?: string;
+  status?: DataQualityJobStatus;
+  error_message?: string | null;
+  finished_at?: string | null;
+  result?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+interface DataQualityJobResult {
+  job_id: string;
+  job: DataQualityJobRecord;
+  result?: {
+    source?: string;
+    generated_at?: string;
+    summary?: DataQualityPayload['summary'];
+    issue_count?: number;
+    failed_tests?: number;
+    [key: string]: unknown;
+  } | null;
+}
+
+interface DataQualityScanState {
+  id: string;
+  status: DataQualityJobStatus;
+  attempts: number;
+  message: string;
+  job?: DataQualityJobRecord;
+  result?: DataQualityJobResult['result'];
+}
+
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterLink, NgxEchartsDirective, ButtonModule, ProgressBarModule, SkeletonModule, TagModule],
   template: `
     <section class="ops-atlas-page data-quality-page">
@@ -59,7 +97,11 @@ const EMPTY_DATA_QUALITY: DataQualityPayload = {
               <i class="pi pi-send"></i>
               创建首要整改
             </button>
-            <button pButton type="button" severity="secondary" (click)="load()" [loading]="loading()" aria-label="刷新数据质量体检">
+            <button pButton type="button" severity="secondary" (click)="startScan()" [loading]="scanning()" [disabled]="loading()" aria-label="后台扫描数据质量">
+              <i class="pi pi-play"></i>
+              后台扫描
+            </button>
+            <button pButton type="button" severity="secondary" (click)="load()" [loading]="loading()" [disabled]="scanning()" aria-label="刷新数据质量体检">
               <i class="pi pi-refresh"></i>
               刷新体检
             </button>
@@ -75,6 +117,13 @@ const EMPTY_DATA_QUALITY: DataQualityPayload = {
           <strong>{{ data().summary.score }}</strong>
           <p-progressbar [value]="data().summary.score" [showValue]="false" />
           <em>{{ data().summary.failed_tests }} 个失败测试 / {{ data().summary.issue_count }} 条治理记录</em>
+          @if (scanJob(); as job) {
+            <div class="quality-scan-status" [class.success]="job.status === 'success'" [class.failed]="job.status === 'failed'" aria-live="polite">
+              <p-tag [severity]="jobSeverity(job.status)" [value]="jobStatusLabel(job.status)" />
+              <span>{{ job.message }}</span>
+              <em>{{ job.job?.finished_at ? date(job.job?.finished_at) : job.id }}</em>
+            </div>
+          }
         </div>
 
         <aside class="quality-rings quality-governance-stack">
@@ -293,12 +342,15 @@ const EMPTY_DATA_QUALITY: DataQualityPayload = {
     </section>
   `
 })
-export class DataQualityPage implements OnInit {
+export class DataQualityPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
+  private scanJobTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly loading = signal(false);
+  protected readonly scanning = signal(false);
   protected readonly creatingId = signal<string | null>(null);
+  protected readonly scanJob = signal<DataQualityScanState | null>(null);
   protected readonly data = signal<DataQualityPayload>(EMPTY_DATA_QUALITY);
   protected readonly primaryIssue = computed(() => this.data().issue_queue[0] ?? null);
   protected readonly primaryIssueId = computed(() => this.primaryIssue()?.id ?? '');
@@ -323,6 +375,10 @@ export class DataQualityPage implements OnInit {
     this.load();
   }
 
+  ngOnDestroy(): void {
+    this.clearScanJobTimer();
+  }
+
   load(): void {
     this.loading.set(true);
     this.api.get<DataQualityPayload>('operations/data-quality').pipe(
@@ -332,6 +388,34 @@ export class DataQualityPage implements OnInit {
       }),
       finalize(() => this.loading.set(false))
     ).subscribe(payload => this.data.set(payload));
+  }
+
+  startScan(): void {
+    if (this.scanning()) {
+      return;
+    }
+    this.scanning.set(true);
+    this.api.post<DataQualityJobResult>('operations/data-quality/scan', {}).pipe(
+      catchError(error => {
+        this.messages.add({ severity: 'warn', summary: '扫描未启动', detail: error?.message || '后台任务未创建。' });
+        return of(null);
+      }),
+      finalize(() => this.scanning.set(false))
+    ).subscribe(result => {
+      if (!result) {
+        return;
+      }
+      const status = result.job?.status || 'pending';
+      if (status === 'success') {
+        this.applyScanJobResult(result);
+      } else if (status === 'failed') {
+        this.applyScanJobResult(result);
+      } else {
+        this.trackScanJob(result);
+        this.messages.add({ severity: 'info', summary: '扫描已入队', detail: `任务 ${result.job_id}` });
+        this.scheduleScanJobPoll();
+      }
+    });
   }
 
   createPrimaryRemediation(): void {
@@ -398,7 +482,132 @@ export class DataQualityPage implements OnInit {
     return compactNumberText(value);
   }
 
+  protected date(value: unknown): string {
+    return dateText(value);
+  }
+
   protected cleanPath(path: string): string {
     return path.split('?')[0] || '/app/data-quality';
+  }
+
+  protected jobSeverity(status: string): TagSeverity {
+    if (status === 'success') {
+      return 'success';
+    }
+    if (status === 'failed') {
+      return 'danger';
+    }
+    if (status === 'running') {
+      return 'info';
+    }
+    return 'warn';
+  }
+
+  protected jobStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      pending: '排队中',
+      running: '扫描中',
+      success: '已完成',
+      failed: '失败'
+    };
+    return map[status] ?? status;
+  }
+
+  private trackScanJob(result: DataQualityJobResult): void {
+    const status = result.job?.status || 'pending';
+    this.scanJob.set({
+      id: result.job_id,
+      status,
+      attempts: 0,
+      message: result.job?.error_message || this.scanJobMessage(status, 0),
+      job: result.job,
+      result: result.result
+    });
+  }
+
+  private scheduleScanJobPoll(): void {
+    this.clearScanJobTimer();
+    this.scanJobTimer = setTimeout(() => this.pollScanJob(), DATA_QUALITY_JOB_POLL_MS);
+  }
+
+  private pollScanJob(): void {
+    const current = this.scanJob();
+    if (!current || current.status === 'success' || current.status === 'failed') {
+      this.clearScanJobTimer();
+      return;
+    }
+    if (current.attempts >= DATA_QUALITY_JOB_MAX_ATTEMPTS) {
+      this.scanJob.set({
+        ...current,
+        message: '后台仍在扫描，可稍后刷新体检结果。'
+      });
+      this.clearScanJobTimer();
+      return;
+    }
+
+    this.api.get<DataQualityJobResult>(`operations/data-quality/jobs/${current.id}`, undefined, { silent: true }).pipe(
+      catchError(error => {
+        this.scanJob.set({
+          ...current,
+          attempts: current.attempts + 1,
+          message: error?.message || '暂时无法读取扫描状态，稍后自动重试。'
+        });
+        return of(null);
+      })
+    ).subscribe(result => {
+      if (!result) {
+        this.scheduleScanJobPoll();
+        return;
+      }
+      const status = this.applyScanJobResult(result, current.attempts + 1);
+      if (status === 'success' || status === 'failed') {
+        this.clearScanJobTimer();
+      } else {
+        this.scheduleScanJobPoll();
+      }
+    });
+  }
+
+  private applyScanJobResult(result: DataQualityJobResult, attempts = this.scanJob()?.attempts ?? 0): DataQualityJobStatus {
+    const current = this.scanJob();
+    const status = result.job?.status || 'pending';
+    this.scanJob.set({
+      id: result.job_id,
+      status,
+      attempts,
+      message: result.job?.error_message || this.scanJobMessage(status, attempts),
+      job: result.job,
+      result: result.result
+    });
+
+    if (status === 'success') {
+      if (current?.status !== 'success') {
+        this.messages.add({ severity: 'success', summary: '扫描完成', detail: '数据质量体检结果已刷新。' });
+      }
+      this.load();
+    } else if (status === 'failed' && current?.status !== 'failed') {
+      this.messages.add({ severity: 'warn', summary: '扫描失败', detail: result.job?.error_message || '后台扫描未完成。' });
+    }
+    return status;
+  }
+
+  private scanJobMessage(status: string, attempts: number): string {
+    if (status === 'success') {
+      return '后台扫描已完成，页面正在同步最新体检结果。';
+    }
+    if (status === 'failed') {
+      return '后台扫描失败，请查看任务错误并重试。';
+    }
+    if (status === 'running') {
+      return `后台正在扫描主数据、仓配、采购、履约和财务链路，第 ${attempts + 1} 次检查。`;
+    }
+    return `扫描任务已进入 data-quality 队列，第 ${attempts + 1} 次检查。`;
+  }
+
+  private clearScanJobTimer(): void {
+    if (this.scanJobTimer) {
+      clearTimeout(this.scanJobTimer);
+      this.scanJobTimer = null;
+    }
   }
 }

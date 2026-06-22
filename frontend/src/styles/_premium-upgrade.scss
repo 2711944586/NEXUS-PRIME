@@ -1,0 +1,475 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEXUS Prime · Premium Visual Upgrade Layer
+   Adds luxury glass morphism, refined depth, elevated micro-interactions
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer app {
+
+  /* ─── Premium Design Tokens ─── */
+  .nexus-entry-redesign,
+  .nexus-login-redesign {
+    --premium-glass: rgba(255, 252, 244, .62);
+    --premium-glass-strong: rgba(255, 252, 244, .82);
+    --premium-glass-border: rgba(255, 255, 255, .38);
+    --premium-frost: blur(24px) saturate(1.6);
+    --premium-glow: 0 0 80px -12px;
+    --premium-depth-1: 0 2px 8px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06);
+    --premium-depth-2: 0 4px 16px rgba(0, 0, 0, .05), 0 16px 48px rgba(0, 0, 0, .08);
+    --premium-depth-3: 0 8px 32px rgba(0, 0, 0, .06), 0 24px 80px rgba(0, 0, 0, .1);
+    --premium-inset: inset 0 1px 0 rgba(255, 255, 255, .32);
+    --premium-shine: linear-gradient(135deg, rgba(255, 255, 255, .18) 0%, transparent 50%);
+    --premium-text-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+    --premium-border-glow: 0 0 0 1px rgba(15, 118, 110, .12);
+    --premium-hover-lift: translateY(-3px) scale(1.005);
+    --premium-card-radius: 16px;
+    --premium-section-radius: 20px;
+  }
+
+  html.dark-cockpit .nexus-entry-redesign,
+  html.dark-cockpit .nexus-login-redesign {
+    --premium-glass: rgba(10, 15, 13, .55);
+    --premium-glass-strong: rgba(16, 22, 19, .78);
+    --premium-glass-border: rgba(255, 255, 255, .08);
+    --premium-depth-1: 0 2px 8px rgba(0, 0, 0, .12), 0 8px 24px rgba(0, 0, 0, .16);
+    --premium-depth-2: 0 4px 16px rgba(0, 0, 0, .14), 0 16px 48px rgba(0, 0, 0, .22);
+    --premium-depth-3: 0 8px 32px rgba(0, 0, 0, .16), 0 24px 80px rgba(0, 0, 0, .28);
+    --premium-inset: inset 0 1px 0 rgba(255, 255, 255, .06);
+    --premium-shine: linear-gradient(135deg, rgba(255, 255, 255, .04) 0%, transparent 50%);
+    --premium-text-shadow: 0 2px 4px rgba(0, 0, 0, .4);
+    --premium-border-glow: 0 0 0 1px rgba(45, 212, 191, .15);
+  }
+
+  /* ─── Entry Page Hero Upgrade ─── */
+  .nexus-entry-redesign .entry-hero {
+    position: relative;
+    padding: clamp(2rem, 4vw, 4rem);
+    border-radius: var(--premium-section-radius);
+    background: var(--premium-glass);
+    border: 1px solid var(--premium-glass-border);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-3), var(--premium-inset);
+  }
+
+  .nexus-entry-redesign .entry-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--premium-shine);
+    pointer-events: none;
+  }
+
+  .nexus-entry-redesign .entry-title {
+    text-shadow: var(--premium-text-shadow);
+    letter-spacing: -0.03em;
+  }
+
+  .nexus-entry-redesign .entry-title span {
+    filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--entry-accent) 18%, transparent));
+  }
+
+  /* ─── Entry Topline Premium Glass ─── */
+  .nexus-entry-redesign .entry-topline {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass-strong);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-2), var(--premium-inset);
+    border-radius: var(--premium-card-radius);
+  }
+
+  .nexus-entry-redesign .entry-topline::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--entry-accent), color-mix(in srgb, var(--entry-warm) 60%, transparent), transparent);
+    opacity: .5;
+  }
+
+  /* ─── Entry Operations Card Premium ─── */
+  .nexus-entry-redesign .entry-operations-card {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-2), var(--premium-border-glow);
+    border-radius: var(--premium-card-radius);
+    transition: transform 380ms cubic-bezier(.16, 1, .3, 1), box-shadow 380ms cubic-bezier(.16, 1, .3, 1);
+  }
+
+  .nexus-entry-redesign .entry-operations-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--premium-depth-3), var(--premium-glow) color-mix(in srgb, var(--entry-accent) 14%, transparent);
+  }
+
+  /* ─── Entry Primary Action Premium Button ─── */
+  .nexus-entry-redesign .entry-primary-action {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--entry-accent), var(--entry-accent-deep));
+    border: none;
+    box-shadow:
+      var(--premium-depth-1),
+      inset 0 1px 0 rgba(255, 255, 255, .18),
+      0 0 24px -4px color-mix(in srgb, var(--entry-accent) 30%, transparent);
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms cubic-bezier(.16, 1, .3, 1);
+  }
+
+  .nexus-entry-redesign .entry-primary-action::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, .15), transparent 60%);
+    pointer-events: none;
+  }
+
+  .nexus-entry-redesign .entry-primary-action:hover {
+    transform: var(--premium-hover-lift);
+    box-shadow:
+      var(--premium-depth-2),
+      inset 0 1px 0 rgba(255, 255, 255, .22),
+      0 0 40px -4px color-mix(in srgb, var(--entry-accent) 40%, transparent);
+  }
+
+  /* ─── Entry Photo Runway Premium ─── */
+  .nexus-entry-redesign .entry-photo-runway figure {
+    border-radius: var(--premium-card-radius);
+    overflow: hidden;
+    border: 1px solid var(--premium-glass-border);
+    box-shadow: var(--premium-depth-2);
+    transition: transform 420ms cubic-bezier(.16, 1, .3, 1), box-shadow 420ms cubic-bezier(.16, 1, .3, 1);
+  }
+
+  .nexus-entry-redesign .entry-photo-runway figure:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: var(--premium-depth-3), 0 0 60px -10px color-mix(in srgb, var(--entry-accent) 16%, transparent);
+  }
+
+  .nexus-entry-redesign .entry-photo-runway figcaption {
+    backdrop-filter: blur(12px) saturate(1.4);
+    background: var(--premium-glass);
+    border-top: 1px solid var(--premium-glass-border);
+  }
+
+  /* ─── Entry Signal Band Premium ─── */
+  .nexus-entry-redesign .entry-signal-band article {
+    border-radius: var(--premium-card-radius);
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-1), var(--premium-inset);
+    transition: transform 320ms cubic-bezier(.16, 1, .3, 1), box-shadow 320ms cubic-bezier(.16, 1, .3, 1), border-color 320ms ease;
+  }
+
+  .nexus-entry-redesign .entry-signal-band article:hover {
+    transform: var(--premium-hover-lift);
+    border-color: color-mix(in srgb, var(--entry-accent) 28%, var(--premium-glass-border));
+    box-shadow: var(--premium-depth-2), var(--premium-border-glow);
+  }
+
+  /* ─── Entry Proof Strip Premium ─── */
+  .nexus-entry-redesign .entry-proof-strip span {
+    border-radius: 12px;
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--premium-depth-1);
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease;
+  }
+
+  .nexus-entry-redesign .entry-proof-strip span:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--premium-depth-2);
+  }
+
+  .nexus-entry-redesign .entry-proof-strip strong {
+    background: linear-gradient(135deg, var(--entry-accent), var(--entry-warm));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 900;
+  }
+
+  /* ─── Entry Flow Map Premium ─── */
+  .nexus-entry-redesign .entry-flow-map span {
+    border-radius: 10px;
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--premium-depth-1);
+    transition: transform 220ms cubic-bezier(.16, 1, .3, 1), box-shadow 220ms ease, border-color 220ms ease;
+  }
+
+  .nexus-entry-redesign .entry-flow-map span.hot {
+    border-color: color-mix(in srgb, var(--entry-accent) 36%, transparent);
+    box-shadow: var(--premium-depth-1), 0 0 20px -6px color-mix(in srgb, var(--entry-accent) 22%, transparent);
+  }
+
+  .nexus-entry-redesign .entry-flow-map span:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: var(--premium-depth-2);
+  }
+
+  /* ─── Entry Process Lines Premium ─── */
+  .nexus-entry-redesign .entry-process-line {
+    border-radius: 12px;
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--premium-depth-1), var(--premium-inset);
+    transition: transform 280ms cubic-bezier(.16, 1, .3, 1), box-shadow 280ms ease, border-color 280ms ease;
+  }
+
+  .nexus-entry-redesign .entry-process-line:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--entry-accent) 24%, var(--premium-glass-border));
+    box-shadow: var(--premium-depth-2), var(--premium-border-glow);
+  }
+
+  /* ─── Entry Live Chip Premium ─── */
+  .nexus-entry-redesign .entry-live-chip {
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--entry-accent) 24%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 8%, var(--premium-glass));
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 12px -3px color-mix(in srgb, var(--entry-accent) 18%, transparent);
+  }
+
+  /* ─── Login Page Premium Glass ─── */
+  .nexus-login-redesign .login-panel.enterprise-login-panel {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass-strong);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-3), var(--premium-inset);
+    border-radius: var(--premium-section-radius);
+  }
+
+  .nexus-login-redesign .login-panel.enterprise-login-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--premium-shine);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .nexus-login-redesign .login-composition {
+    border-radius: var(--premium-section-radius);
+    overflow: hidden;
+    box-shadow: var(--premium-depth-3);
+  }
+
+  /* ─── Login Role Switch Premium ─── */
+  .nexus-login-redesign .login-role-switch button {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--premium-depth-1);
+    border-radius: 12px;
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease, border-color 260ms ease, background 260ms ease;
+  }
+
+  .nexus-login-redesign .login-role-switch button:hover {
+    transform: var(--premium-hover-lift);
+    border-color: color-mix(in srgb, var(--entry-accent) 32%, transparent);
+    box-shadow: var(--premium-depth-2), var(--premium-border-glow);
+  }
+
+  .nexus-login-redesign .login-role-switch button.active {
+    border-color: color-mix(in srgb, var(--entry-accent) 48%, transparent);
+    background: color-mix(in srgb, var(--entry-accent) 10%, var(--premium-glass-strong));
+    box-shadow: var(--premium-depth-2), 0 0 24px -6px color-mix(in srgb, var(--entry-accent) 24%, transparent);
+  }
+
+  /* ─── Login Photo Card Premium Overlay ─── */
+  .nexus-login-redesign .login-photo-card figcaption {
+    backdrop-filter: blur(16px) saturate(1.5);
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .6) 40%, rgba(0, 0, 0, .78));
+  }
+
+  .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title {
+    text-shadow: 0 4px 24px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
+  }
+
+  /* ─── Login Form Fields Premium ─── */
+  .nexus-login-redesign .login-field input {
+    border: 1px solid var(--entry-line-soft);
+    background: color-mix(in srgb, var(--entry-surface) 66%, transparent);
+    backdrop-filter: blur(6px);
+    box-shadow: var(--premium-inset), 0 2px 6px rgba(0, 0, 0, .03);
+    border-radius: 10px;
+    transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+  }
+
+  .nexus-login-redesign .login-field input:focus {
+    border-color: color-mix(in srgb, var(--entry-accent) 52%, transparent);
+    background: color-mix(in srgb, var(--entry-surface-strong) 80%, transparent);
+    box-shadow: var(--premium-inset), 0 0 0 3px color-mix(in srgb, var(--entry-accent) 12%, transparent), 0 4px 12px rgba(0, 0, 0, .06);
+    outline: none;
+  }
+
+  /* ─── Login Submit Button Premium ─── */
+  .nexus-login-redesign .login-submit {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    background: linear-gradient(135deg, var(--entry-accent), var(--entry-accent-deep));
+    box-shadow:
+      var(--premium-depth-1),
+      inset 0 1px 0 rgba(255, 255, 255, .16),
+      0 0 28px -6px color-mix(in srgb, var(--entry-accent) 32%, transparent);
+    border-radius: 12px;
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease;
+  }
+
+  .nexus-login-redesign .login-submit::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .12), transparent);
+    transition: left 600ms ease;
+  }
+
+  .nexus-login-redesign .login-submit:hover::after {
+    left: 100%;
+  }
+
+  .nexus-login-redesign .login-submit:hover {
+    transform: var(--premium-hover-lift);
+    box-shadow:
+      var(--premium-depth-2),
+      inset 0 1px 0 rgba(255, 255, 255, .2),
+      0 0 40px -4px color-mix(in srgb, var(--entry-accent) 40%, transparent);
+  }
+
+  /* ─── Login Auth Visual Core Premium ─── */
+  .nexus-login-redesign .auth-orbit {
+    filter: drop-shadow(0 0 20px color-mix(in srgb, var(--entry-accent) 16%, transparent));
+  }
+
+  .nexus-login-redesign .auth-signal-chart span i {
+    background: linear-gradient(90deg, var(--entry-accent), color-mix(in srgb, var(--entry-accent) 72%, var(--entry-warm)));
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--entry-accent) 20%, transparent);
+    border-radius: 4px;
+  }
+
+  /* ─── Login Capabilities Premium Tiles ─── */
+  .nexus-login-redesign .login-capabilities div {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--premium-depth-1);
+    border-radius: 10px;
+    transition: transform 240ms cubic-bezier(.16, 1, .3, 1), box-shadow 240ms ease, border-color 240ms ease;
+  }
+
+  .nexus-login-redesign .login-capabilities div:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--entry-accent) 22%, var(--premium-glass-border));
+    box-shadow: var(--premium-depth-2);
+  }
+
+  /* ─── Login Back Link Premium ─── */
+  .nexus-login-redesign .login-back-link {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-1), var(--premium-inset);
+    border-radius: 12px;
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease;
+  }
+
+  .nexus-login-redesign .login-back-link:hover {
+    transform: var(--premium-hover-lift);
+    box-shadow: var(--premium-depth-2);
+  }
+
+  /* ─── Register Consent Section Premium ─── */
+  .nexus-login-redesign .register-consent {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--premium-depth-1);
+    border-radius: 12px;
+  }
+
+  /* ─── Register Verification Premium ─── */
+  .nexus-login-redesign .register-verification {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--premium-depth-1);
+    border-radius: 12px;
+  }
+
+  .nexus-login-redesign .register-verification img {
+    border-radius: 8px;
+    box-shadow: var(--premium-depth-1);
+  }
+
+  /* ─── Policy Page Premium ─── */
+  .policy-screen .policy-hero {
+    border-radius: var(--premium-section-radius);
+    overflow: hidden;
+    box-shadow: var(--premium-depth-3);
+  }
+
+  .policy-screen .policy-hero-copy {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-2), var(--premium-inset);
+    border-radius: var(--premium-card-radius);
+  }
+
+  .policy-screen .policy-photo-card {
+    border-radius: var(--premium-card-radius);
+    overflow: hidden;
+    box-shadow: var(--premium-depth-2);
+  }
+
+  .policy-screen .policy-document {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--premium-depth-1), var(--premium-inset);
+    border-radius: var(--premium-card-radius);
+    padding: clamp(1.2rem, 2.4vw, 2rem);
+    transition: box-shadow 320ms ease, border-color 320ms ease;
+  }
+
+  .policy-screen .policy-document:hover {
+    border-color: color-mix(in srgb, var(--entry-accent) 18%, var(--premium-glass-border));
+    box-shadow: var(--premium-depth-2), var(--premium-border-glow);
+  }
+
+  .policy-screen .policy-index button {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--premium-depth-1);
+    border-radius: 12px;
+    transition: transform 260ms cubic-bezier(.16, 1, .3, 1), box-shadow 260ms ease, border-color 260ms ease;
+  }
+
+  .policy-screen .policy-index button:hover,
+  .policy-screen .policy-index button.active {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--entry-accent) 36%, transparent);
+    box-shadow: var(--premium-depth-2), var(--premium-border-glow);
+  }
+
+  /* ─── Policy Topbar Premium ─── */
+  .policy-screen .policy-topbar {
+    border: 1px solid var(--premium-glass-border);
+    background: var(--premium-glass-strong);
+    backdrop-filter: var(--premium-frost);
+    box-shadow: var(--premium-depth-2), var(--premium-inset);
+    border-radius: var(--premium-card-radius);
+  }
+}

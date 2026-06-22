@@ -21,15 +21,15 @@
     overflow-x: hidden;
     font-family: var(--font-sans);
     font-size: 14px;
-    line-height: 1.5;
-    letter-spacing: 0;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
     color: var(--ink);
     background:
-      radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 28rem),
-      radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--accent-warm) 9%, transparent), transparent 30rem),
-      linear-gradient(135deg, color-mix(in srgb, var(--line) 32%, transparent) 1px, transparent 1px),
+      radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 28rem),
+      radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--accent-warm) 6%, transparent), transparent 30rem),
+      linear-gradient(135deg, color-mix(in srgb, var(--line) 20%, transparent) 1px, transparent 1px),
       linear-gradient(180deg, var(--bg), var(--bg-alt));
-    background-size: auto, auto, 22px 22px, auto;
+    background-size: auto, auto, 24px 24px, auto;
     -webkit-font-smoothing: antialiased;
     text-rendering: geometricPrecision;
   }
@@ -40,12 +40,12 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    opacity: .42;
+    opacity: .28;
     background:
-      linear-gradient(90deg, transparent 0 49%, color-mix(in srgb, var(--line-subtle) 76%, transparent) 50%, transparent 51%),
-      linear-gradient(180deg, transparent 0 49%, color-mix(in srgb, var(--line-subtle) 56%, transparent) 50%, transparent 51%);
-    background-size: 96px 96px;
-    mask-image: linear-gradient(180deg, #000, transparent 72%);
+      linear-gradient(90deg, transparent 0 49%, color-mix(in srgb, var(--line-subtle) 60%, transparent) 50%, transparent 51%),
+      linear-gradient(180deg, transparent 0 49%, color-mix(in srgb, var(--line-subtle) 40%, transparent) 50%, transparent 51%);
+    background-size: 100px 100px;
+    mask-image: linear-gradient(180deg, #000, transparent 68%);
   }
 
   a {
@@ -63,6 +63,16 @@
   img {
     display: block;
     max-width: 100%;
+  }
+
+  /* 全局图标完全居中修复 - 强制所有 PrimeIcons 居中 */
+  i.pi,
+  .pi {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
   }
 
   ::selection {
@@ -247,7 +257,9 @@
 
   .atlas-panel,
   .operations-ledger-strip a,
+  .operations-ledger-strip button,
   .command-snapshot-row a,
+  .command-snapshot-row button,
   .business-data-row,
   .atlas-record-row {
     transition:

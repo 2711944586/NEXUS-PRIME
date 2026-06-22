@@ -1,0 +1,57 @@
+/*
+ * 图标完全居中修复
+ * 这个文件专门用于修复所有 PrimeIcons 图标的居中问题
+ */
+
+@layer app {
+  /* 基础图标居中 */
+  .pi {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+  }
+
+  /* 图标容器内的图标 */
+  i.pi {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    justify-self: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+  }
+
+  /* Grid 布局中的图标 */
+  [style*="display: grid"] i.pi,
+  [style*="display:grid"] i.pi {
+    align-self: center !important;
+    justify-self: center !important;
+  }
+
+  /* Flex 布局中的图标 */
+  [style*="display: flex"] i.pi,
+  [style*="display:flex"] i.pi {
+    align-self: center !important;
+  }
+
+  /* 修复伪元素对齐 */
+  .pi::before {
+    display: block !important;
+    line-height: 1 !important;
+  }
+
+  /* 确保图标字体正确加载和渲染 */
+  .pi {
+    font-family: 'primeicons' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

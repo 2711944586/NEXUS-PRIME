@@ -16,6 +16,32 @@ def query_with_lock(query):
     return query
 
 
+def stocktake_event_payload(stocktake):
+    items = StockTakeItem.query.filter_by(take_id=stocktake.id).order_by(StockTakeItem.id.asc()).all()
+    variance_items = sum(1 for item in items if item.variance_qty != 0)
+    return {
+        "stocktake_id": stocktake.id,
+        "take_no": stocktake.take_no,
+        "warehouse_id": stocktake.warehouse_id,
+        "take_type": stocktake.take_type,
+        "status": stocktake.status,
+        "total_items": int(stocktake.total_items or 0),
+        "counted_items": int(stocktake.counted_items or 0),
+        "variance_items": variance_items,
+        "items": [
+            {
+                "item_id": item.id,
+                "product_id": item.product_id,
+                "system_qty": int(item.system_qty or 0),
+                "actual_qty": int(item.actual_qty) if item.actual_qty is not None else None,
+                "variance_qty": int(item.variance_qty or 0),
+                "variance_value": float(item.variance_value or 0),
+            }
+            for item in items
+        ],
+    }
+
+
 class StockTakeService:
     """盘点服务"""
     
@@ -126,6 +152,19 @@ class StockTakeService:
         stocktake.started_at = utcnow()
         
         StockTakeService.add_history(stocktake_id, 'start', user, '开始盘点')
+        from app.platform.events import outbox
+
+        outbox.add(
+            "StocktakeSubmitted",
+            "StockTake",
+            stocktake.id,
+            {
+                **stocktake_event_payload(stocktake),
+                "started_by": user.id,
+                "started_at": stocktake.started_at.isoformat() if stocktake.started_at else None,
+            },
+            created_by=user.id,
+        )
         
         return True, "盘点已开始"
     
@@ -232,6 +271,11 @@ class StockTakeService:
             stocktake.status = StockTake.STATUS_COMPLETED
             stocktake.completed_at = utcnow()
             stocktake.approved_by = user.id
+            counted_items = StockTakeItem.query.filter(
+                StockTakeItem.take_id == stocktake_id,
+                StockTakeItem.actual_qty.isnot(None),
+            ).all()
+            stocktake.variance_items = sum(1 for item in counted_items if item.variance_qty != 0)
             
             # 自动调整库存
             if auto_adjust:
@@ -246,6 +290,20 @@ class StockTakeService:
                         )
             
             StockTakeService.add_history(stocktake_id, 'complete', user, '完成盘点')
+            from app.platform.events import outbox
+
+            outbox.add(
+                "StocktakeApproved",
+                "StockTake",
+                stocktake.id,
+                {
+                    **stocktake_event_payload(stocktake),
+                    "approved_by": user.id,
+                    "approved_at": stocktake.completed_at.isoformat() if stocktake.completed_at else None,
+                    "auto_adjust": bool(auto_adjust),
+                },
+                created_by=user.id,
+            )
             
             return True, "盘点已完成"
         except Exception as e:

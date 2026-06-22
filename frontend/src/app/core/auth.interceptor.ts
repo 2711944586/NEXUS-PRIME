@@ -7,14 +7,17 @@ import { catchError, throwError } from 'rxjs';
 const CSRF_COOKIE_NAME = 'nexus_csrf_token';
 const CSRF_HEADER_NAME = 'X-CSRF-Token';
 const CSRF_STORAGE_KEY = 'nexus_csrf_token';
+const SILENT_REQUEST_HEADER = 'X-Nexus-Silent';
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const messages = inject(MessageService);
   const csrfToken = MUTATING_METHODS.has(req.method) ? readCookie(CSRF_COOKIE_NAME) || sessionStorage.getItem(CSRF_STORAGE_KEY) || '' : '';
+  const silentRequest = req.headers.get(SILENT_REQUEST_HEADER) === '1';
   const request = req.clone({
     withCredentials: true,
+    headers: req.headers.delete(SILENT_REQUEST_HEADER),
     setHeaders: csrfToken ? { [CSRF_HEADER_NAME]: csrfToken } : {}
   });
 
@@ -26,7 +29,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 && !isLoginRequest && !isSessionProbe) {
         router.navigate(['/auth/login'], { queryParams: { redirect: router.url } });
       }
-      if (error.status >= 400 && !(error.status === 401 && isSessionProbe) && !isLoginRequest) {
+      if (!silentRequest && error.status >= 400 && !(error.status === 401 && isSessionProbe) && !isLoginRequest) {
         messages.add({ severity: error.status >= 500 ? 'error' : 'warn', summary: '操作未完成', detail: apiMessage });
       }
       const normalized = new Error(apiMessage) as Error & { status?: number; code?: string; fields?: Record<string, string> };

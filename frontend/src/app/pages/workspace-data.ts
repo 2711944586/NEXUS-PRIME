@@ -56,17 +56,11 @@ export interface WorkspaceBoardLane {
 }
 
 export function buildBoardLanes(workspace: WorkspaceConfig, rows: DataRecord[]): WorkspaceBoardLane[] {
-  const safeRows = rows.length >= 2 ? rows : [...rows, ...workspace.seedRows].slice(0, 2);
-  const sampleRows = safeRows.length >= 2 ? safeRows : [
-    { id: 1, name: workspace.title, status: 'active' },
-    { id: 2, name: workspace.eyebrow, status: 'review' }
-  ];
+  const sampleRows = rows.length >= 2 ? rows.slice(0, 4) : rows;
   const titles = boardTitles(workspace);
   return titles.map((lane, index) => ({
     ...lane,
-    items: sampleRows.slice(index, index + 2).length >= 2
-      ? sampleRows.slice(index, index + 2).map(row => boardItem(row, workspace))
-      : sampleRows.slice(0, 2).map(row => boardItem(row, workspace))
+    items: sampleRows.slice(index, index + 2).map(row => boardItem(row, workspace))
   }));
 }
 

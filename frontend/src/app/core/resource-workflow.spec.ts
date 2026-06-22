@@ -1,5 +1,8 @@
+import '@angular/compiler';
+
 import { describe, expect, it } from 'vitest';
 
+import { REPLENISHMENT_GENERATE_JOB_ENDPOINT } from './replenishment-job.service';
 import { RESOURCE_WORKFLOW_CONFIGS, resourceConfigForUrl } from './resource-workflow';
 
 describe('resource workflow configuration', () => {
@@ -41,5 +44,14 @@ describe('resource workflow configuration', () => {
 
   it('uses the paginated credits endpoint for the credit workbench list', () => {
     expect(resourceConfigForUrl('/app/finance/credits')?.resource).toBe('credits');
+  });
+
+  it('routes replenishment generation actions through the async job endpoint', () => {
+    const generationActions = RESOURCE_WORKFLOW_CONFIGS
+      .flatMap(config => config.actions)
+      .filter(action => action.endpoint?.includes('replenishment-suggestions/generate'));
+
+    expect(generationActions.length).toBeGreaterThan(0);
+    expect(generationActions.every(action => action.endpoint === REPLENISHMENT_GENERATE_JOB_ENDPOINT)).toBe(true);
   });
 });

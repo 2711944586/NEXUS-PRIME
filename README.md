@@ -117,6 +117,18 @@ python -m flask audit-enterprise-data --strict
 .\scripts\dev.ps1 -Install
 ```
 
+只检查依赖和将使用的端口，不启动服务：
+
+```powershell
+.\scripts\dev.ps1 -CheckOnly
+```
+
+已确认依赖存在、只想快速拉起窗口时可跳过等待和自动开浏览器：
+
+```powershell
+.\scripts\dev.ps1 -NoInstall -NoWait -NoOpen
+```
+
 如果刚执行过纯净化清理并删除了 `venv/` 或 `frontend/node_modules/`，`dev.ps1` 会自动恢复依赖。也可以单独执行：
 
 ```powershell
@@ -128,6 +140,26 @@ python -m flask audit-enterprise-data --strict
 ```text
 Frontend: http://127.0.0.1:4200
 Backend : http://127.0.0.1:5000/api/v1
+```
+
+Docker Compose 一键启动会同时拉起 PostgreSQL、Redis、后端 API、Celery worker 和 Angular 前端：
+
+```powershell
+.\scripts\dev.ps1 -Docker -Build
+```
+
+只检查 Docker/Compose 入口和端口：
+
+```powershell
+.\scripts\dev.ps1 -Docker -CheckOnly
+```
+
+等价 Makefile 入口：
+
+```bash
+make dev
+make logs
+make migrate
 ```
 
 本地演示账号：
