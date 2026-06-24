@@ -5,10 +5,11 @@ import { ButtonModule } from 'primeng/button';
 
 import { entryVideoSource, LANDING_POSTER } from '../core/landing-visuals';
 import { ThemeService } from '../core/theme.service';
+import { NexusRevealDirective, NexusSpotlightDirective } from '../motion';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, ButtonModule],
+  imports: [CommonModule, RouterLink, ButtonModule, NexusRevealDirective, NexusSpotlightDirective],
   template: `
     <main id="main-content" class="entry-screen nexus-motion-entry">
       <div class="motion-video-stage" aria-hidden="true">
@@ -32,7 +33,7 @@ import { ThemeService } from '../core/theme.service';
         <div class="motion-grid-field"></div>
       </div>
 
-      <header class="motion-nav" aria-label="首页导航">
+      <header class="motion-nav" aria-label="首页导航" nexusReveal [nexusRevealDelay]="20">
         <a class="motion-brand" routerLink="/" aria-label="NEXUS Prime 首页">
           <span>NX</span>
           <strong>NEXUS Prime</strong>
@@ -58,7 +59,7 @@ import { ThemeService } from '../core/theme.service';
       </header>
 
       <section class="motion-hero" id="entry-hero" aria-label="NEXUS Prime 入场页">
-        <div class="motion-hero-copy">
+        <div class="motion-hero-copy" nexusReveal [nexusRevealDelay]="90">
           <div class="motion-kicker">
             <span>ERP Operating System</span>
             <i></i>
@@ -74,23 +75,32 @@ import { ThemeService } from '../core/theme.service';
             给制造企业使用的经营工作台。现场收货、库存预警、采购审批、销售履约、应收回款和审计记录，在同一套权限体系里流转。
           </p>
 
+          <div class="motion-signal-rail" aria-label="首页运行信号">
+            @for (signal of heroSignals; track signal.label) {
+              <span nexusSpotlight>
+                <strong>{{ signal.value }}</strong>
+                <em>{{ signal.label }}</em>
+              </span>
+            }
+          </div>
+
           <div class="motion-actions">
-            <a pButton routerLink="/auth/login" class="motion-primary" aria-label="进入登录页面">
+            <a pButton routerLink="/auth/login" class="motion-primary" aria-label="进入登录页面" nexusSpotlight>
               <span>进入系统</span>
               <i class="pi pi-arrow-right"></i>
             </a>
-            <a pButton severity="secondary" [outlined]="true" routerLink="/auth/login" [queryParams]="{ mode: 'register' }" aria-label="创建普通成员账号">
+            <a pButton severity="secondary" [outlined]="true" routerLink="/auth/login" [queryParams]="{ mode: 'register' }" aria-label="创建普通成员账号" nexusSpotlight>
               <i class="pi pi-user-plus"></i>
               创建账号
             </a>
-            <a pButton severity="secondary" [text]="true" routerLink="/app/overview" aria-label="进入工作台">
+            <a pButton severity="secondary" [text]="true" routerLink="/app/overview" aria-label="进入工作台" nexusSpotlight>
               <i class="pi pi-desktop"></i>
               已有会话
             </a>
           </div>
         </div>
 
-        <aside class="motion-command-slab" id="entry-flow" aria-label="入场页系统状态">
+        <aside class="motion-command-slab" id="entry-flow" aria-label="入场页系统状态" nexusReveal nexusSpotlight [nexusRevealDelay]="180">
           <div class="slab-head">
             <span>06:40</span>
             <strong>早班经营快照</strong>
@@ -129,7 +139,7 @@ import { ThemeService } from '../core/theme.service';
       </section>
 
       <section class="motion-operations" id="entry-floor" aria-label="真实业务现场">
-        <header class="motion-section-head">
+        <header class="motion-section-head" nexusReveal [nexusRevealDelay]="40">
           <span>Selected operations</span>
           <h2>真实业务现场</h2>
           <p>把制造、仓配、控制台和质检场景接入同一套 ERP 工作流。</p>
@@ -137,7 +147,7 @@ import { ThemeService } from '../core/theme.service';
 
         <div class="motion-runway">
           @for (photo of photos; track photo.src) {
-            <figure [class.featured]="photo.featured">
+            <figure [class.featured]="photo.featured" nexusReveal nexusSpotlight [nexusRevealDelay]="$index * 70">
               <img [src]="photo.src" [alt]="photo.alt" />
               <figcaption>
                 <span>{{ photo.kicker }}</span>
@@ -149,14 +159,14 @@ import { ThemeService } from '../core/theme.service';
       </section>
 
       <section class="motion-system" id="entry-signals" aria-label="准入与部署提示">
-        <div class="motion-system-title">
+        <div class="motion-system-title" nexusReveal [nexusRevealDelay]="30">
           <span>System notes</span>
           <h2>准入审计与<br />部署边界</h2>
         </div>
 
         <div class="motion-signal-stack">
           @for (signal of signals; track signal.title) {
-            <article>
+            <article nexusReveal nexusSpotlight [nexusRevealDelay]="$index * 60">
               <span>{{ signal.kicker }}</span>
               <strong>{{ signal.title }}</strong>
               <p>{{ signal.body }}</p>
@@ -166,7 +176,7 @@ import { ThemeService } from '../core/theme.service';
 
         <div class="motion-process-strip" aria-label="关键流程">
           @for (step of flowSteps; track step.title) {
-            <article>
+            <article nexusReveal nexusSpotlight [nexusRevealDelay]="$index * 60">
               <i [class]="step.icon"></i>
               <span>
                 <strong>{{ step.title }}</strong>
@@ -197,6 +207,11 @@ export class EntryPage implements AfterViewInit, OnDestroy {
     { label: '业务模块', value: '18' },
     { label: '流程节点', value: '42' },
     { label: '审计动作', value: '实时' }
+  ];
+  protected readonly heroSignals = [
+    { label: '库存预警', value: '4.2 min' },
+    { label: '审批流转', value: '18 条' },
+    { label: '审计回放', value: 'Live' }
   ];
   protected readonly flowNodes = [
     { code: '01', label: '收货', hot: false },

@@ -18,7 +18,7 @@ import {
 import { ThemeService } from '../core/theme.service';
 import { environment } from '../../environments/environment';
 import type { DemoAccountRole } from '../../environments/environment.model';
-import { NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent } from '../motion';
+import { NexusRevealDirective, NexusSpotlightDirective } from '../motion';
 
 interface RegisterPolicy {
   terms_version: string;
@@ -43,7 +43,6 @@ interface CaptchaChallenge {
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
-    SceneBackgroundComponent,
     NexusRevealDirective,
     NexusSpotlightDirective
   ],
@@ -69,10 +68,6 @@ interface CaptchaChallenge {
         <div class="auth-video-wash"></div>
         <div class="auth-depth-grid"></div>
       </div>
-      <nexus-scene-background
-        [mode]="authMode()"
-        [image]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'"
-      ></nexus-scene-background>
       <section class="login-stage" aria-label="NEXUS Prime 登录">
         <a class="login-back-link" routerLink="/" nexusReveal [nexusRevealDelay]="40">
           <i class="pi pi-arrow-left"></i>
@@ -81,7 +76,7 @@ interface CaptchaChallenge {
 
         <div class="login-composition" [class.register-composition]="authMode() === 'register'">
           <aside class="login-identity-panel" aria-label="入口现场" nexusReveal [nexusRevealDelay]="110">
-            <figure class="login-photo-card">
+            <figure class="login-photo-card" nexusSpotlight>
               <video
                 #authPanelVideo
                 class="auth-panel-video"
@@ -108,21 +103,23 @@ interface CaptchaChallenge {
               </figcaption>
             </figure>
 
-            <div class="login-live-strip" aria-label="入口状态">
-              @for (item of authLiveTags(); track item) {
-                <span>{{ item }}</span>
-              }
-            </div>
+            @if (authMode() === 'login') {
+              <div class="login-live-strip" aria-label="入口状态" nexusReveal [nexusRevealDelay]="160">
+                @for (item of authLiveTags(); track item) {
+                  <span>{{ item }}</span>
+                }
+              </div>
 
-            <div class="auth-intel-rail" aria-label="准入态势">
-              @for (item of authIntelRail(); track item.label) {
-                <article>
-                  <span>{{ item.label }}</span>
-                  <strong>{{ item.value }}</strong>
-                  <em>{{ item.body }}</em>
-                </article>
-              }
-            </div>
+              <div class="auth-intel-rail" aria-label="准入态势">
+                @for (item of authIntelRail(); track item.label) {
+                  <article nexusSpotlight>
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.value }}</strong>
+                    <em>{{ item.body }}</em>
+                  </article>
+                }
+              </div>
+            }
           </aside>
 
           <section
@@ -165,7 +162,7 @@ interface CaptchaChallenge {
 
             <div class="auth-mode-strip" aria-label="准入模式">
               @for (item of authModeStrip(); track item.label) {
-                <span>
+                <span nexusSpotlight>
                   <i [class]="item.icon"></i>
                   <strong>{{ item.label }}</strong>
                   <em>{{ item.value }}</em>
@@ -188,12 +185,12 @@ interface CaptchaChallenge {
             } @else {
               <div class="register-assurance-strip" aria-label="注册流程">
                 @for (step of registerSteps; track step.label) {
-                  <span><i [class]="step.icon"></i>{{ step.label }}</span>
+                  <span nexusSpotlight><i [class]="step.icon"></i>{{ step.label }}</span>
                 }
               </div>
             }
 
-            <section class="auth-visual-core" aria-label="访问准入图">
+            <section class="auth-visual-core" aria-label="访问准入图" nexusReveal nexusSpotlight [nexusRevealDelay]="230">
               <div class="auth-orbit" aria-hidden="true">
                 <span class="orbit-node node-user"><i class="pi pi-user"></i></span>
                 <span class="orbit-node node-role"><i class="pi pi-key"></i></span>
@@ -211,7 +208,7 @@ interface CaptchaChallenge {
               </div>
             </section>
 
-            <form id="login-form" [formGroup]="form" (ngSubmit)="submit()" class="login-form" novalidate>
+            <form id="login-form" [formGroup]="form" (ngSubmit)="submit()" class="login-form" novalidate nexusReveal [nexusRevealDelay]="260">
               @if (csrfReady() === false) {
                 <div class="login-alert warn" role="status">
                   <i class="pi pi-wifi"></i>
@@ -342,7 +339,7 @@ interface CaptchaChallenge {
               }
 
               @if (authMode() === 'register') {
-                <section class="register-verification" aria-label="注册验证码">
+                <section class="register-verification" aria-label="注册验证码" nexusSpotlight>
                   <div>
                     <span>验证码识别</span>
                     <strong>{{ captcha()?.prompt || '正在生成验证码' }}</strong>
@@ -371,7 +368,7 @@ interface CaptchaChallenge {
                   </button>
                 </section>
 
-                <section class="register-consent" aria-label="注册许可确认">
+                <section class="register-consent" aria-label="注册许可确认" nexusSpotlight>
                   <div class="register-consent-head">
                     <strong>许可确认</strong>
                     <nav aria-label="注册许可">
@@ -395,7 +392,7 @@ interface CaptchaChallenge {
                 </section>
               }
 
-              <button pButton type="submit" [loading]="loading()" [disabled]="submitDisabled()" class="login-submit">
+              <button pButton type="submit" [loading]="loading()" [disabled]="submitDisabled()" class="login-submit" nexusSpotlight>
                 {{ authMode() === 'login' ? '进入系统' : '注册并进入' }}
                 <i class="pi pi-arrow-right"></i>
               </button>
