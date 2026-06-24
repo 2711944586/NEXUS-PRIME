@@ -19,13 +19,13 @@ describe('Report job stream client', () => {
     const body = [
       'event: status\ndata: {"job_id":"job-1","job":{"id":"job-1","status":"running"}}\n\n',
       'event: done\ndata: {"job_id":"job-1","job":{"id":"job-1","status":"success"},"report":{"id":8,"report_name":"销售日报"}}\n\n'
-    ];
+    ].join('');
     const fetchMock = vi.fn((url: RequestInfo | URL, init?: RequestInit) => {
       expect(url).toBe('https://api.example.com/api/v1/reports/jobs/job-1/stream');
       expect(init?.credentials).toBe('include');
       expect(init?.method).toBe('GET');
       expect((init?.headers as Headers).get('X-CSRF-Token')).toBe('csrf-report');
-      return Promise.resolve(new Response(new Blob(body), {
+      return Promise.resolve(new Response(body, {
         status: 200,
         headers: { 'Content-Type': 'text/event-stream' }
       }));

@@ -63,7 +63,7 @@ describe('NotificationsPage realtime stream', () => {
         pagination: { page: 1, page_size: 100, total: 0, pages: 0, has_next: false, has_prev: false }
       }))
     };
-    const fetchMock = vi.fn((_url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchMock = vi.fn((_url: RequestInfo | URL) => {
       return Promise.resolve(new Response(
         'event: snapshot\ndata: {"items":[],"unread":0}\n\n',
         { status: 200, headers: { 'Content-Type': 'text/event-stream' } }

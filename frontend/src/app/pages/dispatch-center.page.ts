@@ -13,7 +13,7 @@ import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { DataRecord, ManufacturingCommandCenter } from '../core/models';
-import { compactNumberText, emptyPageResult, numberOf, percentNumber, recordTitle, textOf } from './page-utils';
+import { compactNumberText, emptyPageResult, numberOf, textOf } from './page-utils';
 
 const EMPTY_COMMAND: ManufacturingCommandCenter = {
   kpis: { order_amount: 0, stock_quantity: 0, low_stock_products: 0, pending_purchase: 0, overdue_amount: 0 },

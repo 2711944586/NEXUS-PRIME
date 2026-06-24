@@ -21,14 +21,14 @@ describe('AI chat stream client', () => {
       'event: chunk\ndata: {"content":"库存"}\n\n',
       'event: chunk\ndata: {"content":"正常"}\n\n',
       'event: done\ndata: {"session":{"id":9,"title":"经营分析"},"message":{"id":12,"role":"assistant","content":"库存正常"},"source":"operations_engine"}\n\n'
-    ];
+    ].join('');
     const fetchMock = vi.fn((url: RequestInfo | URL, init?: RequestInit) => {
       expect(url).toBe('https://api.example.com/api/v1/ai/chat/stream');
       expect(init?.credentials).toBe('include');
       expect(init?.method).toBe('POST');
       expect((init?.headers as Headers).get('X-CSRF-Token')).toBe('csrf-stream');
       expect(JSON.parse(String(init?.body))).toEqual({ message: '分析库存', session_id: null });
-      return Promise.resolve(new Response(new Blob(body), {
+      return Promise.resolve(new Response(body, {
         status: 200,
         headers: { 'Content-Type': 'text/event-stream' }
       }));

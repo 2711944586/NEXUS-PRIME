@@ -6,7 +6,7 @@ import { of, Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ApiService } from '../core/api.service';
-import { DataRecord } from '../core/models';
+import { DataRecord, PageResult } from '../core/models';
 import { ReplenishmentJobService } from '../core/replenishment-job.service';
 import { ReplenishmentPage } from './replenishment.page';
 
@@ -32,7 +32,19 @@ const secondSuggestion: DataRecord = {
   status: 'pending'
 };
 
-const emptyPage = { items: [], total: 0, page: 1, page_size: 180, pages: 1 };
+function pageResult(items: DataRecord[]): PageResult<DataRecord> {
+  return {
+    items,
+    pagination: {
+      page: 1,
+      page_size: 180,
+      total: items.length,
+      pages: 1,
+      has_next: false,
+      has_prev: false
+    }
+  };
+}
 
 function createPage(api: Partial<ApiService>, jobs: Partial<ReplenishmentJobService>, messages = { add: vi.fn() }): ReplenishmentPage {
   const injector = Injector.create({
@@ -58,16 +70,16 @@ describe('ReplenishmentPage generation jobs', () => {
       get: vi.fn(),
       list: vi.fn((resource: string) => {
         if (resource === 'replenishment-suggestions') {
-          return of({ ...emptyPage, items: [firstSuggestion, secondSuggestion], total: 2 });
+          return of(pageResult([firstSuggestion, secondSuggestion]));
         }
-        return of({ ...emptyPage, items: [], total: 0 });
+        return of(pageResult([]));
       })
     };
     const jobs = {
       runGeneration: vi.fn(() => generationEvents.asObservable())
     };
     const messages = { add: vi.fn() };
-    const page = createPage(api as Partial<ApiService>, jobs as Partial<ReplenishmentJobService>, messages) as unknown as {
+    const page = createPage(api as unknown as Partial<ApiService>, jobs as Partial<ReplenishmentJobService>, messages) as unknown as {
       regenerate: () => void;
       generationJob: () => { id: string; status: string; message: string } | null;
       suggestions: () => DataRecord[];
@@ -109,9 +121,9 @@ describe('ReplenishmentPage generation jobs', () => {
       get: vi.fn(),
       list: vi.fn((resource: string) => {
         if (resource === 'replenishment-suggestions') {
-          return of({ ...emptyPage, items: [firstSuggestion], total: 1 });
+          return of(pageResult([firstSuggestion]));
         }
-        return of({ ...emptyPage, items: [], total: 0 });
+        return of(pageResult([]));
       })
     };
     const jobs = {
@@ -128,7 +140,7 @@ describe('ReplenishmentPage generation jobs', () => {
       }))
     };
     const messages = { add: vi.fn() };
-    const page = createPage(api as Partial<ApiService>, jobs as Partial<ReplenishmentJobService>, messages) as unknown as {
+    const page = createPage(api as unknown as Partial<ApiService>, jobs as Partial<ReplenishmentJobService>, messages) as unknown as {
       regenerate: () => void;
       generationJob: () => { id: string; status: string; message: string } | null;
       suggestions: () => DataRecord[];

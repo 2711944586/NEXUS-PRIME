@@ -1,0 +1,687 @@
+@layer app {
+  .login-screen.nexus-login-redesign {
+    --auth-pure-dark: #010403;
+    --auth-pure-light: #fbfcff;
+    --auth-cyan: #76d8ff;
+    --auth-teal: #9fb4c8;
+    --auth-gold: #dbe6ef;
+    --auth-night-gradient: linear-gradient(104deg, #062436 0%, #16749b 48%, #8aa0b4 100%);
+    --auth-day-gradient: linear-gradient(104deg, #0c1822 0%, #2b6f9e 56%, #8aa0b4 100%);
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign {
+    color: #f4fffb;
+    background:
+      linear-gradient(180deg, #010403 0%, #020807 54%, #010403 100%);
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign {
+    color: #0c1822;
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f8fbff 55%, #edf3f8 100%);
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-video-bg {
+    opacity: .74 !important;
+    filter: saturate(1.08) contrast(1.24) brightness(.56) !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign.register-screen .auth-video-bg {
+    opacity: .72 !important;
+    filter: saturate(1.04) contrast(1.2) brightness(.54) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-video-bg {
+    opacity: .5 !important;
+    filter: saturate(.98) contrast(1.18) brightness(1.14) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign.register-screen .auth-video-bg {
+    opacity: .46 !important;
+    filter: saturate(.96) contrast(1.16) brightness(1.16) !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-video-wash {
+    background:
+      radial-gradient(circle at 58% 28%, rgba(72, 132, 168, .14), transparent 25rem),
+      linear-gradient(90deg, rgba(1, 4, 7, .82), rgba(1, 4, 7, .24) 46%, rgba(1, 4, 7, .86)),
+      linear-gradient(180deg, rgba(1, 4, 7, .32), rgba(1, 4, 7, .78) 70%, #010407 100%);
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-video-wash {
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .28) 43%, rgba(237, 243, 248, .82)),
+      linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(248, 251, 255, .46) 62%, #edf3f8 100%);
+  }
+
+  .login-screen.nexus-login-redesign .login-stage {
+    width: min(1420px, 100%);
+    min-height: calc(100dvh - clamp(1.6rem, 3.4vw, 2.7rem));
+  }
+
+  .login-screen.nexus-login-redesign .login-composition,
+  .login-screen.nexus-login-redesign .login-composition.register-composition {
+    grid-template-columns: minmax(420px, .86fr) minmax(460px, .74fr);
+    min-height: clamp(700px, 80dvh, 900px);
+    border-radius: 28px;
+  }
+
+  .login-screen.nexus-login-redesign .login-composition.register-composition {
+    grid-template-columns: minmax(360px, .56fr) minmax(560px, .86fr);
+    align-items: start;
+    min-height: auto;
+  }
+
+  .login-screen.nexus-login-redesign .login-identity-panel {
+    grid-template-rows: minmax(360px, 1fr) auto;
+  }
+
+  .login-screen.nexus-login-redesign .auth-intel-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .login-screen.nexus-login-redesign:not(.register-screen) .auth-intel-rail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .login-screen.nexus-login-redesign .login-photo-card {
+    min-height: 420px;
+    border-radius: 22px;
+  }
+
+  .login-screen.nexus-login-redesign.register-screen .login-photo-card figcaption strong.auth-stage-title {
+    max-width: 8ch;
+    font-size: clamp(3.8rem, 6.9vw, 7.35rem);
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-panel-video {
+    opacity: .86 !important;
+    filter: saturate(1.08) contrast(1.24) brightness(.62) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-panel-video {
+    opacity: .98 !important;
+    filter: saturate(1.02) contrast(1.14) brightness(.96) !important;
+  }
+
+  .login-screen.nexus-login-redesign .login-panel {
+    align-content: start;
+    gap: clamp(.72rem, 1vw, .95rem);
+    max-height: calc(100dvh - 4.8rem);
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+
+  .login-screen.nexus-login-redesign:not(.register-screen) .login-panel {
+    align-content: center;
+  }
+
+  .login-screen.nexus-login-redesign.register-screen .login-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .login-screen.nexus-login-redesign .login-panel::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .login-screen.nexus-login-redesign .login-panel::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(118, 216, 255, .24);
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .login-panel {
+    border-color: rgba(174, 236, 229, .16);
+    background:
+      linear-gradient(180deg, rgba(5, 18, 19, .95), rgba(1, 7, 7, .96)),
+      #010707 !important;
+    box-shadow:
+      0 36px 120px rgba(0, 0, 0, .72),
+      0 0 0 1px rgba(255, 255, 255, .035) inset,
+      inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .login-panel {
+    border-color: rgba(255, 255, 255, .86);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .94), rgba(247, 251, 255, .74)),
+      #fbfcff !important;
+    box-shadow:
+      0 30px 98px rgba(31, 79, 92, .2),
+      inset 0 1px 0 rgba(255, 255, 255, .98),
+      inset 0 0 0 1px rgba(255, 255, 255, .32) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .login-live-strip span,
+  html.light-luxury .login-screen.nexus-login-redesign .auth-intel-rail article {
+    color: #0c1822;
+    border-color: rgba(43, 111, 158, .14);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(241, 247, 252, .58)),
+      rgba(255, 255, 255, .66) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86), 0 14px 34px rgba(31, 79, 92, .12);
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-intel-rail span,
+  html.light-luxury .login-screen.nexus-login-redesign .auth-intel-rail em {
+    color: rgba(12, 24, 34, .62);
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-intel-rail strong {
+    color: #0c1822;
+  }
+
+  .login-screen.nexus-login-redesign .brand-lockup h1 {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+
+  .login-screen.nexus-login-redesign .login-copy p {
+    max-width: 48ch;
+  }
+
+  .login-screen.nexus-login-redesign .auth-mode-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .login-screen.nexus-login-redesign .auth-visual-core {
+    grid-template-columns: minmax(82px, .32fr) minmax(0, 1fr);
+  }
+
+  .login-screen.nexus-login-redesign .auth-orbit {
+    width: 92px;
+    min-width: 92px;
+  }
+
+  .login-screen.nexus-login-redesign.register-screen .login-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .68rem .76rem;
+  }
+
+  .login-screen.nexus-login-redesign.register-screen .login-alert,
+  .login-screen.nexus-login-redesign.register-screen .register-verification,
+  .login-screen.nexus-login-redesign.register-screen .register-consent,
+  .login-screen.nexus-login-redesign.register-screen .login-submit {
+    grid-column: 1 / -1;
+  }
+
+  .login-screen.nexus-login-redesign .login-field input,
+  .login-screen.nexus-login-redesign .p-inputtext {
+    min-height: 46px;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .login-field input,
+  html.dark-cockpit .login-screen.nexus-login-redesign .p-inputtext {
+    background: rgba(1, 7, 7, .92) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .login-field input,
+  html.light-luxury .login-screen.nexus-login-redesign .p-inputtext {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .84), rgba(246, 250, 254, .74)),
+      rgba(255, 255, 255, .84) !important;
+  }
+
+  .login-screen.nexus-login-redesign .register-verification {
+    grid-template-columns: minmax(160px, .65fr) minmax(180px, .74fr) minmax(180px, 1fr) auto;
+    align-items: center;
+  }
+
+  .login-screen.nexus-login-redesign .captcha-refresh {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-mode-strip span,
+  html.dark-cockpit .login-screen.nexus-login-redesign .login-role-switch button,
+  html.dark-cockpit .login-screen.nexus-login-redesign .register-assurance-strip span,
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-visual-core,
+  html.dark-cockpit .login-screen.nexus-login-redesign .register-verification,
+  html.dark-cockpit .login-screen.nexus-login-redesign .register-consent,
+  html.dark-cockpit .login-screen.nexus-login-redesign .login-capabilities div,
+  html.dark-cockpit .login-screen.nexus-login-redesign .login-footnote,
+  html.dark-cockpit .login-screen.nexus-login-redesign .register-policy-strip {
+    border-color: rgba(174, 236, 229, .14);
+    background:
+      linear-gradient(180deg, rgba(9, 24, 25, .78), rgba(2, 9, 9, .76)),
+      rgba(2, 9, 9, .78) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-mode-strip span,
+  html.light-luxury .login-screen.nexus-login-redesign .login-role-switch button,
+  html.light-luxury .login-screen.nexus-login-redesign .register-assurance-strip span,
+  html.light-luxury .login-screen.nexus-login-redesign .auth-visual-core,
+  html.light-luxury .login-screen.nexus-login-redesign .register-verification,
+  html.light-luxury .login-screen.nexus-login-redesign .register-consent,
+  html.light-luxury .login-screen.nexus-login-redesign .login-capabilities div,
+  html.light-luxury .login-screen.nexus-login-redesign .login-footnote,
+  html.light-luxury .login-screen.nexus-login-redesign .register-policy-strip {
+    border-color: rgba(12, 24, 34, .11);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(247, 251, 255, .52)),
+      rgba(255, 255, 255, .62) !important;
+  }
+
+  .login-screen.nexus-login-redesign .login-submit.p-button {
+    min-height: 50px;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .login-submit.p-button {
+    background: var(--auth-night-gradient) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .login-submit.p-button {
+    background: var(--auth-day-gradient) !important;
+  }
+
+  @media (max-width: 1180px) {
+    .login-screen.nexus-login-redesign .login-composition,
+    .login-screen.nexus-login-redesign .login-composition.register-composition {
+      grid-template-columns: minmax(0, .72fr) minmax(430px, .72fr);
+    }
+
+    .login-screen.nexus-login-redesign.register-screen .login-composition {
+      grid-template-columns: minmax(0, .5fr) minmax(520px, .84fr);
+    }
+  }
+
+  @media (max-width: 980px) {
+    .login-screen.nexus-login-redesign .login-composition,
+    .login-screen.nexus-login-redesign .login-composition.register-composition {
+      grid-template-columns: minmax(0, 1fr);
+      min-height: auto;
+    }
+
+    .login-screen.nexus-login-redesign .login-panel {
+      max-height: none;
+    }
+
+    .login-screen.nexus-login-redesign .login-identity-panel {
+      grid-template-rows: minmax(300px, 42vh) auto;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .login-screen.nexus-login-redesign .login-composition,
+    .login-screen.nexus-login-redesign .login-composition.register-composition {
+      display: block;
+    }
+
+    .login-screen.nexus-login-redesign.register-screen .login-form,
+    .login-screen.nexus-login-redesign .register-verification {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .login-screen.nexus-login-redesign .auth-mode-strip,
+    .login-screen.nexus-login-redesign .register-assurance-strip,
+    .login-screen.nexus-login-redesign .login-capabilities {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .login-screen.nexus-login-redesign .auth-visual-core {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+
+@layer app {
+  html.light-luxury .nexus-login-redesign {
+    --auth-day-ink: #0c1822;
+    --auth-day-muted: rgba(12, 24, 34, .66);
+    --auth-day-line: rgba(12, 24, 34, .12);
+    --auth-day-blue: #2b6f9e;
+    --auth-day-teal: #8aa0b4;
+    --auth-day-gold: #dbe6ef;
+    --auth-day-gradient: linear-gradient(105deg, #0c1822 0%, #2b6f9e 58%, #8aa0b4 100%);
+  }
+
+  html.light-luxury .nexus-login-redesign.login-screen {
+    background:
+      radial-gradient(circle at 16% 12%, rgba(255, 255, 255, .92), transparent 25rem),
+      radial-gradient(circle at 84% 8%, rgba(43, 111, 158, .16), transparent 32rem),
+      radial-gradient(circle at 58% 92%, rgba(138, 160, 180, .1), transparent 26rem),
+      linear-gradient(180deg, #ffffff 0%, #f8fbff 54%, #edf3f8 100%);
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-video-bg {
+    opacity: .52 !important;
+    filter: saturate(.7) contrast(1.2) brightness(1.24) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-video-bg {
+    opacity: .52 !important;
+    filter: saturate(.7) contrast(1.2) brightness(1.24) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign.register-screen .auth-video-bg {
+    opacity: .5 !important;
+    filter: saturate(.72) contrast(1.18) brightness(1.2) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign.register-screen .auth-video-bg {
+    opacity: .5 !important;
+    filter: saturate(.72) contrast(1.18) brightness(1.2) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-video-wash {
+    background:
+      radial-gradient(circle at 62% 22%, rgba(43, 111, 158, .11), transparent 24rem),
+      radial-gradient(circle at 18% 76%, rgba(138, 160, 180, .08), transparent 22rem),
+      linear-gradient(90deg, rgba(255, 255, 255, .76), rgba(255, 255, 255, .24) 42%, rgba(237, 243, 248, .8)),
+      linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(248, 251, 255, .44) 62%, #edf3f8 100%);
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-video-wash {
+    background:
+      radial-gradient(circle at 62% 22%, rgba(43, 111, 158, .11), transparent 24rem),
+      radial-gradient(circle at 18% 76%, rgba(138, 160, 180, .08), transparent 22rem),
+      linear-gradient(90deg, rgba(255, 255, 255, .76), rgba(255, 255, 255, .24) 42%, rgba(237, 243, 248, .8)),
+      linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(248, 251, 255, .44) 62%, #edf3f8 100%);
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-video-aurora {
+    background:
+      radial-gradient(ellipse at 76% 16%, rgba(43, 111, 158, .18), transparent 34%),
+      radial-gradient(ellipse at 12% 72%, rgba(138, 160, 180, .1), transparent 32%),
+      conic-gradient(from 212deg at 58% 36%, transparent 0 22%, rgba(43, 111, 158, .13) 30%, transparent 43% 100%);
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-data-scan,
+  html.light-luxury .nexus-login-redesign .auth-depth-grid {
+    opacity: .3;
+    background:
+      linear-gradient(rgba(43, 111, 158, .052) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(43, 111, 158, .044) 1px, transparent 1px),
+      radial-gradient(circle at 70% 18%, rgba(255, 255, 255, .72), transparent 18rem);
+    background-size: 78px 78px, 78px 78px, 100% 100%;
+    mix-blend-mode: multiply;
+  }
+
+  html.light-luxury .nexus-login-redesign .login-composition,
+  html.light-luxury .nexus-login-redesign .login-composition.register-composition {
+    border-color: rgba(255, 255, 255, .82);
+    background:
+      linear-gradient(120deg, rgba(255, 255, 255, .56), rgba(255, 255, 255, .18) 48%, rgba(237, 243, 248, .26)),
+      rgba(255, 255, 255, .2);
+    box-shadow:
+      0 38px 130px rgba(28, 58, 76, .2),
+      0 0 0 1px rgba(255, 255, 255, .52) inset;
+  }
+
+  html.light-luxury .nexus-login-redesign .login-composition::before {
+    background:
+      linear-gradient(110deg, transparent 0 42%, rgba(255, 255, 255, .6) 48%, transparent 56% 100%),
+      radial-gradient(circle at 18% 16%, rgba(43, 111, 158, .13), transparent 24%),
+      radial-gradient(circle at 86% 78%, rgba(138, 160, 180, .1), transparent 28%);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-photo-card {
+    background: #0f2735;
+    box-shadow:
+      0 26px 90px rgba(28, 58, 76, .2),
+      inset 0 1px 0 rgba(255, 255, 255, .44);
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-panel-video {
+    opacity: .98 !important;
+    filter: saturate(.92) contrast(1.12) brightness(.95) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .auth-panel-video {
+    opacity: .98 !important;
+    filter: saturate(.92) contrast(1.12) brightness(.95) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign.register-screen .auth-panel-video {
+    filter: saturate(.88) contrast(1.08) brightness(.98) !important;
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign.register-screen .auth-panel-video {
+    filter: saturate(.88) contrast(1.08) brightness(.98) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign .login-photo-card::before {
+    background:
+      linear-gradient(90deg, rgba(6, 22, 32, .72), rgba(6, 22, 32, .16) 50%, rgba(255, 255, 255, .08)),
+      linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(6, 22, 32, .68)),
+      linear-gradient(135deg, transparent 0 48%, rgba(181, 210, 230, .18) 49%, transparent 50% 100%),
+      repeating-linear-gradient(90deg, transparent 0 74px, rgba(255, 255, 255, .12) 76px, transparent 78px);
+  }
+
+  html.light-luxury .login-screen.nexus-login-redesign .login-photo-card::before {
+    background:
+      linear-gradient(90deg, rgba(6, 22, 32, .72), rgba(6, 22, 32, .16) 50%, rgba(255, 255, 255, .08)),
+      linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(6, 22, 32, .68)),
+      linear-gradient(135deg, transparent 0 48%, rgba(181, 210, 230, .18) 49%, transparent 50% 100%),
+      repeating-linear-gradient(90deg, transparent 0 74px, rgba(255, 255, 255, .12) 76px, transparent 78px);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-photo-card figcaption strong.auth-stage-title > span {
+    background-image:
+      linear-gradient(180deg, #ffffff 0%, #edf7ff 48%, #b8d4e8 100%),
+      linear-gradient(100deg, transparent 0 34%, rgba(255, 255, 255, .9) 48%, transparent 63% 100%);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-panel {
+    color: var(--auth-day-ink);
+    border-color: rgba(255, 255, 255, .86);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .93), rgba(247, 251, 255, .68)),
+      radial-gradient(circle at 80% 6%, rgba(43, 111, 158, .09), transparent 18rem),
+      rgba(255, 255, 255, .78) !important;
+    box-shadow:
+      0 30px 94px rgba(28, 58, 76, .18),
+      inset 0 1px 0 rgba(255, 255, 255, .98),
+      inset 0 0 0 1px rgba(255, 255, 255, .34) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign .login-panel::before {
+    background:
+      linear-gradient(120deg, transparent 0 30%, rgba(43, 111, 158, .1) 35%, transparent 44% 100%),
+      linear-gradient(rgba(12, 24, 34, .028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(12, 24, 34, .024) 1px, transparent 1px);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-live-strip span,
+  html.light-luxury .nexus-login-redesign .auth-intel-rail article,
+  html.light-luxury .nexus-login-redesign .auth-mode-strip span,
+  html.light-luxury .nexus-login-redesign .login-role-switch button,
+  html.light-luxury .nexus-login-redesign .register-assurance-strip span,
+  html.light-luxury .nexus-login-redesign .auth-visual-core,
+  html.light-luxury .nexus-login-redesign .register-verification,
+  html.light-luxury .nexus-login-redesign .register-consent,
+  html.light-luxury .nexus-login-redesign .login-capabilities div,
+  html.light-luxury .nexus-login-redesign .login-footnote,
+  html.light-luxury .nexus-login-redesign .register-policy-strip {
+    border-color: rgba(12, 24, 34, .1);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(247, 251, 255, .52)),
+      rgba(255, 255, 255, .62) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78), 0 14px 34px rgba(28, 58, 76, .1);
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-visual-core,
+  html.light-luxury .nexus-login-redesign .auth-orbit {
+    background:
+      radial-gradient(circle at 22% 18%, rgba(43, 111, 158, .1), transparent 34%),
+      rgba(255, 255, 255, .6) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-mode-strip i,
+  html.light-luxury .nexus-login-redesign .login-role-switch button i,
+  html.light-luxury .nexus-login-redesign .login-capabilities i,
+  html.light-luxury .nexus-login-redesign .register-assurance-strip i,
+  html.light-luxury .nexus-login-redesign .orbit-node {
+    color: #1d526f;
+    border-color: rgba(43, 111, 158, .2);
+    background: rgba(43, 111, 158, .08);
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-orbit strong,
+  html.light-luxury .nexus-login-redesign .brand-lockup .brand-mark,
+  html.light-luxury .nexus-login-redesign .login-submit.p-button {
+    background: var(--auth-day-gradient) !important;
+  }
+
+  html.light-luxury .nexus-login-redesign .auth-signal-chart i::before {
+    background: linear-gradient(90deg, #2b6f9e, #8aa0b4, #dbe6ef);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-role-switch button:hover,
+  html.light-luxury .nexus-login-redesign .login-role-switch button.active {
+    border-color: rgba(43, 111, 158, .32);
+    background: rgba(43, 111, 158, .08) !important;
+    box-shadow: inset 0 0 0 1px rgba(43, 111, 158, .045), 0 14px 32px rgba(28, 58, 76, .1);
+  }
+
+  html.light-luxury .nexus-login-redesign .login-field input:focus,
+  html.light-luxury .nexus-login-redesign .p-inputtext:enabled:focus {
+    border-color: rgba(43, 111, 158, .46);
+    box-shadow: 0 0 0 3px rgba(43, 111, 158, .11), inset 0 1px 0 rgba(255, 255, 255, .88);
+  }
+
+  html.light-luxury .nexus-login-redesign .register-policy-strip,
+  html.light-luxury .nexus-login-redesign .register-policy-strip button,
+  html.light-luxury .nexus-login-redesign .register-consent-head button,
+  html.light-luxury .nexus-login-redesign .login-footnote button,
+  html.light-luxury .nexus-login-redesign .captcha-refresh {
+    border-color: rgba(43, 111, 158, .2);
+    color: #1d526f;
+    background: rgba(43, 111, 158, .07);
+  }
+
+  html.dark-cockpit .nexus-login-redesign {
+    --auth-night-blue: #72cbff;
+    --auth-night-teal: #9fb4c8;
+    --auth-night-gold: #dbe6ef;
+    --auth-night-gradient: linear-gradient(105deg, #062436 0%, #16749b 54%, #8aa0b4 100%);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-video-bg {
+    opacity: .76 !important;
+    object-position: center center;
+    filter: saturate(1.02) contrast(1.2) brightness(.58) !important;
+    transform: translate(-50%, -50%) scale(1.012);
+    animation: auth-video-drift-contained 20s ease-in-out infinite alternate !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-video-bg {
+    opacity: .76 !important;
+    object-position: center center;
+    filter: saturate(1.02) contrast(1.2) brightness(.58) !important;
+    transform: translate(-50%, -50%) scale(1.012);
+    animation: auth-video-drift-contained 20s ease-in-out infinite alternate !important;
+  }
+
+  html.dark-cockpit .nexus-login-redesign.register-screen .auth-video-bg {
+    opacity: .74 !important;
+    filter: saturate(.98) contrast(1.18) brightness(.56) !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign.register-screen .auth-video-bg {
+    opacity: .74 !important;
+    filter: saturate(.98) contrast(1.18) brightness(.56) !important;
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-video-aurora {
+    opacity: .28;
+    background:
+      radial-gradient(ellipse at 76% 16%, rgba(114, 203, 255, .22), transparent 34%),
+      radial-gradient(ellipse at 12% 72%, rgba(159, 180, 200, .12), transparent 32%),
+      conic-gradient(from 212deg at 58% 36%, transparent 0 22%, rgba(22, 116, 155, .2) 30%, transparent 43% 100%);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-data-scan {
+    opacity: .2;
+    background:
+      linear-gradient(105deg, transparent 0 40%, rgba(114, 203, 255, .14) 47%, transparent 54% 100%),
+      repeating-linear-gradient(90deg, transparent 0 94px, rgba(114, 203, 255, .08) 96px, transparent 98px),
+      repeating-linear-gradient(180deg, transparent 0 66px, rgba(159, 180, 200, .05) 67px, transparent 69px);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-video-wash {
+    background:
+      radial-gradient(circle at 66% 30%, rgba(114, 203, 255, .09), transparent 24rem),
+      radial-gradient(circle at 18% 78%, rgba(159, 180, 200, .06), transparent 22rem),
+      linear-gradient(90deg, rgba(1, 3, 7, .82), rgba(1, 3, 7, .28) 45%, rgba(1, 3, 7, .84)),
+      linear-gradient(180deg, rgba(1, 3, 7, .34), rgba(1, 3, 7, .78) 62%, #010307 100%);
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-video-wash {
+    background:
+      radial-gradient(circle at 66% 30%, rgba(114, 203, 255, .09), transparent 24rem),
+      radial-gradient(circle at 18% 78%, rgba(159, 180, 200, .06), transparent 22rem),
+      linear-gradient(90deg, rgba(1, 3, 7, .82), rgba(1, 3, 7, .28) 45%, rgba(1, 3, 7, .84)),
+      linear-gradient(180deg, rgba(1, 3, 7, .34), rgba(1, 3, 7, .78) 62%, #010307 100%);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-depth-grid {
+    opacity: .26;
+    background:
+      linear-gradient(rgba(114, 203, 255, .055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(114, 203, 255, .044) 1px, transparent 1px);
+    background-size: 78px 78px;
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-panel-video {
+    opacity: .9 !important;
+    object-position: center center;
+    filter: saturate(1.02) contrast(1.16) brightness(.68) !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-panel-video {
+    opacity: .9 !important;
+    object-position: center center;
+    filter: saturate(1.02) contrast(1.16) brightness(.68) !important;
+  }
+
+  html.dark-cockpit .nexus-login-redesign.register-screen .auth-panel-video {
+    opacity: .88 !important;
+    filter: saturate(.98) contrast(1.12) brightness(.66) !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign.register-screen .auth-panel-video {
+    opacity: .88 !important;
+    filter: saturate(.98) contrast(1.12) brightness(.66) !important;
+  }
+
+  html.dark-cockpit .nexus-login-redesign .login-photo-card::before {
+    background:
+      linear-gradient(90deg, rgba(1, 8, 12, .62), rgba(1, 8, 12, .16) 52%, rgba(1, 8, 12, .62)),
+      linear-gradient(180deg, rgba(1, 8, 12, .04), rgba(1, 8, 12, .68)),
+      repeating-linear-gradient(90deg, transparent 0 74px, rgba(114, 203, 255, .08) 76px, transparent 78px);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-visual-core {
+    background:
+      radial-gradient(circle at 22% 18%, rgba(114, 203, 255, .14), transparent 34%),
+      radial-gradient(circle at 86% 78%, rgba(159, 180, 200, .08), transparent 34%),
+      rgba(2, 8, 8, .76) !important;
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-orbit {
+    background:
+      radial-gradient(circle, rgba(114, 203, 255, .13), rgba(159, 180, 200, .06) 42%, transparent 68%),
+      rgba(2, 8, 8, .88);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .auth-signal-chart i::before {
+    background: var(--auth-night-gradient);
+  }
+
+  html.dark-cockpit .nexus-login-redesign .login-submit.p-button:disabled {
+    background:
+      linear-gradient(105deg, rgba(6, 36, 54, .42), rgba(22, 116, 155, .34), rgba(138, 160, 180, .26)) !important;
+  }
+
+  @keyframes auth-video-drift-contained {
+    from {
+      transform: translate(-50%, -50%) scale(1.012);
+    }
+
+    to {
+      transform: translate(-49.6%, -50.2%) scale(1.035);
+    }
+  }
+}

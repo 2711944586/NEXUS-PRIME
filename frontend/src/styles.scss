@@ -17,10 +17,16 @@
 @use './styles/effects/scene-background';
 @use './styles/components/motion' as motion-components;
 
-// Extensions (TODO: merge into domain partials above)
+// Extensions
 @use './styles/icon-fix';
 @use './styles/quality-enhancements';
 @use './styles/motion-system';
 @use './styles/premium-shell';
 @use './styles/premium-upgrade';
 @use './styles/experience-polish';
+@use './styles/entry-cinematic';
+@use './styles/entry-premium-tune';
+@use './styles/auth-cinematic-tune';
+@use './styles/policy-cinematic';
+@use './styles/auth-layout-lock';
+@use './styles/cinematic-final-lock';

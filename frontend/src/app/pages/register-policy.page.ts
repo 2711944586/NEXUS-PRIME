@@ -4,6 +4,12 @@ import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/rout
 import { catchError, filter, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
+import {
+  LANDING_POSTER,
+  policyFallbackImage,
+  policyPanelVideoSource,
+  policyVideoSource
+} from '../core/landing-visuals';
 import { ThemeService } from '../core/theme.service';
 
 interface RegisterPolicy {
@@ -25,6 +31,26 @@ interface RegisterPolicyDocument {
   imports: [CommonModule, RouterLink],
   template: `
     <main class="policy-screen nexus-login-redesign">
+      <div class="policy-video-stage" aria-hidden="true">
+        <video
+          class="policy-video-bg"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+          [poster]="poster"
+          [src]="policyVideoSource()"
+          (canplay)="playBackgroundVideo($event)"
+          (loadeddata)="playBackgroundVideo($event)"
+        >
+        </video>
+        <div class="policy-video-aurora"></div>
+        <div class="policy-data-scan"></div>
+        <div class="policy-video-wash"></div>
+        <div class="policy-depth-grid"></div>
+      </div>
+
       <header class="policy-topbar">
         <a class="entry-brand-inline" routerLink="/" aria-label="NEXUS Prime 首页">
           <span class="brand-mark">NX</span>
@@ -35,8 +61,12 @@ interface RegisterPolicyDocument {
         </a>
         <nav aria-label="许可页操作">
           <a routerLink="/auth/login" [queryParams]="{ mode: 'register' }">返回注册</a>
-          <button type="button" (click)="theme.toggle(false)" aria-label="切换主题">
-            <i class="pi" [ngClass]="theme.mode() === 'dark-cockpit' ? 'pi-moon' : 'pi-sun'"></i>
+          <button
+            type="button"
+            (click)="toggleTheme()"
+            [attr.aria-label]="theme.mode() === 'dark-cockpit' ? '切换到亮色主题' : '切换到暗色主题'"
+          >
+            <i class="pi" [ngClass]="theme.mode() === 'dark-cockpit' ? 'pi-sun' : 'pi-moon'"></i>
           </button>
         </nav>
       </header>
@@ -54,8 +84,21 @@ interface RegisterPolicyDocument {
             <a routerLink="/auth/login" [queryParams]="{ mode: 'register' }">创建账号</a>
           </div>
         </div>
-        <figure class="policy-photo-card">
-          <img src="/images/contracts-desk-wide.jpg" alt="业务合同与注册许可资料桌面" />
+        <figure class="policy-photo-card policy-video-card">
+          <video
+            class="policy-panel-video"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            [poster]="poster"
+            [src]="policyPanelVideoSource()"
+            (canplay)="playBackgroundVideo($event)"
+            (loadeddata)="playBackgroundVideo($event)"
+          >
+          </video>
+          <img [src]="policyFallbackImage()" alt="业务合同与注册许可资料桌面" />
           <figcaption>
             <span>Policy desk</span>
             <strong>许可与审计资料</strong>
@@ -95,6 +138,7 @@ interface RegisterPolicyDocument {
 })
 export class RegisterPolicyPage implements OnInit, AfterViewInit {
   protected readonly theme = inject(ThemeService);
+  protected readonly poster = LANDING_POSTER;
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -134,6 +178,34 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
       this.router.navigate([], { fragment: target, replaceUrl: false });
     }
     this.performPolicyScroll(target, updateUrl ? 'smooth' : 'auto');
+  }
+
+  toggleTheme(): void {
+    this.theme.toggle(false);
+  }
+
+  policyVideoSource(): string {
+    return policyVideoSource(this.theme.mode());
+  }
+
+  policyPanelVideoSource(): string {
+    return policyPanelVideoSource(this.theme.mode());
+  }
+
+  policyFallbackImage(): string {
+    return policyFallbackImage();
+  }
+
+  playBackgroundVideo(event: Event): void {
+    const video = event.target as HTMLVideoElement | null;
+    if (!video) {
+      return;
+    }
+    video.muted = true;
+    video.playsInline = true;
+    void video.play().catch(() => {
+      // Poster and fallback image keep the policy page readable if autoplay is blocked.
+    });
   }
 
   registerPolicyDocuments(): RegisterPolicyDocument[] {

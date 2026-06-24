@@ -44,3 +44,11 @@ Local frontend images are stored under `frontend/public/images` so deployed page
 - `technician-repair-wide.jpg`: Pexels industrial technician repair scene, downloaded locally from `https://images.pexels.com/photos/34054468/pexels-photo-34054468.jpeg?auto=compress&cs=tinysrgb&w=1800`.
 - `control-panel-wide.jpg`: Pexels industrial control panel scene, downloaded locally from `https://images.pexels.com/photos/3582392/pexels-photo-3582392.jpeg?auto=compress&cs=tinysrgb&w=1800`.
 - `factory-safety-helmet-wide.jpg`: Pexels factory safety helmet collaboration scene, downloaded locally from `https://images.pexels.com/photos/19895881/pexels-photo-19895881.jpeg?auto=compress&cs=tinysrgb&w=1800`.
+
+## Video Sources
+
+- Homepage dark and light remote video: Mixkit data-center corridor footage, embedded as `https://assets.mixkit.co/videos/23282/23282-720.mp4`.
+- Login dark and light remote video: Mixkit server room inspection footage, embedded as `https://assets.mixkit.co/videos/23108/23108-720.mp4`; the login-side media panel uses fiber optics in a server room, `https://assets.mixkit.co/videos/47050/47050-720.mp4`.
+- Register dark and light remote video: Mixkit electronics manufacturing robot footage, embedded as `https://assets.mixkit.co/videos/47258/47258-720.mp4`; the register-side media panel uses the red-white robotic production line, `https://assets.mixkit.co/videos/47257/47257-720.mp4`.
+- Register policy dark and light remote video: Mixkit data-center corridor footage, embedded as `https://assets.mixkit.co/videos/23282/23282-720.mp4`; the policy-side media panel uses fiber optics in a server room, `https://assets.mixkit.co/videos/47050/47050-720.mp4`.
+- `automated-production-line-wide.jpg`: local poster fallback for landing, auth, and policy videos.

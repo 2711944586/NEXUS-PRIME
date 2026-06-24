@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -9,6 +9,12 @@ import { catchError, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
+import {
+  authFallbackImage,
+  authPanelVideoSource,
+  authVideoSource,
+  LANDING_POSTER
+} from '../core/landing-visuals';
 import { ThemeService } from '../core/theme.service';
 import { environment } from '../../environments/environment';
 import type { DemoAccountRole } from '../../environments/environment.model';
@@ -43,6 +49,26 @@ interface CaptchaChallenge {
   ],
   template: `
     <main class="login-screen nexus-login-redesign" [class.register-screen]="authMode() === 'register'">
+      <div class="auth-video-stage" aria-hidden="true">
+        <video
+          #authVideo
+          class="auth-video-bg"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+          [poster]="poster"
+          [src]="authVideoSource()"
+          (canplay)="playBackgroundVideo($event)"
+          (loadeddata)="playBackgroundVideo($event)"
+        >
+        </video>
+        <div class="auth-video-aurora"></div>
+        <div class="auth-data-scan"></div>
+        <div class="auth-video-wash"></div>
+        <div class="auth-depth-grid"></div>
+      </div>
       <nexus-scene-background
         [mode]="authMode()"
         [image]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'"
@@ -56,21 +82,46 @@ interface CaptchaChallenge {
         <div class="login-composition" [class.register-composition]="authMode() === 'register'">
           <aside class="login-identity-panel" aria-label="入口现场" nexusReveal [nexusRevealDelay]="110">
             <figure class="login-photo-card">
-              <img [src]="authMode() === 'register' ? '/images/factory-engineers-wide.jpg' : '/images/receiving-dock-wide.jpg'" alt="制造与仓配现场" />
+              <video
+                #authPanelVideo
+                class="auth-panel-video"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="auto"
+                [poster]="poster"
+                [src]="authPanelVideoSource()"
+                (canplay)="playPanelVideo($event)"
+                (loadeddata)="playPanelVideo($event)"
+              >
+              </video>
+              <img [src]="authFallbackImage()" alt="制造与仓配现场" />
               <figcaption>
-                <span>{{ authMode() === 'register' ? 'Register' : 'Secure console' }}</span>
+                <span>{{ authHeroKicker() }}</span>
                 <strong class="auth-stage-title" [attr.aria-label]="authMode() === 'register' ? '创建普通成员账号' : '进入经营工作台'">
                   @for (line of stageTitleLines(); track line) {
                     <span>{{ line }}</span>
                   }
                 </strong>
+                <p>{{ authHeroCopy() }}</p>
               </figcaption>
             </figure>
 
             <div class="login-live-strip" aria-label="入口状态">
-              <span>Role scoped</span>
-              <span>CSRF ready</span>
-              <span>Audit trace</span>
+              @for (item of authLiveTags(); track item) {
+                <span>{{ item }}</span>
+              }
+            </div>
+
+            <div class="auth-intel-rail" aria-label="准入态势">
+              @for (item of authIntelRail(); track item.label) {
+                <article>
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                  <em>{{ item.body }}</em>
+                </article>
+              }
             </div>
           </aside>
 
@@ -81,8 +132,17 @@ interface CaptchaChallenge {
             nexusSpotlight
             [nexusRevealDelay]="170"
           >
-            <button pButton type="button" class="theme-fab" [text]="true" [rounded]="true" (click)="theme.toggle(false)" aria-label="切换主题">
-              <i class="pi" [ngClass]="theme.mode() === 'dark-cockpit' ? 'pi-moon' : 'pi-sun'"></i>
+            <button
+              pButton
+              type="button"
+              class="theme-fab"
+              [text]="true"
+              [rounded]="true"
+              (click)="toggleTheme()"
+              [attr.aria-label]="theme.mode() === 'dark-cockpit' ? '切换到亮色主题' : '切换到暗色主题'"
+              [attr.title]="theme.mode() === 'dark-cockpit' ? '切换到亮色主题' : '切换到暗色主题'"
+            >
+              <i class="pi" [ngClass]="theme.mode() === 'dark-cockpit' ? 'pi-sun' : 'pi-moon'"></i>
             </button>
 
             <div class="brand-lockup">
@@ -100,6 +160,16 @@ interface CaptchaChallenge {
                   <span>许可版本 {{ registerPolicy()?.terms_version || captcha()?.terms_version || '读取中' }}</span>
                   <button type="button" (click)="openPolicyTop()">查看许可</button>
                 </div>
+              }
+            </div>
+
+            <div class="auth-mode-strip" aria-label="准入模式">
+              @for (item of authModeStrip(); track item.label) {
+                <span>
+                  <i [class]="item.icon"></i>
+                  <strong>{{ item.label }}</strong>
+                  <em>{{ item.value }}</em>
+                </span>
               }
             </div>
 
@@ -358,8 +428,12 @@ interface CaptchaChallenge {
     </main>
   `
 })
-export class LoginPage implements OnInit {
+export class LoginPage implements OnInit, AfterViewInit {
+  @ViewChild('authVideo') private readonly authVideo?: ElementRef<HTMLVideoElement>;
+  @ViewChild('authPanelVideo') private readonly authPanelVideo?: ElementRef<HTMLVideoElement>;
+
   protected readonly theme = inject(ThemeService);
+  protected readonly poster = LANDING_POSTER;
   private readonly api = inject(ApiService);
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
@@ -419,6 +493,42 @@ export class LoginPage implements OnInit {
       if (result) {
         this.csrfReady.set(true);
       }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    queueMicrotask(() => this.playBackgroundVideo());
+    queueMicrotask(() => this.playPanelVideo());
+  }
+
+  protected toggleTheme(): void {
+    this.theme.toggle(false);
+    queueMicrotask(() => this.ensureVideosPlaying());
+  }
+
+  protected playBackgroundVideo(event?: Event): void {
+    const video = (event?.target as HTMLVideoElement | null) ?? this.authVideo?.nativeElement;
+    if (!video) {
+      return;
+    }
+
+    video.muted = true;
+    video.playsInline = true;
+    void video.play().catch(() => {
+      // The scene background and poster keep the entrance usable if autoplay is blocked.
+    });
+  }
+
+  protected playPanelVideo(event?: Event): void {
+    const video = (event?.target as HTMLVideoElement | null) ?? this.authPanelVideo?.nativeElement;
+    if (!video) {
+      return;
+    }
+
+    video.muted = true;
+    video.playsInline = true;
+    void video.play().catch(() => {
+      // The fallback photo remains below the cinematic overlay if autoplay is blocked.
     });
   }
 
@@ -485,6 +595,7 @@ export class LoginPage implements OnInit {
   switchMode(mode: 'login' | 'register'): void {
     this.authMode.set(mode);
     this.errorMessage.set('');
+    queueMicrotask(() => this.reloadBackgroundVideo());
     if (mode === 'register') {
       this.form.controls.full_name.addValidators([Validators.required, Validators.minLength(2)]);
       this.form.controls.username.addValidators([Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9._-]+$/)]);
@@ -593,6 +704,62 @@ export class LoginPage implements OnInit {
       ];
   }
 
+  authVideoSource(): string {
+    return authVideoSource(this.authMode(), this.theme.mode());
+  }
+
+  authPanelVideoSource(): string {
+    return authPanelVideoSource(this.authMode(), this.theme.mode());
+  }
+
+  authFallbackImage(): string {
+    return authFallbackImage(this.authMode());
+  }
+
+  authHeroKicker(): string {
+    return this.authMode() === 'register' ? 'Robotic onboarding' : 'Server access';
+  }
+
+  authHeroCopy(): string {
+    return this.authMode() === 'register'
+      ? '新成员资料、岗位边界和许可确认进入同一条可审计链路。'
+      : '会话、角色和关键动作在进入工作台之前完成准入校验。';
+  }
+
+  authLiveTags(): string[] {
+    return this.authMode() === 'register'
+      ? ['Profile staged', 'Policy signed', 'Audit queued']
+      : ['Session sealed', 'Role scoped', 'Trace live'];
+  }
+
+  authIntelRail(): Array<{ label: string; value: string; body: string }> {
+    return this.authMode() === 'register'
+      ? [
+        { label: 'Scope', value: 'Member', body: '默认普通权限' },
+        { label: 'Review', value: '岗位授权', body: '管理员后续分配' },
+        { label: 'Trail', value: 'Register', body: '资料与许可留痕' }
+      ]
+      : [
+        { label: 'Identity', value: '2 roles', body: '管理员 / 普通用户' },
+        { label: 'Session', value: 'CSRF', body: '安全令牌校验' },
+        { label: 'Trace', value: 'Live', body: '登录动作留痕' }
+      ];
+  }
+
+  authModeStrip(): Array<{ icon: string; label: string; value: string }> {
+    return this.authMode() === 'register'
+      ? [
+        { icon: 'pi pi-id-card', label: '账号资料', value: '完整性校验' },
+        { icon: 'pi pi-file-check', label: '服务许可', value: '版本锁定' },
+        { icon: 'pi pi-history', label: '审计链路', value: '注册留痕' }
+      ]
+      : [
+        { icon: 'pi pi-key', label: '会话密钥', value: '已准备' },
+        { icon: 'pi pi-shield', label: '角色边界', value: '按账号注入' },
+        { icon: 'pi pi-chart-line', label: '经营入口', value: '总览跳转' }
+      ];
+  }
+
   visualMetrics(): Array<{ label: string; value: number }> {
     return this.authMode() === 'register'
       ? [
@@ -608,7 +775,26 @@ export class LoginPage implements OnInit {
   }
 
   stageTitleLines(): string[] {
-    return this.authMode() === 'register' ? ['创建普通', '成员账号'] : ['进入经营', '工作台'];
+    return this.authMode() === 'register' ? ['成员入网', '准入许可'] : ['安全准入', '经营中枢'];
+  }
+
+  private reloadBackgroundVideo(): void {
+    const video = this.authVideo?.nativeElement;
+    if (video) {
+      video.load();
+      this.playBackgroundVideo();
+    }
+
+    const panelVideo = this.authPanelVideo?.nativeElement;
+    if (panelVideo) {
+      panelVideo.load();
+      this.playPanelVideo();
+    }
+  }
+
+  private ensureVideosPlaying(): void {
+    this.playBackgroundVideo();
+    this.playPanelVideo();
   }
 
   openPolicy(fragment: 'terms' | 'privacy' | 'data_scope'): void {

@@ -148,7 +148,7 @@ describe('OperationsTasksPage workflow todo stream', () => {
         return of(emptyAnalytics());
       })
     };
-    const fetchMock = vi.fn((_url: RequestInfo | URL, init?: RequestInit) => {
+    const fetchMock = vi.fn((_url: RequestInfo | URL) => {
       return Promise.resolve(new Response(
         'event: snapshot\ndata: {"items":[],"total":0}\n\n',
         { status: 200, headers: { 'Content-Type': 'text/event-stream' } }

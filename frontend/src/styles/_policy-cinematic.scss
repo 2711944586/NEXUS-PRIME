@@ -1,0 +1,639 @@
+@layer app {
+  .policy-screen.nexus-login-redesign {
+    --policy-dark: #010403;
+    --policy-light: #fbfcf6;
+    --policy-cyan: #76d8ff;
+    --policy-teal: #68e0bd;
+    --policy-gold: #d6ad55;
+    --policy-gradient-night: linear-gradient(104deg, #0b465d 0%, #16879f 42%, #36aa86 72%, #d0a14d 100%);
+    --policy-gradient-day: linear-gradient(104deg, #102633 0%, #256f8f 45%, #4d9b85 74%, #b8944d 100%);
+    position: relative;
+    isolation: isolate;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding: clamp(1rem, 2.4vw, 1.6rem);
+    scroll-behavior: smooth;
+  }
+
+  html.dark-cockpit .policy-screen.nexus-login-redesign {
+    color: #f4fffb;
+    background: linear-gradient(180deg, #010403 0%, #020807 55%, #010403 100%);
+  }
+
+  html.light-luxury .policy-screen.nexus-login-redesign {
+    color: #102432;
+    background: linear-gradient(180deg, #fbfcf6 0%, #eef6ef 55%, #e6f0e9 100%);
+  }
+
+  .policy-video-stage {
+    position: fixed;
+    inset: 0;
+    z-index: -5;
+    overflow: hidden;
+    background: #010403 url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    pointer-events: none;
+  }
+
+  .policy-video-bg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+    transform: translate(-50%, -50%) scale(1.045);
+    animation: policy-video-drift 20s ease-in-out infinite alternate;
+  }
+
+  .policy-video-aurora,
+  .policy-data-scan,
+  .policy-video-wash,
+  .policy-depth-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  html.dark-cockpit .policy-video-bg {
+    opacity: .58;
+    filter: saturate(1.08) contrast(1.34) brightness(.42);
+  }
+
+  html.light-luxury .policy-video-bg {
+    opacity: .46;
+    filter: saturate(1) contrast(1.16) brightness(1.14);
+  }
+
+  .policy-video-aurora {
+    background:
+      conic-gradient(from 216deg at 58% 34%, transparent 0 21%, rgba(118, 216, 255, .25) 30%, transparent 42% 100%),
+      linear-gradient(112deg, transparent 0 38%, rgba(104, 224, 189, .15) 47%, transparent 57% 100%);
+    mix-blend-mode: screen;
+    animation: policy-aurora-breathe 14s ease-in-out infinite alternate;
+  }
+
+  html.light-luxury .policy-video-aurora {
+    background:
+      conic-gradient(from 216deg at 58% 34%, transparent 0 21%, rgba(37, 111, 143, .18) 30%, transparent 42% 100%),
+      linear-gradient(112deg, transparent 0 38%, rgba(77, 155, 133, .14) 47%, transparent 57% 100%);
+    mix-blend-mode: multiply;
+  }
+
+  .policy-data-scan {
+    background:
+      linear-gradient(105deg, transparent 0 40%, rgba(118, 216, 255, .16) 47%, transparent 54% 100%),
+      repeating-linear-gradient(90deg, transparent 0 106px, rgba(174, 236, 229, .07) 108px, transparent 110px);
+    background-size: 230% 100%, 100% 100%;
+    opacity: .54;
+    mix-blend-mode: screen;
+    animation: policy-scan 7.8s linear infinite;
+  }
+
+  html.light-luxury .policy-data-scan {
+    background:
+      linear-gradient(105deg, transparent 0 40%, rgba(37, 111, 143, .15) 47%, transparent 54% 100%),
+      repeating-linear-gradient(90deg, transparent 0 106px, rgba(16, 38, 50, .055) 108px, transparent 110px);
+    mix-blend-mode: multiply;
+  }
+
+  html.dark-cockpit .policy-video-wash {
+    background:
+      linear-gradient(90deg, rgba(1, 4, 3, .96), rgba(1, 4, 3, .62) 47%, rgba(1, 4, 3, .96)),
+      linear-gradient(180deg, rgba(1, 4, 3, .58), rgba(1, 4, 3, .9) 68%, #010403 100%);
+  }
+
+  html.light-luxury .policy-video-wash {
+    background:
+      linear-gradient(90deg, rgba(251, 252, 246, .84), rgba(251, 252, 246, .4) 46%, rgba(238, 246, 239, .88)),
+      linear-gradient(180deg, rgba(251, 252, 246, .14), rgba(251, 252, 246, .56) 62%, #edf5ee 100%);
+  }
+
+  .policy-depth-grid {
+    opacity: .36;
+    background:
+      linear-gradient(rgba(174, 236, 229, .065) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(174, 236, 229, .052) 1px, transparent 1px);
+    background-size: 84px 84px;
+    mask-image: linear-gradient(180deg, #000 0 70%, transparent 100%);
+    animation: policy-grid-glide 20s linear infinite;
+  }
+
+  html.light-luxury .policy-depth-grid {
+    opacity: .42;
+    background:
+      linear-gradient(rgba(16, 38, 50, .055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 38, 50, .048) 1px, transparent 1px);
+  }
+
+  .policy-screen .policy-topbar {
+    position: sticky;
+    top: max(1rem, env(safe-area-inset-top));
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: min(1320px, 100%);
+    margin: 0 auto clamp(1.2rem, 2.8vw, 2rem);
+    padding: .55rem .65rem;
+    border-radius: 999px;
+    backdrop-filter: blur(22px) saturate(1.16);
+  }
+
+  html.dark-cockpit .policy-screen .policy-topbar {
+    border: 1px solid rgba(174, 236, 229, .14);
+    background: rgba(2, 8, 8, .76);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .52), inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+
+  html.light-luxury .policy-screen .policy-topbar {
+    border: 1px solid rgba(255, 255, 255, .78);
+    background: rgba(255, 255, 250, .78);
+    box-shadow: 0 24px 70px rgba(31, 79, 92, .16), inset 0 1px 0 rgba(255, 255, 255, .9);
+  }
+
+  .policy-screen .policy-topbar nav {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+  }
+
+  .policy-screen .policy-topbar nav a,
+  .policy-screen .policy-topbar nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: .45rem .85rem;
+    color: inherit;
+    background: transparent;
+    font-weight: 780;
+    cursor: pointer;
+  }
+
+  html.dark-cockpit .policy-screen .policy-topbar nav a,
+  html.dark-cockpit .policy-screen .policy-topbar nav button {
+    color: #f4fffb;
+    border-color: rgba(174, 236, 229, .12);
+    background: rgba(255, 255, 255, .045);
+  }
+
+  html.light-luxury .policy-screen .policy-topbar nav a,
+  html.light-luxury .policy-screen .policy-topbar nav button {
+    color: #102432;
+    border-color: rgba(16, 38, 50, .1);
+    background: rgba(16, 38, 50, .045);
+  }
+
+  .policy-screen .policy-hero {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(360px, .62fr);
+    gap: clamp(1rem, 2vw, 1.4rem);
+    width: min(1320px, 100%);
+    min-height: clamp(520px, 60vw, 680px);
+    margin: 0 auto clamp(1.2rem, 3vw, 2rem);
+    padding: clamp(.8rem, 1.5vw, 1rem);
+    border-radius: 28px;
+    overflow: hidden;
+  }
+
+  html.dark-cockpit .policy-screen .policy-hero {
+    border: 1px solid rgba(174, 236, 229, .14);
+    background: rgba(2, 8, 8, .56);
+    box-shadow: 0 44px 140px rgba(0, 0, 0, .64), inset 0 1px 0 rgba(255, 255, 255, .05);
+  }
+
+  html.light-luxury .policy-screen .policy-hero {
+    border: 1px solid rgba(255, 255, 255, .78);
+    background: rgba(255, 255, 250, .28);
+    box-shadow: 0 36px 118px rgba(31, 79, 92, .2), inset 0 1px 0 rgba(255, 255, 255, .84);
+  }
+
+  .policy-screen .policy-hero-copy {
+    align-content: center;
+    border-radius: 22px;
+    padding: clamp(1.4rem, 4vw, 3.6rem);
+  }
+
+  html.dark-cockpit .policy-screen .policy-hero-copy {
+    border: 1px solid rgba(174, 236, 229, .12);
+    background: linear-gradient(180deg, rgba(6, 20, 21, .88), rgba(2, 8, 8, .78));
+  }
+
+  html.light-luxury .policy-screen .policy-hero-copy {
+    border: 1px solid rgba(255, 255, 255, .84);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .82), rgba(255, 255, 250, .58));
+  }
+
+  .policy-screen .policy-hero-copy > span {
+    color: var(--policy-gold);
+    font-family: var(--font-mono);
+    letter-spacing: .18em;
+  }
+
+  .policy-screen .policy-hero h1 {
+    width: min(7ch, 100%);
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: clamp(4.4rem, 11vw, 10.8rem);
+    font-weight: 950;
+    line-height: .82;
+    letter-spacing: 0;
+  }
+
+  html.dark-cockpit .policy-screen .policy-hero h1 {
+    background-image:
+      linear-gradient(180deg, #f4fffb 0%, #c9f5ea 48%, #76d8ff 100%),
+      linear-gradient(105deg, transparent 0 35%, rgba(255, 255, 255, .82) 48%, transparent 62% 100%);
+  }
+
+  html.light-luxury .policy-screen .policy-hero h1 {
+    background-image:
+      linear-gradient(180deg, #102432 0%, #163847 46%, #256f8f 100%),
+      linear-gradient(105deg, transparent 0 35%, rgba(255, 255, 255, .95) 48%, transparent 62% 100%);
+  }
+
+  .policy-screen .policy-hero p {
+    width: min(60ch, 100%);
+    margin: 0;
+    line-height: 1.78;
+  }
+
+  html.dark-cockpit .policy-screen .policy-hero p {
+    color: rgba(226, 245, 239, .72);
+  }
+
+  html.light-luxury .policy-screen .policy-hero p {
+    color: rgba(16, 38, 50, .72);
+  }
+
+  .policy-screen .policy-actions strong,
+  .policy-screen .policy-actions a {
+    min-height: 42px;
+    border-radius: 999px;
+  }
+
+  .policy-screen .policy-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .65rem 1rem;
+  }
+
+  html.dark-cockpit .policy-screen .policy-actions a {
+    color: #f4fffb;
+    background: var(--policy-gradient-night);
+  }
+
+  html.light-luxury .policy-screen .policy-actions a {
+    color: #f8faf5;
+    background: var(--policy-gradient-day);
+  }
+
+  .policy-screen .policy-video-card {
+    position: relative;
+    min-height: 100%;
+    border-radius: 22px;
+    background: #071215;
+    overflow: hidden;
+  }
+
+  .policy-screen .policy-panel-video,
+  .policy-screen .policy-video-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .policy-screen .policy-panel-video {
+    z-index: 0;
+    opacity: .96;
+  }
+
+  .policy-screen .policy-video-card img {
+    z-index: 0;
+    opacity: 0;
+  }
+
+  html.dark-cockpit .policy-screen .policy-panel-video {
+    filter: saturate(1.08) contrast(1.28) brightness(.5);
+  }
+
+  html.light-luxury .policy-screen .policy-panel-video {
+    filter: saturate(1) contrast(1.14) brightness(.96);
+  }
+
+  .policy-screen .policy-video-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(90deg, rgba(3, 14, 16, .84), rgba(3, 14, 16, .3) 52%, rgba(3, 14, 16, .72)),
+      linear-gradient(180deg, rgba(3, 14, 16, .08), rgba(3, 14, 16, .88));
+    pointer-events: none;
+  }
+
+  .policy-screen .policy-video-card::after {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    z-index: 2;
+    background: conic-gradient(from 220deg, transparent 0 26%, rgba(255, 255, 255, .22) 34%, transparent 45% 100%);
+    opacity: .34;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    animation: policy-media-glare 9.5s linear infinite;
+  }
+
+  .policy-screen .policy-video-card figcaption {
+    z-index: 3;
+    inset: auto clamp(1rem, 2vw, 1.4rem) clamp(1rem, 2vw, 1.4rem);
+  }
+
+  .policy-screen .policy-video-card figcaption span {
+    color: rgba(244, 250, 247, .78);
+    font-family: var(--font-mono);
+    letter-spacing: .18em;
+  }
+
+  .policy-screen .policy-video-card figcaption strong {
+    color: #fff;
+    max-width: 8ch;
+    font-family: var(--font-sans);
+    font-size: clamp(2.4rem, 5vw, 5.8rem);
+    font-weight: 930;
+  }
+
+  .policy-screen .policy-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, .28fr) minmax(0, 1fr);
+    gap: clamp(1rem, 2vw, 1.4rem);
+    width: min(1320px, 100%);
+    margin: 0 auto clamp(3rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .policy-screen .policy-index {
+    position: sticky;
+    top: 6.4rem;
+    display: grid;
+    gap: .6rem;
+  }
+
+  .policy-screen .policy-index button {
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    min-height: 68px;
+    padding: .72rem;
+    text-align: left;
+  }
+
+  html.dark-cockpit .policy-screen .policy-index button,
+  html.dark-cockpit .policy-screen .policy-document {
+    border-color: rgba(174, 236, 229, .13);
+    background:
+      linear-gradient(180deg, rgba(8, 22, 23, .78), rgba(2, 9, 9, .74)),
+      rgba(2, 9, 9, .76);
+  }
+
+  html.light-luxury .policy-screen .policy-index button,
+  html.light-luxury .policy-screen .policy-document {
+    border-color: rgba(16, 38, 50, .12);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .74), rgba(255, 255, 250, .54)),
+      rgba(255, 255, 250, .62);
+  }
+
+  .policy-screen .policy-index button span {
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-weight: 900;
+  }
+
+  html.dark-cockpit .policy-screen .policy-index button span {
+    color: var(--policy-cyan);
+    background: rgba(118, 216, 255, .11);
+  }
+
+  html.light-luxury .policy-screen .policy-index button span {
+    color: #256f8f;
+    background: rgba(37, 111, 143, .09);
+  }
+
+  .policy-screen .policy-index button.active {
+    transform: translateY(-1px);
+  }
+
+  html.dark-cockpit .policy-screen .policy-index button.active {
+    border-color: rgba(118, 216, 255, .38);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .36), 0 0 28px rgba(118, 216, 255, .09);
+  }
+
+  html.light-luxury .policy-screen .policy-index button.active {
+    border-color: rgba(37, 111, 143, .34);
+    box-shadow: 0 18px 48px rgba(31, 79, 92, .16);
+  }
+
+  .policy-screen .policy-documents {
+    display: grid;
+    gap: clamp(1rem, 2vw, 1.35rem);
+  }
+
+  .policy-screen .policy-document {
+    scroll-margin-top: 7rem;
+    border-radius: 24px;
+    padding: clamp(1.2rem, 2.8vw, 2.4rem);
+    backdrop-filter: blur(20px) saturate(1.12);
+  }
+
+  .policy-screen .policy-document header {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: .5rem 1rem;
+    align-items: start;
+  }
+
+  .policy-screen .policy-document header > span {
+    grid-row: span 2;
+    display: inline-grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    font-family: var(--font-mono);
+    font-weight: 900;
+  }
+
+  html.dark-cockpit .policy-screen .policy-document header > span {
+    color: var(--policy-cyan);
+    background: rgba(118, 216, 255, .1);
+  }
+
+  html.light-luxury .policy-screen .policy-document header > span {
+    color: #256f8f;
+    background: rgba(37, 111, 143, .09);
+  }
+
+  .policy-screen .policy-document h2 {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: clamp(1.7rem, 3vw, 3.2rem);
+    font-weight: 910;
+    letter-spacing: 0;
+  }
+
+  .policy-screen .policy-document p {
+    margin: 0;
+  }
+
+  .policy-screen .policy-document ul {
+    margin-top: 1.15rem;
+    gap: .7rem;
+  }
+
+  .policy-screen .policy-document li {
+    padding-left: 1.35rem;
+    line-height: 1.76;
+  }
+
+  html.dark-cockpit .policy-screen .policy-document li {
+    color: rgba(226, 245, 239, .74);
+  }
+
+  html.light-luxury .policy-screen .policy-document li {
+    color: rgba(16, 38, 50, .72);
+  }
+
+  @keyframes policy-video-drift {
+    from {
+      transform: translate(-50%, -50%) scale(1.045);
+    }
+
+    to {
+      transform: translate(-49.2%, -50.4%) scale(1.08);
+    }
+  }
+
+  @keyframes policy-aurora-breathe {
+    from {
+      opacity: .36;
+      transform: translate3d(-1.4%, 1%, 0) scale(1);
+    }
+
+    to {
+      opacity: .68;
+      transform: translate3d(1.4%, -1%, 0) scale(1.06);
+    }
+  }
+
+  @keyframes policy-scan {
+    from {
+      background-position: -130% 50%, 0 0;
+    }
+
+    to {
+      background-position: 130% 50%, 106px 0;
+    }
+  }
+
+  @keyframes policy-grid-glide {
+    from {
+      background-position: 0 0, 0 0;
+    }
+
+    to {
+      background-position: 84px 84px, 84px 84px;
+    }
+  }
+
+  @keyframes policy-media-glare {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @media (max-width: 980px) {
+    .policy-screen .policy-hero,
+    .policy-screen .policy-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-screen .policy-video-card {
+      min-height: 360px;
+    }
+
+    .policy-screen .policy-index {
+      position: relative;
+      top: auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .policy-screen.nexus-login-redesign {
+      padding: .75rem;
+    }
+
+    .policy-screen .policy-topbar {
+      align-items: stretch;
+      flex-direction: column;
+      border-radius: 22px;
+    }
+
+    .policy-screen .policy-topbar nav {
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .policy-screen .policy-hero {
+      min-height: 0;
+      border-radius: 22px;
+    }
+
+    .policy-screen .policy-video-card {
+      min-height: 280px;
+    }
+
+    .policy-screen .policy-hero h1 {
+      font-size: clamp(3.5rem, 18vw, 5.8rem);
+    }
+
+    .policy-screen .policy-index {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-screen .policy-document header {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .policy-screen .policy-document header > span {
+      grid-row: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .policy-video-bg,
+    .policy-video-aurora,
+    .policy-data-scan,
+    .policy-depth-grid,
+    .policy-video-card::after {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    .policy-video-bg {
+      display: none;
+    }
+  }
+}
