@@ -50,7 +50,7 @@ services:
       UPLOAD_LIBRARY_FOLDER: /app/backend/storage/uploads/library
       AI_LOCAL_ANALYSIS: ${AI_LOCAL_ANALYSIS:-true}
     ports:
-      - "${BACKEND_PORT:-5000}:5000"
+      - "${BACKEND_PORT:-5001}:5000"
     volumes:
       - backend-runtime:/app/backend/.runtime
       - backend-uploads:/app/backend/storage/uploads
@@ -120,8 +120,8 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     environment:
-      NEXUS_API_BASE_URL: ${NEXUS_API_BASE_URL:-http://127.0.0.1:5000/api/v1}
-      NEXUS_LOCAL_API_BASE_URL: ${NEXUS_API_BASE_URL:-http://127.0.0.1:5000/api/v1}
+      NEXUS_API_BASE_URL: ${NEXUS_API_BASE_URL:-http://127.0.0.1:5001/api/v1}
+      NEXUS_LOCAL_API_BASE_URL: ${NEXUS_API_BASE_URL:-http://127.0.0.1:5001/api/v1}
       NEXUS_RUNTIME_CONFIG_LOCAL: "1"
       NEXUS_SENTRY_DSN: ${NEXUS_SENTRY_DSN:-}
       NEXUS_SENTRY_ENVIRONMENT: ${NEXUS_SENTRY_ENVIRONMENT:-local}

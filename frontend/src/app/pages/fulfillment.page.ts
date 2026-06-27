@@ -233,7 +233,7 @@ export class FulfillmentPage {
   ];
   protected readonly salesOrdersQuery = injectQuery(() => this.sales.ordersQuery({
     page: 1,
-    page_size: 100,
+    page_size: 12,
     q: this.query().trim()
   }));
   protected readonly rows = computed(() => this.salesOrdersQuery.data()?.items ?? []);

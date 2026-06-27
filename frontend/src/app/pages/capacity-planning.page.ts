@@ -129,6 +129,14 @@ const EMPTY_CAPACITY: CapacityGovernancePayload = {
             </article>
           </div>
 
+          <nav class="governance-action-strip" aria-label="产能计划快捷动作">
+            <a routerLink="/app/sales/orders">销售需求</a>
+            <a routerLink="/app/procurement/orders">到货释放</a>
+            <a routerLink="/app/inventory/replenishment">物料齐套</a>
+            <a routerLink="/app/dispatch">仓配调度</a>
+            <button type="button" (click)="chartMode.set('supply')">供需视图</button>
+          </nav>
+
           @if (loading()) {
             <p-skeleton height="108px" />
           } @else {

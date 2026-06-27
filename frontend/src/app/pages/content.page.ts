@@ -340,7 +340,7 @@ export class ContentPage implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.list<DataRecord>('articles', { page: 1, page_size: 100, q: this.query, sort: 'created_at', order: 'desc' }).pipe(
+    this.api.list<DataRecord>('articles', { page: 1, page_size: 12, q: this.query, sort: 'created_at', order: 'desc' }).pipe(
       catchError(error => {
         this.error.set(error?.message || '无法读取内容数据。');
         return of(emptyPageResult<DataRecord>());

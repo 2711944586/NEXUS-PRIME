@@ -1,0 +1,2114 @@
+@layer nexus {
+  html.operations-console.light-luxury {
+    --rb-canvas: #f8fafc;
+    --rb-canvas-2: #eef3f8;
+    --rb-canvas-3: #e3ebf3;
+    --rb-surface: rgba(255, 255, 255, .82);
+    --rb-surface-strong: rgba(255, 255, 255, .96);
+    --rb-surface-soft: rgba(31, 48, 68, .05);
+    --rb-ink: #102033;
+    --rb-ink-strong: #071421;
+    --rb-muted: rgba(34, 49, 68, .68);
+    --rb-faint: rgba(34, 49, 68, .5);
+    --rb-line: rgba(34, 49, 68, .12);
+    --rb-line-strong: rgba(34, 49, 68, .2);
+    --rb-accent: #1f6f8b;
+    --rb-accent-2: #27836f;
+    --rb-violet: #6d6f93;
+    --rb-warm: #9b752c;
+    --rb-shadow: 0 8px 26px rgba(24, 43, 64, .08), inset 0 .5px 0 rgba(255, 255, 255, .82);
+    --rb-shadow-strong: 0 16px 48px rgba(24, 43, 64, .13), inset 0 .5px 0 rgba(255, 255, 255, .94);
+    --bg: var(--rb-canvas);
+    --bg-alt: var(--rb-canvas-2);
+    --surface: var(--rb-surface);
+    --surface-strong: var(--rb-surface-strong);
+    --surface-muted: rgba(31, 48, 68, .055);
+    --surface-raised: rgba(255, 255, 255, .97);
+    --surface-glass: rgba(255, 255, 255, .78);
+    --surface-inset: rgba(226, 235, 244, .78);
+    --ink: var(--rb-ink);
+    --ink-strong: var(--rb-ink-strong);
+    --ink-soft: rgba(16, 32, 51, .84);
+    --muted: var(--rb-muted);
+    --muted-strong: rgba(34, 49, 68, .76);
+    --line: var(--rb-line);
+    --line-strong: var(--rb-line-strong);
+    --line-subtle: rgba(34, 49, 68, .075);
+    --accent: var(--rb-accent);
+    --accent-2: var(--rb-accent-2);
+    --accent-warm: var(--rb-warm);
+  }
+
+  html.operations-console.light-luxury body {
+    background:
+      linear-gradient(180deg, #f8fafc 0%, #eef3f8 52%, #e8eff6 100%);
+  }
+
+  html.operations-console.light-luxury .atlas-shell::before,
+  html.operations-console.light-luxury body::before,
+  html.operations-console.light-luxury .atlas-shell::after {
+    opacity: .22;
+  }
+
+  .route-loading-bar {
+    display: none;
+  }
+
+  html.operations-console .warehouse-network-link {
+    animation: none !important;
+  }
+
+  html.operations-console .atlas-topbar,
+  html.operations-console .atlas-dock,
+  html.operations-console .module-panel,
+  html.operations-console .module-panel-backdrop,
+  html.operations-console .quick-create-popover,
+  html.operations-console .search-popover,
+  html.operations-console .ops-atlas-page > *,
+  html.operations-console .detail-page > *,
+  html.operations-console .p-skeleton,
+  html.operations-console .atlas-shell::before,
+  html.operations-console .atlas-shell::after,
+  html.operations-console .ops-atlas-page > header[class*="hero"]::before,
+  html.operations-console .ops-atlas-page > .atlas-split-hero::before,
+  html.operations-console .ops-atlas-page > .atlas-hero::before,
+  html.operations-console .settings-hero::before,
+  html.operations-console .profile-hero::before,
+  html.operations-console .flow-hero::before,
+  html.operations-console .ai-command-hero::before,
+  html.operations-console .detail-hero::before {
+    animation: none !important;
+  }
+
+  html.operations-console .atlas-panel:hover,
+  html.operations-console .context-block:hover,
+  html.operations-console .module-workbench:hover,
+  html.operations-console .detail-card:hover,
+  html.operations-console .page-evidence-strip:hover,
+  html.operations-console .atlas-record-row:hover,
+  html.operations-console .business-data-row:hover,
+  html.operations-console .workbench-record:hover,
+  html.operations-console .procurement-task-card:hover,
+  html.operations-console .risk-rack-card:hover,
+  html.operations-console .report-mini-card:hover,
+  html.operations-console .dock-item:hover,
+  html.operations-console .atlas-dock-more:hover,
+  html.operations-console .warehouse-network-node:hover {
+    transform: none !important;
+  }
+
+  html.operations-console .atlas-panel:hover::after,
+  html.operations-console .module-workbench:hover::after,
+  html.operations-console .resource-workbench-host:hover::after,
+  html.operations-console .context-block:hover::after,
+  html.operations-console .detail-card:hover::after,
+  html.operations-console .report-preview-card:hover::after,
+  html.operations-console .security-health-card:hover::after,
+  html.operations-console .stocktake-scanner:hover::after,
+  html.operations-console .quality-score-card:hover::after,
+  html.operations-console .notification-meter:hover::after,
+  html.operations-console .atlas-record-row:hover::after,
+  html.operations-console .business-data-row:hover::after,
+  html.operations-console .workbench-record:hover::after,
+  html.operations-console .procurement-task-card:hover::after,
+  html.operations-console .risk-rack-card:hover::after,
+  html.operations-console .report-mini-card:hover::after,
+  html.operations-console .module-card-link:hover::after {
+    animation: none !important;
+    opacity: .16;
+  }
+
+  html.operations-console .atlas-topbar {
+    grid-template-columns: minmax(166px, .42fr) minmax(112px, .28fr) minmax(240px, .9fr) minmax(380px, auto);
+    min-height: 62px;
+    max-height: 72px;
+    border-radius: 10px;
+  }
+
+  html.operations-console .atlas-brand,
+  html.operations-console .atlas-location,
+  html.operations-console .atlas-search,
+  html.operations-console .atlas-actions {
+    min-width: 0;
+  }
+
+  html.operations-console .breadcrumbs,
+  html.operations-console .atlas-location > strong {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html.operations-console .atlas-actions {
+    justify-self: end;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  html.operations-console .atlas-actions .p-button,
+  html.operations-console .icon-action,
+  html.operations-console .create-action,
+  html.operations-console .sync-action {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  html.operations-console .atlas-actions .topbar-action-label {
+    display: none;
+  }
+
+  html.operations-console .service-health-chip {
+    max-width: 124px;
+  }
+
+  html.operations-console .service-health-chip em,
+  html.operations-console .atlas-clock {
+    display: none;
+  }
+
+  html.operations-console .governance-action-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+    gap: 8px;
+    margin: 12px 0 0;
+  }
+
+  html.operations-console .governance-action-strip a,
+  html.operations-console .governance-action-strip button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-muted);
+    color: var(--ink);
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console.light-luxury .governance-action-strip a,
+  html.operations-console.light-luxury .governance-action-strip button {
+    background: rgba(255, 255, 255, .76);
+    color: #102033;
+  }
+
+  html.operations-console .flow-compact-workbench {
+    margin: 14px 0;
+  }
+
+  html.operations-console .flow-fast-lane {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  html.operations-console .flow-fast-lane article,
+  html.operations-console .flow-fast-lane .business-data-row {
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    min-height: 58px;
+    min-width: 0;
+    padding: 9px 10px;
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface-muted) 78%, transparent);
+  }
+
+  html.operations-console .flow-fast-lane article span,
+  html.operations-console .flow-fast-lane .business-data-row span {
+    color: var(--accent);
+    font-size: .66rem;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  html.operations-console .flow-fast-lane article strong,
+  html.operations-console .flow-fast-lane .business-data-row strong {
+    color: var(--ink-strong);
+    font-size: .86rem;
+    line-height: 1.15;
+  }
+
+  html.operations-console .flow-fast-lane article em,
+  html.operations-console .flow-fast-lane .business-data-row em {
+    color: var(--muted);
+    font-size: .72rem;
+    font-style: normal;
+    line-height: 1.25;
+  }
+
+  html.operations-console .flow-compact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+  }
+
+  html.operations-console .flow-compact-grid .business-data-row {
+    min-height: 64px;
+    padding: 10px;
+  }
+
+  html.operations-console .operations-execution-ledger {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  html.operations-console .execution-ledger-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  html.operations-console .execution-ledger-head h2 {
+    margin: 2px 0 0;
+    color: var(--ink-strong);
+    font-size: 1.02rem;
+    line-height: 1.18;
+    letter-spacing: 0;
+  }
+
+  html.operations-console .execution-ledger-head p {
+    max-width: 34ch;
+    margin: 0;
+    color: var(--muted-strong);
+    font-size: .74rem;
+    font-weight: 750;
+    line-height: 1.35;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .execution-ledger-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  html.operations-console .execution-ledger-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "eyebrow value"
+      "title title"
+      "detail detail";
+    align-content: start;
+    gap: 4px 8px;
+    min-height: 76px;
+    padding: 10px;
+    text-decoration: none;
+  }
+
+  html.operations-console .execution-ledger-row span {
+    grid-area: eyebrow;
+    color: var(--accent);
+    font-size: .66rem;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  html.operations-console .execution-ledger-row strong {
+    grid-area: title;
+    color: var(--ink-strong);
+    font-size: .86rem;
+    font-weight: 850;
+    line-height: 1.2;
+  }
+
+  html.operations-console .execution-ledger-row b {
+    grid-area: value;
+    color: var(--ink-strong);
+    font-size: .82rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  html.operations-console .execution-ledger-row em {
+    grid-area: detail;
+    color: var(--muted-strong);
+    font-size: .7rem;
+    font-style: normal;
+    line-height: 1.28;
+  }
+
+  html.operations-console .dispatch-action-strip {
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 1281px) {
+    html.operations-console .atlas-workbench,
+    html.operations-console .atlas-shell.route-overview .atlas-workbench {
+      grid-template-columns: 88px minmax(0, 1fr) minmax(300px, 340px);
+      grid-template-areas:
+        "dock main context"
+        "dock resources context"
+        "evidence evidence evidence";
+      width: min(1640px, calc(100vw - 28px)) !important;
+      margin-top: calc(var(--topbar-height) + 22px);
+      align-items: start;
+    }
+
+    html.operations-console .atlas-dock {
+      position: sticky;
+      top: calc(var(--topbar-height) + 22px);
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      width: 88px;
+      max-height: calc(100dvh - var(--topbar-height) - 36px);
+      padding: 8px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border-radius: 12px !important;
+      scroll-snap-type: none;
+    }
+
+    html.operations-console .dock-grouped-island {
+      flex-wrap: nowrap;
+      align-items: stretch;
+    }
+
+    html.operations-console .dock-capsule {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 5px;
+      min-height: 0;
+      padding: 6px;
+      border-radius: 10px;
+    }
+
+    html.operations-console .dock-capsule::before,
+    html.operations-console .dock-capsule-label {
+      display: none;
+    }
+
+    html.operations-console .dock-island-track {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 5px;
+      min-height: 0;
+    }
+
+    html.operations-console .dock-item,
+    html.operations-console .atlas-dock-more {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      gap: 5px;
+      width: 100%;
+      min-width: 0;
+      min-height: 50px;
+      padding: 8px 4px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+    }
+
+    html.operations-console .dock-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    html.operations-console .dock-label {
+      display: block;
+      max-width: 64px;
+      overflow: hidden;
+      color: inherit;
+      font-size: .68rem;
+      line-height: 1.08;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    html.operations-console .dock-active-line {
+      inset: 7px auto 7px 4px;
+      width: 2px;
+      height: auto;
+      transform: scaleY(.2);
+    }
+
+    html.operations-console .dock-item.active .dock-active-line,
+    html.operations-console .atlas-dock-more.active .dock-active-line {
+      transform: scaleY(1);
+    }
+
+    html.operations-console .atlas-context-panel {
+      top: calc(var(--topbar-height) + 22px);
+      max-height: calc(100dvh - var(--topbar-height) - 36px);
+      overflow: auto;
+    }
+  }
+
+  html.operations-console .ops-atlas-page,
+  html.operations-console .detail-page {
+    gap: 16px;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] {
+    display: grid;
+    grid-template-columns: minmax(0, .92fr) minmax(220px, .58fr);
+    gap: 12px;
+    align-items: stretch;
+    min-height: 0 !important;
+    padding: 14px !important;
+    border-radius: 10px !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] > * {
+    min-width: 0;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative {
+    align-content: start;
+    gap: 8px;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative h1 {
+    max-width: 18ch;
+    margin: 0;
+    font-size: clamp(1.46rem, 2.1vw, 2rem) !important;
+    line-height: 1.06;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative p {
+    max-width: 58ch;
+    margin: 0;
+    font-size: .86rem !important;
+    line-height: 1.45 !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .atlas-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .atlas-actions-row :is(.p-button, button, a) {
+    min-height: 34px;
+    border-radius: 8px;
+    font-size: .78rem;
+    line-height: 1.1;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .material-shelf-map,
+    .procurement-lane-map,
+    .flow-hero-map,
+    .report-preview-card,
+    .security-health-card,
+    .audit-summary-card,
+    .stocktake-scanner,
+    .quality-score-card,
+    .notification-meter,
+    .settings-orbit,
+    .profile-identity-card,
+    .ai-hero-chart,
+    .ai-live-brief
+  ) {
+    max-height: 238px;
+    overflow: auto;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .purchase-score-tower,
+    .material-water-orb,
+    .flow-hero-stats,
+    .report-preview-card,
+    .security-health-card,
+    .audit-summary-card,
+    .stocktake-scanner
+  ) {
+    align-self: stretch;
+  }
+
+  html.operations-console .ops-atlas-page :is(h1, h2, h3),
+  html.operations-console .detail-page :is(h1, h2, h3) {
+    letter-spacing: 0;
+    text-wrap: balance;
+  }
+
+  html.operations-console .hero-narrative h1,
+  html.operations-console .detail-title h1 {
+    max-width: 21ch;
+    font-size: clamp(2rem, 3vw, 2.86rem);
+    line-height: 1.03;
+  }
+
+  html.operations-console .hero-narrative p,
+  html.operations-console .detail-title p {
+    max-width: 68ch;
+    font-size: .98rem;
+    line-height: 1.66;
+  }
+
+  html.operations-console .atlas-panel,
+  html.operations-console .module-workbench,
+  html.operations-console .resource-workbench-host,
+  html.operations-console .page-evidence-strip,
+  html.operations-console .mobile-field-evidence-strip,
+  html.operations-console .atlas-context-panel,
+  html.operations-console .context-block,
+  html.operations-console .detail-card,
+  html.operations-console .detail-shell {
+    border-radius: 10px;
+  }
+
+  html.operations-console .atlas-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  html.operations-console .atlas-panel-head h2,
+  html.operations-console .workbench-title strong,
+  html.operations-console .detail-card .panel-title h2 {
+    font-size: 1.04rem;
+    line-height: 1.22;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .atlas-record-row,
+    .business-data-row,
+    .workbench-record,
+    .workbench-capability,
+    .field-row,
+    .workflow-step-rail a,
+    .workflow-signal-list a,
+    .shift-handoff-list a,
+    .context-action,
+    .module-card-link,
+    .report-template-list button,
+    .report-job-row,
+    .report-queue-list a,
+    .settings-option-grid button,
+    .settings-link-list a,
+    .quality-issue-card,
+    .task-queue-card,
+    .notification-task
+  ),
+  html.operations-console .detail-page :is(
+    .detail-metric,
+    .detail-flow-board article,
+    .field-row,
+    .detail-timeline-item,
+    .related-list a,
+    .audit-strip div
+  ) {
+    border-radius: 8px;
+  }
+
+  html.operations-console :is(a, button, input, textarea, select, strong, em, span, p, h1, h2, h3) {
+    min-width: 0;
+  }
+
+  html.operations-console :is(button, a, .p-tag, .dock-label, .atlas-location > strong, .atlas-brand strong) {
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    [class*="-grid"],
+    [class*="-matrix"],
+    [class*="-mosaic"],
+    [class*="-board"],
+    [class*="-stack"],
+    [class*="-list"]
+  ) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    [class*="-grid"] > *,
+    [class*="-matrix"] > *,
+    [class*="-mosaic"] > *,
+    [class*="-board"] > *,
+    [class*="-stack"] > *,
+    [class*="-list"] > *
+  ) {
+    min-width: 0;
+  }
+
+  html.operations-console.light-luxury .atlas-topbar,
+  html.operations-console.light-luxury .atlas-dock,
+  html.operations-console.light-luxury .module-panel,
+  html.operations-console.light-luxury .quick-create-popover,
+  html.operations-console.light-luxury .search-popover,
+  html.operations-console.light-luxury .atlas-panel,
+  html.operations-console.light-luxury .module-workbench,
+  html.operations-console.light-luxury .resource-workbench-host,
+  html.operations-console.light-luxury .page-evidence-strip,
+  html.operations-console.light-luxury .mobile-field-evidence-strip,
+  html.operations-console.light-luxury .atlas-context-panel,
+  html.operations-console.light-luxury .context-block,
+  html.operations-console.light-luxury .detail-card,
+  html.operations-console.light-luxury .detail-shell {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(248, 251, 255, .88)),
+      linear-gradient(135deg, color-mix(in srgb, var(--rb-accent) 4%, transparent), transparent 52%);
+    border-color: rgba(34, 49, 68, .13);
+    box-shadow: var(--rb-shadow);
+  }
+
+  html.operations-console.light-luxury :is(.atlas-record-row, .business-data-row, .workbench-record, .field-row, .workflow-signal-list a, .shift-handoff-list a, .context-action, .module-card-link, .detail-metric, .detail-flow-board article, .related-list a, .detail-timeline-item, .audit-strip div, .report-template-list button, .report-job-row, .settings-option-grid button, .settings-link-list a) {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(241, 246, 251, .76));
+    border-color: rgba(34, 49, 68, .12);
+  }
+
+  html.operations-console.light-luxury .operations-execution-ledger {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(247, 251, 255, .9));
+    border-color: rgba(34, 49, 68, .13);
+  }
+
+  html.operations-console.light-luxury .flow-fast-lane article,
+  html.operations-console.light-luxury .flow-fast-lane .business-data-row {
+    background: rgba(255, 255, 255, .78);
+    border-color: rgba(34, 49, 68, .12);
+  }
+
+  html.operations-console.light-luxury :is(.context-workflow-photo, .page-evidence-grid a, .field-evidence-grid a) {
+    background: #26384c;
+  }
+
+  @media (max-width: 1280px) {
+    html.operations-console .atlas-topbar {
+      grid-template-columns: minmax(170px, auto) minmax(0, 1fr) auto;
+    }
+
+    html.operations-console .atlas-workbench {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "dock"
+        "main"
+        "resources"
+        "context"
+        "evidence";
+    }
+
+    html.operations-console .atlas-dock {
+      position: sticky;
+      top: calc(var(--topbar-height) + 12px);
+      width: auto;
+      max-width: 100%;
+    }
+
+    html.operations-console .execution-ledger-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 860px) {
+    html.operations-console .atlas-topbar {
+      max-height: 62px;
+      border-radius: 10px;
+    }
+
+    html.operations-console .atlas-actions {
+      max-width: min(238px, 64vw);
+    }
+
+    html.operations-console .atlas-workbench {
+      margin-top: 84px;
+      width: calc(100vw - 20px) !important;
+    }
+
+    html.operations-console .hero-narrative h1,
+    html.operations-console .detail-title h1 {
+      font-size: 1.76rem;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 12px !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative h1 {
+      max-width: 100%;
+      font-size: 1.34rem !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative p {
+      font-size: .82rem !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .material-shelf-map,
+      .procurement-lane-map,
+      .flow-hero-map,
+      .report-preview-card,
+      .security-health-card,
+      .audit-summary-card,
+      .stocktake-scanner,
+      .quality-score-card,
+      .notification-meter,
+      .settings-orbit,
+      .profile-identity-card,
+      .ai-hero-chart,
+      .ai-live-brief
+    ) {
+      max-height: none;
+      overflow: visible;
+    }
+
+    html.operations-console .flow-fast-lane {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    html.operations-console .flow-fast-lane article,
+    html.operations-console .flow-fast-lane .business-data-row {
+      min-height: 54px;
+      padding: 8px;
+    }
+  }
+}
+
+@layer app {
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .command-hero-chart,
+    .hero-interactive-chart,
+    .ai-hero-chart
+  ) {
+    display: none !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .material-shelf-map,
+    .procurement-lane-map,
+    .flow-hero-map,
+    .dispatch-network,
+    .dispatch-kpi-stack
+  ) :is(a, button, article, span, strong, em, small, b, p),
+  html.operations-console .flow-compact-grid .business-data-row :is(span, strong, em, small, b, p),
+  html.operations-console .flow-fast-lane :is(article, .business-data-row) :is(span, strong, em, small, b, p),
+  html.operations-console .dispatch-action-strip .business-data-row :is(span, strong, em, small, b, p) {
+    position: static !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+  }
+
+  html.operations-console .flow-compact-grid {
+    grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)) !important;
+  }
+
+  html.operations-console .flow-compact-grid .business-data-row,
+  html.operations-console .dispatch-action-strip .business-data-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "kicker metric"
+      "title title" !important;
+    align-items: center !important;
+    gap: 5px 10px !important;
+    min-height: 72px !important;
+    padding: 10px 12px !important;
+  }
+
+  html.operations-console .flow-compact-grid .business-data-row span,
+  html.operations-console .dispatch-action-strip .business-data-row span {
+    grid-area: kicker !important;
+    color: var(--muted-strong) !important;
+    font-size: .72rem !important;
+    line-height: 1.18 !important;
+  }
+
+  html.operations-console .flow-compact-grid .business-data-row strong,
+  html.operations-console .dispatch-action-strip .business-data-row strong {
+    grid-area: title !important;
+    color: var(--ink-strong) !important;
+    font-size: .94rem !important;
+    line-height: 1.22 !important;
+  }
+
+  html.operations-console .flow-compact-grid .business-data-row em,
+  html.operations-console .dispatch-action-strip .business-data-row em {
+    grid-area: metric !important;
+    justify-self: end !important;
+    color: var(--muted) !important;
+    font-size: .78rem !important;
+    line-height: 1.18 !important;
+    text-align: right !important;
+  }
+
+  html.operations-console .flow-fast-lane :is(article, .business-data-row) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: center !important;
+    gap: 4px !important;
+    min-height: 64px !important;
+  }
+
+  html.operations-console .flow-fast-lane :is(article, .business-data-row) strong {
+    font-size: .84rem !important;
+    line-height: 1.2 !important;
+  }
+
+  @media (max-width: 860px) {
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] > * {
+      grid-column: auto !important;
+      grid-row: auto !important;
+      grid-area: auto !important;
+      min-width: 0 !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative {
+      grid-column: 1 !important;
+      grid-row: auto !important;
+      grid-area: auto !important;
+      max-width: 100% !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .material-shelf-map,
+      .procurement-lane-map,
+      .purchase-score-tower,
+      .flow-hero-stats,
+      .settings-status-board,
+      .dispatch-network,
+      .dispatch-kpi-stack
+    ) {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 8px !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .material-shelf-map button,
+      .procurement-lane-map a,
+      .procurement-lane-map button,
+      .purchase-score-tower > div,
+      .flow-hero-stats span,
+      .settings-status-board article,
+      .dispatch-network .business-data-row,
+      .dispatch-kpi-stack .business-data-row
+    ) {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      grid-template-areas:
+        "label value"
+        "meta meta" !important;
+      gap: 4px 10px !important;
+      min-height: 64px !important;
+      padding: 10px !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .material-shelf-map button,
+      .procurement-lane-map a,
+      .procurement-lane-map button,
+      .purchase-score-tower > div,
+      .flow-hero-stats span,
+      .settings-status-board article,
+      .dispatch-network .business-data-row,
+      .dispatch-kpi-stack .business-data-row
+    ) > span {
+      grid-area: label !important;
+      font-size: .72rem !important;
+      line-height: 1.18 !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .material-shelf-map button,
+      .procurement-lane-map a,
+      .procurement-lane-map button,
+      .purchase-score-tower > div,
+      .flow-hero-stats span,
+      .settings-status-board article,
+      .dispatch-network .business-data-row,
+      .dispatch-kpi-stack .business-data-row
+    ) > strong {
+      grid-area: value !important;
+      justify-self: end !important;
+      font-size: .96rem !important;
+      line-height: 1.12 !important;
+      text-align: right !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .material-shelf-map button,
+      .procurement-lane-map a,
+      .procurement-lane-map button,
+      .purchase-score-tower > div,
+      .flow-hero-stats span,
+      .settings-status-board article,
+      .dispatch-network .business-data-row,
+      .dispatch-kpi-stack .business-data-row
+    ) > em {
+      grid-area: meta !important;
+      font-size: .72rem !important;
+      line-height: 1.24 !important;
+    }
+
+    html.operations-console .flow-compact-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+}
+
+@layer app {
+  html.operations-console .workflow-command-strip {
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+    padding: 10px !important;
+    border-radius: 10px !important;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 94%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent-2) 4%, transparent)) !important;
+    box-shadow:
+      0 8px 20px color-mix(in srgb, #0f172a 6%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, .36) !important;
+  }
+
+  html.operations-console .workflow-command-primary {
+    grid-template-columns: minmax(0, 1fr) minmax(110px, 132px) !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .workflow-command-copy,
+  html.operations-console .workflow-command-health,
+  html.operations-console .workflow-command-signals a,
+  html.operations-console .workflow-command-actions a,
+  html.operations-console .workflow-command-steps a {
+    border-radius: 8px !important;
+  }
+
+  html.operations-console .workflow-command-copy {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px !important;
+    padding: 10px 12px !important;
+  }
+
+  html.operations-console .workflow-command-copy strong {
+    font-size: clamp(1rem, 1.14vw, 1.18rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  html.operations-console .workflow-command-copy p {
+    display: -webkit-box;
+    max-width: 100% !important;
+    font-size: .8rem !important;
+    line-height: 1.34 !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  html.operations-console .workflow-command-health {
+    gap: 5px !important;
+    padding: 10px !important;
+  }
+
+  html.operations-console .workflow-command-health strong {
+    font-size: 1.36rem !important;
+  }
+
+  html.operations-console .workflow-command-health .p-progressbar {
+    height: 6px !important;
+  }
+
+  html.operations-console .workflow-command-steps {
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .workflow-command-steps a {
+    min-height: 46px !important;
+    padding: 8px 9px 8px 12px !important;
+  }
+
+  html.operations-console .workflow-command-steps a::before {
+    inset: 8px auto 8px 5px !important;
+    width: 3px !important;
+  }
+
+  html.operations-console .workflow-command-bottom {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .workflow-command-signals,
+  html.operations-console .workflow-command-actions {
+    gap: 8px !important;
+  }
+
+  html.operations-console .workflow-command-signals {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html.operations-console .workflow-command-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html.operations-console .workflow-command-signals a,
+  html.operations-console .workflow-command-actions a {
+    min-height: 52px !important;
+    padding: 8px 9px !important;
+  }
+
+  html.operations-console .workflow-command-copy span,
+  html.operations-console .workflow-command-health span,
+  html.operations-console .workflow-command-signals span,
+  html.operations-console .workflow-command-actions span,
+  html.operations-console .workflow-command-steps span {
+    font-size: .68rem !important;
+    line-height: 1.14 !important;
+  }
+
+  html.operations-console .workflow-command-steps strong,
+  html.operations-console .workflow-command-signals strong,
+  html.operations-console .workflow-command-actions strong {
+    font-size: .82rem !important;
+    line-height: 1.16 !important;
+  }
+
+  html.operations-console .workflow-command-signals em,
+  html.operations-console .workflow-command-actions em {
+    font-size: .68rem !important;
+    line-height: 1.18 !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] {
+    grid-template-columns: minmax(0, .78fr) minmax(220px, .48fr) !important;
+    gap: 10px !important;
+    align-items: start !important;
+    max-height: 276px !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative {
+    align-content: start !important;
+    gap: 7px !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative h1 {
+    max-width: 16ch !important;
+    font-size: clamp(1.34rem, 1.76vw, 1.82rem) !important;
+    line-height: 1.05 !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative p {
+    display: -webkit-box;
+    max-width: 62ch !important;
+    font-size: .8rem !important;
+    line-height: 1.36 !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .atlas-kicker,
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .eyebrow {
+    font-size: .68rem !important;
+    line-height: 1.1 !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .atlas-actions-row {
+    gap: 6px !important;
+    margin-top: 0 !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] .atlas-actions-row :is(.p-button, button, a) {
+    min-height: 32px !important;
+    padding: 7px 9px !important;
+    font-size: .72rem !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .material-shelf-map,
+    .procurement-lane-map,
+    .purchase-score-tower,
+    .flow-hero-map,
+    .flow-hero-stats,
+    .report-preview-card,
+    .security-health-card,
+    .audit-summary-card,
+    .stocktake-scanner,
+    .quality-score-card,
+    .notification-meter,
+    .settings-status-board,
+    .settings-orbit,
+    .profile-identity-card,
+    .ai-hero-chart,
+    .ai-live-brief,
+    .command-hero-chart,
+    .hero-interactive-chart,
+    .hero-command-ledger
+  ) {
+    max-height: 172px !important;
+    overflow: hidden !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .command-visual-board,
+    .settings-visual-rail
+  ) {
+    display: none !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .hero-mini-metrics,
+    .flow-hero-stats,
+    .settings-status-board,
+    .purchase-score-tower
+  ) {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .hero-mini-metrics article,
+    .flow-hero-stats span,
+    .settings-status-board article,
+    .purchase-score-tower > div,
+    .material-shelf-map button,
+    .procurement-lane-map a,
+    .procurement-lane-map button
+  ) {
+    min-height: 48px !important;
+    padding: 8px !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+    .hero-mini-metrics strong,
+    .flow-hero-stats strong,
+    .settings-status-board strong,
+    .purchase-score-tower strong,
+    .material-shelf-map strong,
+    .procurement-lane-map strong
+  ) {
+    font-size: .92rem !important;
+    line-height: 1.12 !important;
+  }
+
+  html.operations-console .command-overview-refined .command-hero {
+    grid-template-columns: minmax(0, .8fr) minmax(220px, .52fr) !important;
+    grid-template-areas: "story chart" !important;
+    min-height: 0 !important;
+  }
+
+  html.operations-console .command-overview-refined .command-hero-story {
+    grid-area: story !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .command-overview-refined .command-hero-chart {
+    grid-area: chart !important;
+    min-height: 0 !important;
+    padding: 10px !important;
+  }
+
+  html.operations-console .command-overview-refined .command-hero-chart .hero-mini-chart,
+  html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(.ai-hero-mini-chart, .hero-mini-chart, .hero-trend-chart) {
+    min-height: 112px !important;
+    height: 112px !important;
+  }
+
+  html.operations-console .flow-console-page .flow-hero {
+    grid-template-columns: minmax(0, .78fr) minmax(220px, .5fr) !important;
+  }
+
+  html.operations-console .flow-console-page .flow-hero .flow-hero-map {
+    min-height: 0 !important;
+  }
+
+  html.operations-console .ai-command-page .ai-command-hero {
+    grid-template-columns: minmax(0, .78fr) minmax(220px, .52fr) !important;
+  }
+
+  html.operations-console .ai-command-page .ai-command-hero .ai-live-brief {
+    display: none !important;
+  }
+
+  html.operations-console .settings-page .settings-hero {
+    grid-template-columns: minmax(0, .8fr) minmax(220px, .5fr) !important;
+  }
+
+  @media (max-width: 1280px) {
+    html.operations-console .workflow-command-primary,
+    html.operations-console .workflow-command-bottom {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .workflow-command-actions {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 860px) {
+    html.operations-console .workflow-command-strip {
+      gap: 8px !important;
+      margin-bottom: 10px !important;
+      padding: 8px !important;
+    }
+
+    html.operations-console .workflow-command-primary {
+      grid-template-columns: minmax(0, 1fr) minmax(74px, 86px) !important;
+    }
+
+    html.operations-console .workflow-command-copy p {
+      display: none !important;
+    }
+
+    html.operations-console .workflow-command-health {
+      padding: 8px !important;
+    }
+
+    html.operations-console .workflow-command-health strong {
+      font-size: 1.04rem !important;
+    }
+
+    html.operations-console .workflow-command-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html.operations-console .workflow-command-signals,
+    html.operations-console .workflow-command-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html.operations-console .workflow-command-signals a,
+    html.operations-console .workflow-command-actions a,
+    html.operations-console .workflow-command-steps a {
+      min-height: 46px !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"],
+    html.operations-console .command-overview-refined .command-hero,
+    html.operations-console .flow-console-page .flow-hero,
+    html.operations-console .ai-command-page .ai-command-hero,
+    html.operations-console .settings-page .settings-hero {
+      grid-template-columns: minmax(0, 1fr) !important;
+      grid-template-areas: none !important;
+      max-height: none !important;
+      overflow: visible !important;
+      padding: 12px !important;
+    }
+
+    html.operations-console .atlas-stage .ops-atlas-page > header[class*="hero"] :is(
+      .flow-hero-map,
+      .ai-hero-chart,
+      .command-hero-chart,
+      .hero-interactive-chart,
+      .hero-command-ledger
+    ) {
+      display: none !important;
+    }
+  }
+}
+
+@layer nexus {
+  html.operations-console.dark-cockpit .workbench-table-head em {
+    color: rgba(255, 255, 255, .62) !important;
+  }
+
+  html.operations-console .report-job-row em,
+  html.operations-console .report-queue-list a em {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+}
+
+@layer nexus {
+  @media (min-width: 1281px) {
+    html.operations-console .atlas-workbench,
+    html.operations-console .atlas-shell.route-overview .atlas-workbench {
+      display: grid !important;
+      grid-template-columns: 88px minmax(0, 1fr) minmax(300px, 340px) !important;
+      grid-template-areas:
+        "dock main context"
+        "dock resources context"
+        "evidence evidence evidence" !important;
+      gap: clamp(12px, 1.1vw, 18px) !important;
+      width: min(1640px, calc(100vw - 28px)) !important;
+      margin: calc(var(--topbar-height) + 22px) auto 0 !important;
+      padding: 0 0 var(--space-8) !important;
+      align-items: start !important;
+    }
+
+    html.operations-console .atlas-shell.route-overview .page-evidence-strip,
+    html.operations-console .atlas-shell.route-overview .resource-workbench-host,
+    html.operations-console .atlas-shell.route-overview .module-workbench,
+    html.operations-console .atlas-shell.route-overview .atlas-context-panel {
+      display: grid !important;
+    }
+
+    html.operations-console .atlas-dock {
+      grid-area: dock !important;
+      position: sticky !important;
+      top: calc(var(--topbar-height) + 22px) !important;
+      left: auto !important;
+      right: auto !important;
+      bottom: auto !important;
+      z-index: 45 !important;
+      display: grid !important;
+      flex-direction: initial !important;
+      flex-wrap: initial !important;
+      align-content: start !important;
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      gap: 8px !important;
+      width: 88px !important;
+      max-width: 88px !important;
+      height: auto !important;
+      max-height: calc(100dvh - var(--topbar-height) - 36px) !important;
+      padding: 8px !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      border-radius: 12px !important;
+      scroll-snap-type: none !important;
+    }
+
+    html.operations-console .dock-capsule {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 5px !important;
+      min-height: 0 !important;
+      padding: 6px !important;
+      border-radius: 10px !important;
+    }
+
+    html.operations-console .dock-capsule::before,
+    html.operations-console .dock-capsule-label {
+      display: none !important;
+    }
+
+    html.operations-console .dock-island-track {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 5px !important;
+      min-height: 0 !important;
+    }
+
+    html.operations-console .dock-item,
+    html.operations-console .atlas-dock-more {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      justify-items: center !important;
+      gap: 5px !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      min-height: 50px !important;
+      padding: 8px 4px !important;
+      border: 1px solid transparent !important;
+      border-radius: 9px !important;
+    }
+
+    html.operations-console .dock-label {
+      display: block !important;
+      max-width: 64px !important;
+      overflow: hidden !important;
+      font-size: .68rem !important;
+      line-height: 1.08 !important;
+      text-align: center !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+
+    html.operations-console .dock-active-line {
+      inset: 7px auto 7px 4px !important;
+      width: 2px !important;
+      height: auto !important;
+      transform: scaleY(.2) !important;
+    }
+
+    html.operations-console .dock-item.active .dock-active-line,
+    html.operations-console .atlas-dock-more.active .dock-active-line {
+      transform: scaleY(1) !important;
+    }
+
+    html.operations-console .content-stage {
+      grid-area: main !important;
+    }
+
+    html.operations-console .page-evidence-strip {
+      grid-area: evidence !important;
+      grid-column: 1 / -1 !important;
+    }
+
+    html.operations-console .resource-workbench-host,
+    html.operations-console .module-workbench {
+      grid-area: resources !important;
+      grid-column: auto !important;
+    }
+
+    html.operations-console .atlas-context-panel {
+      grid-area: context !important;
+      position: sticky !important;
+      top: calc(var(--topbar-height) + 22px) !important;
+      display: grid !important;
+      max-height: calc(100dvh - var(--topbar-height) - 36px) !important;
+      overflow: auto !important;
+    }
+  }
+
+  html.operations-console .atlas-actions .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console .ops-atlas-page .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console .detail-page .p-button:not(.p-button-text):not(.p-button-outlined) {
+    color: #ffffff !important;
+    background-color: #1f5f7c !important;
+    background-image:
+      linear-gradient(180deg, #2d7798, #1f5f7c) !important;
+    border-color: #1e5b76 !important;
+  }
+
+  html.operations-console.light-luxury .atlas-actions .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.light-luxury .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.light-luxury .ops-atlas-page .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.light-luxury .detail-page .p-button:not(.p-button-text):not(.p-button-outlined) {
+    color: #ffffff !important;
+    background-color: #1c5875 !important;
+    background-image:
+      linear-gradient(180deg, #286f91, #1c5875) !important;
+    border-color: #1b536f !important;
+    box-shadow: 0 8px 18px rgba(31, 111, 139, .18), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-actions .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.dark-cockpit .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.dark-cockpit .ops-atlas-page .p-button:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.dark-cockpit .detail-page .p-button:not(.p-button-text):not(.p-button-outlined) {
+    color: #f8fafc !important;
+    background-color: #1e6383 !important;
+    background-image: linear-gradient(180deg, #2f80a5, #1e6383) !important;
+    border-color: #2b789b !important;
+  }
+
+  html.operations-console.light-luxury .p-button.p-button-info:not(.p-button-text):not(.p-button-outlined),
+  html.operations-console.light-luxury a.p-button-info:not(.p-button-text):not(.p-button-outlined) {
+    background-color: #1f6259 !important;
+    background-image: linear-gradient(180deg, #2a7f73, #1f6259) !important;
+    border-color: #1e5f56 !important;
+    color: #ffffff !important;
+  }
+
+  html.operations-console.light-luxury .p-button.p-button-text.p-button-danger,
+  html.operations-console.light-luxury .record-action-button.p-button-text.p-button-danger {
+    color: #b91c1c !important;
+  }
+
+  html.operations-console.light-luxury :is(
+    .mode-switch button.active,
+    .metric-mode-switch button.active,
+    .shift-lens-switch button.active,
+    .report-mode-switch button.active,
+    .quality-inspection-chart-tabs button.active,
+    .maintenance-chart-tabs button.active,
+    .mobile-chart-tabs button.active,
+    .command-chart-tabs button.active,
+    .command-insight-stack button.active,
+    .flow-chart-tabs button.active,
+    .warehouse-chart-tabs button.active,
+    .stocktake-chart-tabs button.active,
+    .supplier-chart-tabs button.active,
+    .contract-chart-tabs button.active,
+    .service-chart-tabs button.active,
+    .security-chart-tabs button.active,
+    .audit-chart-tabs button.active
+  ) {
+    color: #ffffff !important;
+    background-color: #1f526c !important;
+    background-image: linear-gradient(180deg, #2c6985, #1f526c) !important;
+    border-color: #1d5069 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 8px 18px rgba(31, 82, 108, .18) !important;
+  }
+
+  html.operations-console.dark-cockpit :is(
+    .mode-switch button.active,
+    .metric-mode-switch button.active,
+    .shift-lens-switch button.active,
+    .report-mode-switch button.active,
+    .quality-inspection-chart-tabs button.active,
+    .maintenance-chart-tabs button.active,
+    .mobile-chart-tabs button.active,
+    .command-chart-tabs button.active,
+    .command-insight-stack button.active,
+    .flow-chart-tabs button.active,
+    .warehouse-chart-tabs button.active,
+    .stocktake-chart-tabs button.active,
+    .supplier-chart-tabs button.active,
+    .contract-chart-tabs button.active,
+    .service-chart-tabs button.active,
+    .security-chart-tabs button.active,
+    .audit-chart-tabs button.active
+  ) {
+    color: #f8fafc !important;
+    background-color: #1e5f7c !important;
+    background-image: linear-gradient(180deg, #2c7a9e, #1e5f7c) !important;
+    border-color: #2b789b !important;
+  }
+
+  html.operations-console.light-luxury :is(
+    em,
+    small,
+    .atlas-panel-head p,
+    .atlas-panel-head em,
+    .workbench-title p,
+    .context-title em,
+    .shift-stage-card em,
+    .shift-stage-card p,
+    .shift-action-queue em,
+    .shift-action-queue small,
+    .shift-event-timeline em,
+    .shift-event-timeline small,
+    .business-data-row em,
+    .atlas-record-row em,
+    .workbench-record em
+  ) {
+    color: rgba(48, 63, 84, .82) !important;
+  }
+
+  html.operations-console.light-luxury :is(
+    .workbench-table-head,
+    .field-row > span,
+    .atlas-kicker,
+    .eyebrow,
+    .context-title span,
+    .workbench-title span,
+    .atlas-panel-head > div > span
+  ) {
+    color: #1f6684 !important;
+  }
+
+  html.operations-console :is(
+    .page-evidence-grid a,
+    .field-evidence-grid a,
+    .mobile-field-evidence-strip a,
+    .context-workflow-photo,
+    .command-photo-strip a,
+    .module-photo-rail a,
+    .command-visual-board figure,
+    .settings-visual-rail figure,
+    .command-evidence-rail figure
+  ) :is(span, strong, em, p, small, b) {
+    color: #f8fafc !important;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, .56) !important;
+  }
+
+  html.operations-console.light-luxury :is(
+    .page-evidence-grid a,
+    .field-evidence-grid a,
+    .mobile-field-evidence-strip a,
+    .context-workflow-photo,
+    .command-photo-strip a,
+    .module-photo-rail a,
+    .command-visual-board figure,
+    .settings-visual-rail figure,
+    .command-evidence-rail figure
+  ) :is(span, strong, em, p, small, b) {
+    color: #f8fafc !important;
+  }
+
+  html.operations-console .report-job-row em,
+  html.operations-console .report-queue-list a em {
+    display: block !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: 1.28 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html.operations-console .workbench-column-labels,
+  html.operations-console .record-main {
+    grid-template-columns: minmax(118px, .82fr) minmax(190px, 1.5fr) minmax(116px, .74fr) minmax(82px, .42fr) !important;
+  }
+
+  html.operations-console .record-cell.cell-code > span,
+  html.operations-console .record-cell > span,
+  html.operations-console .task-queue-card span,
+  html.operations-console .shift-action-queue span,
+  html.operations-console .shift-event-timeline span,
+  html.operations-console .mobile-queue-main span,
+  html.operations-console .stocktake-take-list span,
+  html.operations-console .notification-task span {
+    max-width: 100% !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html.operations-console .record-cell.cell-meta > em {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html.operations-console .atlas-context-panel {
+    align-content: start !important;
+    gap: 12px !important;
+    grid-auto-rows: max-content !important;
+    grid-template-rows: none !important;
+    padding: 10px !important;
+  }
+
+  html.operations-console .context-block {
+    gap: 9px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+    overflow: visible !important;
+  }
+
+  html.operations-console .context-block > p {
+    margin: 0 !important;
+    color: var(--muted-strong);
+    font-size: .76rem !important;
+    line-height: 1.52 !important;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .context-title {
+    align-items: start !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .context-title span,
+  html.operations-console .context-title em {
+    min-width: 0;
+    line-height: 1.22 !important;
+  }
+
+  html.operations-console .context-title em {
+    max-width: 58%;
+    text-align: right;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .compact-ledger {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .compact-ledger div {
+    min-width: 0;
+    padding: 9px 8px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
+  }
+
+  html.operations-console .compact-ledger span,
+  html.operations-console .compact-ledger strong {
+    line-height: 1.18 !important;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .compact-ledger strong {
+    font-size: .9rem !important;
+  }
+
+  html.operations-console .workflow-signal-list,
+  html.operations-console .shift-handoff-list,
+  html.operations-console .workflow-step-rail,
+  html.operations-console .evidence-ledger {
+    align-content: start !important;
+    gap: 8px !important;
+    grid-auto-rows: max-content !important;
+    min-height: 0 !important;
+  }
+
+  html.operations-console .workflow-signal-list a,
+  html.operations-console .shift-handoff-list a,
+  html.operations-console .workflow-step-rail a,
+  html.operations-console .context-action,
+  html.operations-console .context-risk {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    gap: 5px !important;
+    min-height: auto !important;
+    padding: 10px !important;
+    overflow: hidden !important;
+  }
+
+  html.operations-console .context-risk i {
+    display: none !important;
+  }
+
+  html.operations-console .workflow-signal-list a > *,
+  html.operations-console .shift-handoff-list a > *,
+  html.operations-console .workflow-step-rail a > *,
+  html.operations-console .context-action,
+  html.operations-console .context-risk > * {
+    grid-column: auto !important;
+    grid-area: auto !important;
+    min-width: 0;
+    line-height: 1.24 !important;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .workflow-signal-list span,
+  html.operations-console .workflow-step-rail span,
+  html.operations-console .shift-handoff-list span,
+  html.operations-console .context-risk span {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--muted-strong) !important;
+    font-size: .7rem !important;
+  }
+
+  html.operations-console .workflow-signal-list strong,
+  html.operations-console .shift-handoff-list strong,
+  html.operations-console .workflow-step-rail strong,
+  html.operations-console .context-risk strong {
+    color: var(--ink-strong);
+    font-size: .88rem !important;
+    line-height: 1.24 !important;
+  }
+
+  html.operations-console .workflow-signal-list em,
+  html.operations-console .shift-handoff-list em,
+  html.operations-console .shift-handoff-list small {
+    display: block !important;
+    color: var(--muted-strong) !important;
+    font-size: .7rem !important;
+    line-height: 1.28 !important;
+    white-space: normal !important;
+  }
+
+  html.operations-console .shift-handoff-list b {
+    flex: 0 0 auto;
+    font-size: .66rem !important;
+    line-height: 1;
+  }
+
+  html.operations-console .context-workflow-photo {
+    min-height: 128px !important;
+    max-height: 150px;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+
+  html.operations-console .context-workflow-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 128px;
+    object-fit: cover;
+    transform: none !important;
+  }
+
+  html.operations-console .context-workflow-photo figcaption {
+    padding: 10px !important;
+  }
+
+  html.operations-console .context-workflow-photo figcaption span,
+  html.operations-console .context-workflow-photo figcaption strong {
+    display: block;
+    line-height: 1.2 !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .field-evidence-grid {
+    align-content: start !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: max-content !important;
+    gap: 8px !important;
+  }
+
+  html.operations-console .field-evidence-grid a {
+    min-height: 86px !important;
+    padding: 8px !important;
+    transform: none !important;
+  }
+
+  html.operations-console .field-evidence-grid img,
+  html.operations-console .page-evidence-grid img,
+  html.operations-console .command-photo-strip img,
+  html.operations-console .module-photo-rail img,
+  html.operations-console .settings-visual-rail img,
+  html.operations-console .command-visual-board img {
+    transform: none !important;
+  }
+
+  html.operations-console .field-evidence-grid span,
+  html.operations-console .field-evidence-grid strong {
+    line-height: 1.18 !important;
+  }
+
+  html.operations-console .evidence-ledger {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html.operations-console .evidence-ledger span {
+    padding: 8px 6px !important;
+  }
+
+  html.operations-console .evidence-ledger strong,
+  html.operations-console .evidence-ledger em {
+    min-width: 0;
+    line-height: 1.18 !important;
+    overflow-wrap: anywhere;
+  }
+
+  html.operations-console .evidence-ledger strong {
+    font-size: .86rem !important;
+  }
+
+  html.operations-console .evidence-ledger em {
+    font-size: .66rem !important;
+  }
+
+  @media (max-height: 820px) and (min-width: 1281px) {
+    html.operations-console .atlas-context-panel {
+      gap: 10px !important;
+    }
+
+    html.operations-console .context-block {
+      padding: 10px !important;
+    }
+
+    html.operations-console .context-workflow-photo {
+      min-height: 104px !important;
+      max-height: 118px !important;
+    }
+
+    html.operations-console .context-workflow-photo img {
+      min-height: 104px !important;
+    }
+  }
+
+  @media (max-width: 860px) {
+    html.operations-console .atlas-workbench {
+      padding-bottom: 20px !important;
+    }
+
+    html.operations-console .atlas-dock {
+      display: grid !important;
+      grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+      position: sticky !important;
+      top: 74px !important;
+      bottom: auto !important;
+      left: 10px !important;
+      right: 10px !important;
+      width: auto !important;
+      max-width: calc(100vw - 20px) !important;
+      gap: 5px !important;
+      overflow-x: hidden !important;
+      overflow-y: hidden !important;
+      padding: 7px !important;
+      align-self: start !important;
+    }
+
+    html.operations-console .dock-capsule,
+    html.operations-console .dock-capsule-more {
+      display: contents !important;
+      flex: initial !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    html.operations-console .dock-item,
+    html.operations-console .atlas-dock-more {
+      min-width: 0 !important;
+      width: 100% !important;
+      min-height: 42px !important;
+      padding: 7px 2px !important;
+    }
+
+    html.operations-console .atlas-dock .dock-capsule-more {
+      margin-inline-end: 2px !important;
+    }
+
+    html.operations-console .atlas-context-panel {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      position: static !important;
+      max-height: none !important;
+      overflow: visible !important;
+      padding: 8px !important;
+      gap: 8px !important;
+    }
+
+    html.operations-console .atlas-context-panel .context-block {
+      padding: 10px !important;
+      border-radius: 8px !important;
+    }
+
+    html.operations-console .atlas-context-panel .context-block.live,
+    html.operations-console .atlas-context-panel .compact-ledger,
+    html.operations-console .atlas-context-panel .workflow-context-block > p,
+    html.operations-console .atlas-context-panel .context-workflow-photo,
+    html.operations-console .atlas-context-panel .evidence-ledger {
+      display: none !important;
+    }
+
+    html.operations-console .workflow-signal-list,
+    html.operations-console .shift-handoff-list,
+    html.operations-console .workflow-step-rail,
+    html.operations-console .field-evidence-grid {
+      display: grid !important;
+      grid-auto-flow: row !important;
+      grid-auto-columns: initial !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      overflow: visible !important;
+      scroll-snap-type: none !important;
+      padding-bottom: 0 !important;
+    }
+
+    html.operations-console .workflow-signal-list a,
+    html.operations-console .shift-handoff-list a,
+    html.operations-console .workflow-step-rail a,
+    html.operations-console .field-evidence-grid a,
+    html.operations-console .context-action {
+      min-height: 58px !important;
+      scroll-snap-align: none !important;
+    }
+
+    html.operations-console .workflow-signal-list a > *,
+    html.operations-console .shift-handoff-list a > *,
+    html.operations-console .workflow-step-rail a > *,
+    html.operations-console .field-evidence-grid a > *,
+    html.operations-console .context-action {
+      white-space: normal !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
+    }
+
+    html.operations-console .field-evidence-grid img {
+      min-height: 72px !important;
+      height: 72px !important;
+    }
+
+    html.operations-console .atlas-shell.route-overview .atlas-workbench {
+      grid-template-columns: minmax(0, 1fr) !important;
+      grid-template-areas:
+        "dock"
+        "main"
+        "evidence"
+        "resources"
+        "context" !important;
+      width: calc(100vw - 20px) !important;
+    }
+
+    html.operations-console .atlas-shell.route-overview .page-evidence-strip,
+    html.operations-console .atlas-shell.route-overview .resource-workbench-host,
+    html.operations-console .atlas-shell.route-overview .module-workbench,
+    html.operations-console .atlas-shell.route-overview .atlas-context-panel {
+      display: grid !important;
+    }
+
+    html.operations-console .operations-execution-ledger {
+      padding: 10px !important;
+      gap: 8px !important;
+    }
+
+    html.operations-console .execution-ledger-head {
+      display: grid !important;
+      gap: 4px !important;
+    }
+
+    html.operations-console .execution-ledger-head p {
+      max-width: 100% !important;
+      text-align: left !important;
+      font-size: .7rem !important;
+    }
+
+    html.operations-console .execution-ledger-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 7px !important;
+    }
+
+    html.operations-console .execution-ledger-row {
+      min-height: 62px !important;
+      padding: 9px !important;
+    }
+  }
+}
+
+@layer app {
+  html.operations-console .atlas-stage .ops-atlas-page.command-overview-refined > header.command-hero :is(
+    .hero-mini-metrics,
+    .hero-interactive-chart,
+    .command-snapshot-row,
+    .command-visual-board,
+    .command-hero-chart,
+    .hero-command-ledger
+  ),
+  html.operations-console .atlas-stage .ops-atlas-page.flow-console-page > header.flow-hero :is(
+    .flow-fast-lane,
+    .flow-hero-map
+  ) {
+    display: none !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page.command-overview-refined > header.command-hero,
+  html.operations-console .atlas-stage .ops-atlas-page.flow-console-page > header.flow-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.operations-console .atlas-stage .ops-atlas-page.command-overview-refined > header.command-hero .hero-narrative,
+  html.operations-console .atlas-stage .ops-atlas-page.flow-console-page > header.flow-hero .hero-narrative {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    grid-area: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html.operations-console .flow-compact-workbench {
+    margin-top: 14px !important;
+  }
+
+  html.operations-console .record-action-label {
+    width: auto !important;
+    max-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    clip-path: inset(50%) !important;
+    white-space: normal !important;
+  }
+}

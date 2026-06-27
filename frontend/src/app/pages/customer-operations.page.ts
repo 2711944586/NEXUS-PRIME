@@ -197,13 +197,16 @@ export class CustomerOperationsPage implements OnInit {
   load(): void {
     this.loading.set(true);
     forkJoin({
-      customers: this.api.list<DataRecord>('partners', { page: 1, page_size: 140, type: 'customer' }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
-      receivables: this.api.list<DataRecord>('receivables', { page: 1, page_size: 140 }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
-      analytics: this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(catchError(() => of(EMPTY_ANALYTICS)))
+      customers: this.api.list<DataRecord>('partners', { page: 1, page_size: 24, type: 'customer' }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
+      receivables: this.api.list<DataRecord>('receivables', { page: 1, page_size: 24 }).pipe(catchError(() => of(emptyPageResult<DataRecord>())))
     }).pipe(finalize(() => this.loading.set(false))).subscribe(result => {
       this.customers.set(result.customers.items);
       this.receivables.set(result.receivables.items);
-      this.analytics.set(result.analytics);
+    });
+    this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(
+      catchError(() => of(EMPTY_ANALYTICS))
+    ).subscribe(analytics => {
+      this.analytics.set(analytics);
     });
   }
 

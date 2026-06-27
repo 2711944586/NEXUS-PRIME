@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -34,6 +34,129 @@ interface CaptchaChallenge {
   expires_in: number;
   terms_version: string;
 }
+
+type AuthMode = 'login' | 'register';
+type LoginFieldName = 'email' | 'password' | 'confirm_password' | 'full_name' | 'username' | 'position' | 'department_name' | 'captcha_answer';
+
+interface CapabilityTile {
+  icon: string;
+  title: string;
+  body: string;
+}
+
+interface AuthModeStripItem {
+  icon: string;
+  label: string;
+  value: string;
+}
+
+interface AuthIntelItem {
+  label: string;
+  value: string;
+  body: string;
+}
+
+interface AuthMetric {
+  label: string;
+  value: number;
+}
+
+const ROLE_ENTRIES: ReadonlyArray<{ kind: DemoAccountRole; title: string; body: string; icon: string }> = [
+  { kind: 'admin', title: '管理员', body: '用户、权限、审计、全部业务写入', icon: 'pi pi-shield' },
+  { kind: 'member', title: '普通用户', body: '采购、销售、文件、报表等授权流程', icon: 'pi pi-user' }
+];
+
+const REGISTER_STEPS: ReadonlyArray<{ icon: string; label: string }> = [
+  { icon: 'pi pi-id-card', label: '资料完整' },
+  { icon: 'pi pi-envelope', label: '邮箱唯一' },
+  { icon: 'pi pi-eye', label: '验证码识别' },
+  { icon: 'pi pi-file-check', label: '许可确认' },
+  { icon: 'pi pi-history', label: '审计留痕' }
+];
+
+const CAPABILITY_TILES: Record<AuthMode, ReadonlyArray<CapabilityTile>> = {
+  register: [
+    { icon: 'pi pi-user-plus', title: '成员账号', body: '默认普通权限' },
+    { icon: 'pi pi-shield', title: '许可确认', body: '服务与隐私' },
+    { icon: 'pi pi-eye', title: '验证码', body: '人工识别' },
+    { icon: 'pi pi-history', title: '审计记录', body: '注册留痕' }
+  ],
+  login: [
+    { icon: 'pi pi-database', title: '数据记录', body: '业务写入留痕' },
+    { icon: 'pi pi-shield', title: '权限矩阵', body: '角色差异访问' },
+    { icon: 'pi pi-comments', title: '协同审计', body: '流程通知闭环' },
+    { icon: 'pi pi-chart-line', title: '经营分析', body: '指标与图表' }
+  ]
+};
+
+const AUTH_MODE_STRIP: Record<AuthMode, ReadonlyArray<AuthModeStripItem>> = {
+  register: [
+    { icon: 'pi pi-id-card', label: '账号资料', value: '完整性校验' },
+    { icon: 'pi pi-file-check', label: '服务许可', value: '版本锁定' },
+    { icon: 'pi pi-history', label: '审计链路', value: '注册留痕' }
+  ],
+  login: [
+    { icon: 'pi pi-key', label: '会话密钥', value: '已准备' },
+    { icon: 'pi pi-shield', label: '角色边界', value: '按账号注入' },
+    { icon: 'pi pi-chart-line', label: '经营入口', value: '总览跳转' }
+  ]
+};
+
+const VISUAL_METRICS: Record<AuthMode, ReadonlyArray<AuthMetric>> = {
+  register: [
+    { label: '资料', value: 88 },
+    { label: '校验', value: 76 },
+    { label: '许可', value: 94 }
+  ],
+  login: [
+    { label: '会话', value: 92 },
+    { label: '权限', value: 84 },
+    { label: '审计', value: 97 }
+  ]
+};
+
+const AUTH_HERO_KICKER: Record<AuthMode, string> = {
+  register: 'Robotic onboarding',
+  login: 'Server access'
+};
+
+const AUTH_HERO_COPY: Record<AuthMode, string> = {
+  register: '新成员资料、岗位边界和许可确认进入同一条可审计链路。',
+  login: '会话、角色和关键动作在进入工作台之前完成准入校验。'
+};
+
+const STAGE_TITLE_LINES: Record<AuthMode, readonly string[]> = {
+  register: ['成员入网', '准入许可'],
+  login: ['安全准入', '经营中枢']
+};
+
+const LOGIN_LIVE_TAGS = ['Session sealed', 'Role scoped', 'Trace live'] as const;
+const LOGIN_INTEL_RAIL: ReadonlyArray<AuthIntelItem> = [
+  { label: 'Identity', value: '2 roles', body: '管理员 / 普通用户' },
+  { label: 'Session', value: 'CSRF', body: '安全令牌校验' },
+  { label: 'Trace', value: 'Live', body: '登录动作留痕' }
+];
+
+const AUTH_VALIDATED_FIELDS = [
+  'full_name',
+  'username',
+  'position',
+  'department_name',
+  'password',
+  'confirm_password',
+  'captcha_answer',
+  'accepted_terms',
+  'accepted_privacy',
+  'accepted_data_scope'
+] as const;
+
+const LOGIN_PASSWORD_VALIDATORS = [Validators.required, Validators.minLength(6)];
+const REGISTER_PASSWORD_VALIDATORS = [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/)];
+const REQUIRED_PROFILE_VALIDATORS = [Validators.required, Validators.minLength(2)];
+const USERNAME_VALIDATORS = [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9._-]+$/)];
+const REQUIRED_CONFIRMATION_VALIDATORS = [Validators.required];
+const REQUIRED_CAPTCHA_VALIDATORS = [Validators.required, Validators.minLength(1)];
+const REQUIRED_ACCEPTANCE_VALIDATORS = [Validators.requiredTrue];
 
 @Component({
   standalone: true,
@@ -425,7 +548,7 @@ interface CaptchaChallenge {
     </main>
   `
 })
-export class LoginPage implements OnInit, AfterViewInit {
+export class LoginPage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('authVideo') private readonly authVideo?: ElementRef<HTMLVideoElement>;
   @ViewChild('authPanelVideo') private readonly authPanelVideo?: ElementRef<HTMLVideoElement>;
 
@@ -441,24 +564,14 @@ export class LoginPage implements OnInit, AfterViewInit {
   protected readonly loading = signal(false);
   protected readonly csrfReady = signal<boolean | null>(null);
   protected readonly errorMessage = signal('');
-  protected readonly authMode = signal<'login' | 'register'>('login');
+  protected readonly authMode = signal<AuthMode>('login');
   protected readonly selectedRole = signal<DemoAccountRole>('admin');
   protected readonly captcha = signal<CaptchaChallenge | null>(null);
   protected readonly captchaLoading = signal(false);
   protected readonly registerPolicy = signal<RegisterPolicy | null>(null);
   private loginWatchdog: ReturnType<typeof setTimeout> | null = null;
-  protected readonly roleEntries = [
-    { kind: 'admin' as const, title: '管理员', body: '用户、权限、审计、全部业务写入', icon: 'pi pi-shield' },
-    { kind: 'member' as const, title: '普通用户', body: '采购、销售、文件、报表等授权流程', icon: 'pi pi-user' }
-  ];
-  protected readonly demoRoleEntries = signal(this.roleEntries.filter(entry => Boolean(environment.demoAccounts[entry.kind])));
-  protected readonly registerSteps = [
-    { icon: 'pi pi-id-card', label: '资料完整' },
-    { icon: 'pi pi-envelope', label: '邮箱唯一' },
-    { icon: 'pi pi-eye', label: '验证码识别' },
-    { icon: 'pi pi-file-check', label: '许可确认' },
-    { icon: 'pi pi-history', label: '审计留痕' }
-  ];
+  protected readonly demoRoleEntries = signal(ROLE_ENTRIES.filter(entry => Boolean(environment.demoAccounts[entry.kind])));
+  protected readonly registerSteps = REGISTER_STEPS;
   protected readonly form = this.fb.nonNullable.group({
     full_name: [''],
     username: [''],
@@ -466,7 +579,7 @@ export class LoginPage implements OnInit, AfterViewInit {
     department_name: [''],
     phone: [''],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', LOGIN_PASSWORD_VALIDATORS],
     confirm_password: [''],
     captcha_answer: [''],
     accepted_terms: [false],
@@ -496,6 +609,10 @@ export class LoginPage implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     queueMicrotask(() => this.playBackgroundVideo());
     queueMicrotask(() => this.playPanelVideo());
+  }
+
+  ngOnDestroy(): void {
+    this.clearLoginWatchdog();
   }
 
   protected toggleTheme(): void {
@@ -589,21 +706,21 @@ export class LoginPage implements OnInit, AfterViewInit {
     this.errorMessage.set('');
   }
 
-  switchMode(mode: 'login' | 'register'): void {
+  switchMode(mode: AuthMode): void {
     this.authMode.set(mode);
     this.errorMessage.set('');
     queueMicrotask(() => this.reloadBackgroundVideo());
     if (mode === 'register') {
-      this.form.controls.full_name.addValidators([Validators.required, Validators.minLength(2)]);
-      this.form.controls.username.addValidators([Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-Z0-9._-]+$/)]);
-      this.form.controls.position.addValidators([Validators.required, Validators.minLength(2)]);
-      this.form.controls.department_name.addValidators([Validators.required, Validators.minLength(2)]);
-      this.form.controls.password.setValidators([Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/)]);
-      this.form.controls.confirm_password.addValidators([Validators.required]);
-      this.form.controls.captcha_answer.addValidators([Validators.required, Validators.minLength(1)]);
-      this.form.controls.accepted_terms.addValidators([Validators.requiredTrue]);
-      this.form.controls.accepted_privacy.addValidators([Validators.requiredTrue]);
-      this.form.controls.accepted_data_scope.addValidators([Validators.requiredTrue]);
+      this.form.controls.full_name.setValidators(REQUIRED_PROFILE_VALIDATORS);
+      this.form.controls.username.setValidators(USERNAME_VALIDATORS);
+      this.form.controls.position.setValidators(REQUIRED_PROFILE_VALIDATORS);
+      this.form.controls.department_name.setValidators(REQUIRED_PROFILE_VALIDATORS);
+      this.form.controls.password.setValidators(REGISTER_PASSWORD_VALIDATORS);
+      this.form.controls.confirm_password.setValidators(REQUIRED_CONFIRMATION_VALIDATORS);
+      this.form.controls.captcha_answer.setValidators(REQUIRED_CAPTCHA_VALIDATORS);
+      this.form.controls.accepted_terms.setValidators(REQUIRED_ACCEPTANCE_VALIDATORS);
+      this.form.controls.accepted_privacy.setValidators(REQUIRED_ACCEPTANCE_VALIDATORS);
+      this.form.controls.accepted_data_scope.setValidators(REQUIRED_ACCEPTANCE_VALIDATORS);
       this.form.patchValue({
         email: '',
         password: '',
@@ -624,7 +741,7 @@ export class LoginPage implements OnInit, AfterViewInit {
       this.form.controls.username.clearValidators();
       this.form.controls.position.clearValidators();
       this.form.controls.department_name.clearValidators();
-      this.form.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
+      this.form.controls.password.setValidators(LOGIN_PASSWORD_VALIDATORS);
       this.form.controls.confirm_password.clearValidators();
       this.form.controls.captcha_answer.clearValidators();
       this.form.controls.accepted_terms.clearValidators();
@@ -635,24 +752,15 @@ export class LoginPage implements OnInit, AfterViewInit {
         this.prefillRole(this.demoRoleEntries()[0].kind);
       }
     }
-    this.form.controls.full_name.updateValueAndValidity();
-    this.form.controls.username.updateValueAndValidity();
-    this.form.controls.position.updateValueAndValidity();
-    this.form.controls.department_name.updateValueAndValidity();
-    this.form.controls.password.updateValueAndValidity();
-    this.form.controls.confirm_password.updateValueAndValidity();
-    this.form.controls.captcha_answer.updateValueAndValidity();
-    this.form.controls.accepted_terms.updateValueAndValidity();
-    this.form.controls.accepted_privacy.updateValueAndValidity();
-    this.form.controls.accepted_data_scope.updateValueAndValidity();
+    AUTH_VALIDATED_FIELDS.forEach(field => this.form.controls[field].updateValueAndValidity());
   }
 
-  fieldInvalid(name: 'email' | 'password' | 'confirm_password' | 'full_name' | 'username' | 'position' | 'department_name' | 'captcha_answer'): boolean {
+  fieldInvalid(name: LoginFieldName): boolean {
     const control = this.form.controls[name];
     return control.invalid && (control.dirty || control.touched);
   }
 
-  fieldMessage(name: 'email' | 'password' | 'confirm_password' | 'full_name' | 'username' | 'position' | 'department_name' | 'captcha_answer', fallback: string): string {
+  fieldMessage(name: LoginFieldName, fallback: string): string {
     const serverMessage = this.form.controls[name].errors?.['server'];
     return typeof serverMessage === 'string' ? serverMessage : fallback;
   }
@@ -685,20 +793,8 @@ export class LoginPage implements OnInit, AfterViewInit {
     });
   }
 
-  capabilityTiles(): Array<{ icon: string; title: string; body: string }> {
-    return this.authMode() === 'register'
-      ? [
-        { icon: 'pi pi-user-plus', title: '成员账号', body: '默认普通权限' },
-        { icon: 'pi pi-shield', title: '许可确认', body: '服务与隐私' },
-        { icon: 'pi pi-eye', title: '验证码', body: '人工识别' },
-        { icon: 'pi pi-history', title: '审计记录', body: '注册留痕' }
-      ]
-      : [
-        { icon: 'pi pi-database', title: '数据记录', body: '业务写入留痕' },
-        { icon: 'pi pi-shield', title: '权限矩阵', body: '角色差异访问' },
-        { icon: 'pi pi-comments', title: '协同审计', body: '流程通知闭环' },
-        { icon: 'pi pi-chart-line', title: '经营分析', body: '指标与图表' }
-      ];
+  capabilityTiles(): ReadonlyArray<CapabilityTile> {
+    return CAPABILITY_TILES[this.authMode()];
   }
 
   authVideoSource(): string {
@@ -714,65 +810,31 @@ export class LoginPage implements OnInit, AfterViewInit {
   }
 
   authHeroKicker(): string {
-    return this.authMode() === 'register' ? 'Robotic onboarding' : 'Server access';
+    return AUTH_HERO_KICKER[this.authMode()];
   }
 
   authHeroCopy(): string {
-    return this.authMode() === 'register'
-      ? '新成员资料、岗位边界和许可确认进入同一条可审计链路。'
-      : '会话、角色和关键动作在进入工作台之前完成准入校验。';
+    return AUTH_HERO_COPY[this.authMode()];
   }
 
-  authLiveTags(): string[] {
-    return this.authMode() === 'register'
-      ? ['Profile staged', 'Policy signed', 'Audit queued']
-      : ['Session sealed', 'Role scoped', 'Trace live'];
+  authLiveTags(): readonly string[] {
+    return LOGIN_LIVE_TAGS;
   }
 
-  authIntelRail(): Array<{ label: string; value: string; body: string }> {
-    return this.authMode() === 'register'
-      ? [
-        { label: 'Scope', value: 'Member', body: '默认普通权限' },
-        { label: 'Review', value: '岗位授权', body: '管理员后续分配' },
-        { label: 'Trail', value: 'Register', body: '资料与许可留痕' }
-      ]
-      : [
-        { label: 'Identity', value: '2 roles', body: '管理员 / 普通用户' },
-        { label: 'Session', value: 'CSRF', body: '安全令牌校验' },
-        { label: 'Trace', value: 'Live', body: '登录动作留痕' }
-      ];
+  authIntelRail(): ReadonlyArray<AuthIntelItem> {
+    return LOGIN_INTEL_RAIL;
   }
 
-  authModeStrip(): Array<{ icon: string; label: string; value: string }> {
-    return this.authMode() === 'register'
-      ? [
-        { icon: 'pi pi-id-card', label: '账号资料', value: '完整性校验' },
-        { icon: 'pi pi-file-check', label: '服务许可', value: '版本锁定' },
-        { icon: 'pi pi-history', label: '审计链路', value: '注册留痕' }
-      ]
-      : [
-        { icon: 'pi pi-key', label: '会话密钥', value: '已准备' },
-        { icon: 'pi pi-shield', label: '角色边界', value: '按账号注入' },
-        { icon: 'pi pi-chart-line', label: '经营入口', value: '总览跳转' }
-      ];
+  authModeStrip(): ReadonlyArray<AuthModeStripItem> {
+    return AUTH_MODE_STRIP[this.authMode()];
   }
 
-  visualMetrics(): Array<{ label: string; value: number }> {
-    return this.authMode() === 'register'
-      ? [
-        { label: '资料', value: 88 },
-        { label: '校验', value: 76 },
-        { label: '许可', value: 94 }
-      ]
-      : [
-        { label: '会话', value: 92 },
-        { label: '权限', value: 84 },
-        { label: '审计', value: 97 }
-      ];
+  visualMetrics(): ReadonlyArray<AuthMetric> {
+    return VISUAL_METRICS[this.authMode()];
   }
 
-  stageTitleLines(): string[] {
-    return this.authMode() === 'register' ? ['成员入网', '准入许可'] : ['安全准入', '经营中枢'];
+  stageTitleLines(): readonly string[] {
+    return STAGE_TITLE_LINES[this.authMode()];
   }
 
   private reloadBackgroundVideo(): void {
@@ -840,9 +902,7 @@ export class LoginPage implements OnInit, AfterViewInit {
   }
 
   private startLoginWatchdog(): void {
-    if (this.loginWatchdog) {
-      clearTimeout(this.loginWatchdog);
-    }
+    this.clearLoginWatchdog();
     this.loginWatchdog = setTimeout(() => {
       if (!this.loading()) {
         return;
@@ -854,6 +914,10 @@ export class LoginPage implements OnInit, AfterViewInit {
 
   private finishLoginRequest(): void {
     this.loading.set(false);
+    this.clearLoginWatchdog();
+  }
+
+  private clearLoginWatchdog(): void {
     if (this.loginWatchdog) {
       clearTimeout(this.loginWatchdog);
       this.loginWatchdog = null;

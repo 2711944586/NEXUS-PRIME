@@ -130,6 +130,14 @@ const EMPTY_QUALITY_INSPECTION: QualityInspectionPayload = {
             </article>
           </div>
 
+          <nav class="governance-action-strip" aria-label="质量检验快捷动作">
+            <a routerLink="/app/procurement/orders">来料批次</a>
+            <a routerLink="/app/suppliers/performance">供应商 CAPA</a>
+            <a routerLink="/app/files">质量附件</a>
+            <a routerLink="/app/reports">检验报表</a>
+            <button type="button" (click)="chartMode.set('supplier')">供应商视图</button>
+          </nav>
+
           @if (loading()) {
             <p-skeleton height="126px" />
           } @else {

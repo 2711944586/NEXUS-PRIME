@@ -781,6 +781,223 @@
     grid-area: resources;
   }
 
+  .workflow-command-strip {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid color-mix(in srgb, var(--accent) 15%, var(--line));
+    border-radius: var(--radius-md);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 93%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), color-mix(in srgb, var(--accent-2) 5%, transparent));
+    box-shadow:
+      0 12px 28px color-mix(in srgb, #0f172a 7%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, .34);
+  }
+
+  .workflow-command-primary,
+  .workflow-command-bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .36fr);
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .workflow-command-copy,
+  .workflow-command-health,
+  .workflow-command-signals a,
+  .workflow-command-actions a,
+  .workflow-command-steps a {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
+  }
+
+  .workflow-command-copy {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+  }
+
+  .workflow-command-copy span,
+  .workflow-command-health span,
+  .workflow-command-signals span,
+  .workflow-command-actions span,
+  .workflow-command-steps span {
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 820;
+    line-height: 1.2;
+  }
+
+  .workflow-command-copy strong {
+    color: var(--ink-strong);
+    font-size: clamp(1.08rem, 1.3vw, 1.34rem);
+    font-weight: 900;
+    line-height: 1.12;
+  }
+
+  .workflow-command-copy p {
+    max-width: 82ch;
+    margin: 0;
+    color: var(--muted-strong);
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+
+  .workflow-command-health {
+    display: grid;
+    align-content: center;
+    gap: 7px;
+    padding: 12px;
+  }
+
+  .workflow-command-health strong {
+    color: var(--ink-strong);
+    font-size: 1.72rem;
+    font-weight: 930;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .workflow-command-health.warning {
+    border-color: color-mix(in srgb, var(--warning) 28%, var(--line));
+    background: color-mix(in srgb, var(--warning) 5%, var(--surface-muted));
+  }
+
+  .workflow-command-health.danger {
+    border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+    background: color-mix(in srgb, var(--danger) 5%, var(--surface-muted));
+  }
+
+  .workflow-command-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .workflow-command-steps a {
+    position: relative;
+    display: grid;
+    gap: 3px;
+    min-height: 58px;
+    padding: 10px 10px 10px 12px;
+    color: var(--ink);
+    text-decoration: none;
+    transition:
+      border-color var(--motion-fast) var(--ease-standard),
+      background var(--motion-fast) var(--ease-standard),
+      transform var(--motion-fast) var(--ease-standard);
+  }
+
+  .workflow-command-steps a::before {
+    content: "";
+    position: absolute;
+    inset: 10px auto 10px 6px;
+    width: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 46%, transparent);
+  }
+
+  .workflow-command-steps a.active {
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong));
+  }
+
+  .workflow-command-steps a.warning::before {
+    background: var(--warning);
+  }
+
+  .workflow-command-steps a.danger::before {
+    background: var(--danger);
+  }
+
+  .workflow-command-steps a.success::before {
+    background: var(--success);
+  }
+
+  .workflow-command-steps a:hover,
+  .workflow-command-signals a:hover,
+  .workflow-command-actions a:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+    background: color-mix(in srgb, var(--accent) 7%, var(--surface-strong));
+  }
+
+  .workflow-command-steps strong,
+  .workflow-command-signals strong,
+  .workflow-command-actions strong {
+    overflow: hidden;
+    color: var(--ink-strong);
+    font-size: .9rem;
+    font-weight: 880;
+    line-height: 1.18;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .workflow-command-signals,
+  .workflow-command-actions {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .workflow-command-signals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workflow-command-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workflow-command-signals a,
+  .workflow-command-actions a {
+    display: grid;
+    gap: 3px;
+    min-height: 62px;
+    padding: 10px;
+    color: var(--ink);
+    text-decoration: none;
+    transition:
+      border-color var(--motion-fast) var(--ease-standard),
+      background var(--motion-fast) var(--ease-standard),
+      transform var(--motion-fast) var(--ease-standard);
+  }
+
+  .workflow-command-signals a.warning,
+  .workflow-command-actions a.warning {
+    border-color: color-mix(in srgb, var(--warning) 24%, var(--line));
+    background: color-mix(in srgb, var(--warning) 5%, var(--surface-muted));
+  }
+
+  .workflow-command-signals a.danger,
+  .workflow-command-actions a.danger {
+    border-color: color-mix(in srgb, var(--danger) 24%, var(--line));
+    background: color-mix(in srgb, var(--danger) 5%, var(--surface-muted));
+  }
+
+  .workflow-command-signals a.success,
+  .workflow-command-actions a.success {
+    border-color: color-mix(in srgb, var(--success) 24%, var(--line));
+    background: color-mix(in srgb, var(--success) 5%, var(--surface-muted));
+  }
+
+  .workflow-command-signals em,
+  .workflow-command-actions em {
+    overflow: hidden;
+    color: var(--muted-strong);
+    font-size: .72rem;
+    font-style: normal;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .field-evidence-grid,
   .page-evidence-grid {
     display: grid;
@@ -1107,6 +1324,75 @@
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--dock-tone, var(--accent)) 42%, var(--line));
     background: color-mix(in srgb, var(--dock-tone, var(--accent)) 13%, var(--surface-strong));
+  }
+
+  .module-photo-rail {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-2);
+    border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line));
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
+  }
+
+  .module-photo-rail figure {
+    position: relative;
+    min-width: 0;
+    min-height: 94px;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--line));
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-inset) 82%, #101827);
+  }
+
+  .module-photo-rail figure::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(7, 20, 33, .08), rgba(7, 20, 33, .72)),
+      linear-gradient(90deg, rgba(7, 20, 33, .22), transparent 58%);
+  }
+
+  .module-photo-rail img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 94px;
+    object-fit: cover;
+  }
+
+  .module-photo-rail figcaption {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 1;
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding: 9px;
+  }
+
+  .module-photo-rail figcaption span,
+  .module-photo-rail figcaption strong {
+    min-width: 0;
+    color: #f8fafc;
+    line-height: 1.16;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, .56);
+    overflow-wrap: anywhere;
+  }
+
+  .module-photo-rail figcaption span {
+    font-size: .68rem;
+    font-weight: 860;
+  }
+
+  .module-photo-rail figcaption strong {
+    font-size: .72rem;
+    font-weight: 820;
   }
 
   .module-command-deck article,
@@ -1501,6 +1787,11 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .workflow-command-primary,
+    .workflow-command-bottom {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     .dock-label {
       display: none;
     }
@@ -1570,6 +1861,15 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
+    .module-photo-rail {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .module-photo-rail figure,
+    .module-photo-rail img {
+      min-height: 86px;
+    }
+
     .atlas-actions .p-button,
     .icon-action,
     .create-action,
@@ -1627,6 +1927,26 @@
       width: calc(100vw - 20px);
       margin-top: 86px;
       gap: var(--space-3);
+    }
+
+    .workflow-command-strip {
+      padding: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+
+    .workflow-command-steps {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: visible;
+      padding-bottom: 0;
+    }
+
+    .workflow-command-steps a {
+      min-height: 54px;
+    }
+
+    .workflow-command-signals {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .page-evidence-strip {

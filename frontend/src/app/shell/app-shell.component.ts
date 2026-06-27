@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { NavigationEnd, NavigationStart, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { catchError, debounceTime, distinctUntilChanged, filter, interval, of, startWith, Subject, switchMap } from 'rxjs';
 
@@ -21,32 +21,20 @@ import {
   MORE_DOCK_ITEMS
 } from '../core/navigation';
 import { ThemeService } from '../core/theme.service';
-import { COMMAND_CENTER_PHOTOS } from '../core/visual-assets';
 import { activeWorkflowStage, workflowForUrl } from '../core/workflow-blueprints';
 import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
 import { AppDockComponent } from './app-dock.component';
-import { AppContextPanelComponent } from './app-context-panel.component';
 import { AppModuleMapComponent } from './app-module-map.component';
 import { AppTopbarComponent, QuickCreateAction } from './app-topbar.component';
-import { ResourceWorkbenchComponent } from './resource-workbench.component';
 import {
   EMPTY_COMMAND_CENTER,
   EMPTY_SERVICE_HEALTH,
-  buildShiftHandoffActions,
-  buildWorkflowSignals,
   calculateShellHealth,
-  compactMoney,
-  compactNumber,
-  moduleEntryCount,
-  nextWorkflowSteps,
   normalizeServiceHealth,
-  pageEvidenceTiles,
-  riskPath,
   serviceHealthLabel,
   serviceHealthLatencyLabel,
   serviceHealthTooltip,
-  userInitials,
-  workflowEvidenceTiles
+  userInitials
 } from './app-shell.models';
 
 const QUICK_CREATE_ACTIONS: QuickCreateAction[] = [
@@ -68,9 +56,10 @@ const COMMAND_SUGGESTIONS = [
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, AppContextPanelComponent, AppDockComponent, AppModuleMapComponent, AppTopbarComponent, ResourceWorkbenchComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, AppDockComponent, AppModuleMapComponent, AppTopbarComponent],
   template: `
     <div class="atlas-shell" [class.drawer-open]="moreOpen" [class.route-overview]="isOverviewRoute()">
+      <a class="skip-main-link" href="#main-content">跳到主内容</a>
       @if (routeLoading()) {
         <div class="route-loading-bar" aria-hidden="true"></div>
       }
@@ -114,44 +103,6 @@ const COMMAND_SUGGESTIONS = [
         <main class="content-stage atlas-stage" id="main-content">
           <router-outlet />
         </main>
-
-        <section class="page-evidence-strip" aria-label="页面级现场证据">
-          <div class="context-title">
-            <span>页面现场</span>
-            <em>{{ currentWorkflow().title }} · {{ pageEvidenceTiles().length }} 张</em>
-          </div>
-          <div class="page-evidence-grid">
-            @for (tile of pageEvidenceTiles(); track tile.photo.src + tile.stage.key) {
-              <a [routerLink]="tile.stage.path" [class.warning]="tile.stage.tone === 'warning'" [class.danger]="tile.stage.tone === 'danger'" [class.success]="tile.stage.tone === 'success'">
-                <img [src]="tile.photo.src" [alt]="tile.photo.alt" loading="eager" decoding="async" fetchpriority="high" />
-                <span>{{ tile.photo.label }}</span>
-                <strong>{{ tile.stage.label }} · {{ tile.stage.metric }}</strong>
-                <em>{{ tile.photo.caption }}</em>
-              </a>
-            }
-          </div>
-        </section>
-
-        <app-resource-workbench />
-
-        <app-context-panel
-          [currentWorkflow]="currentWorkflow()"
-          [activeWorkflowStep]="activeWorkflowStep()"
-          [shellHealth]="shellHealth()"
-          [shellRisks]="shellRisks()"
-          [totalRiskCount]="commandData().risks.length"
-          [stockQuantityLabel]="compactNumber(commandData().kpis.stock_quantity)"
-          [pendingPurchase]="commandData().kpis.pending_purchase"
-          [overdueAmountLabel]="compactMoney(commandData().kpis.overdue_amount)"
-          [workflowSignals]="workflowSignals()"
-          [workflowEvidenceTiles]="workflowEvidenceTiles()"
-          [shiftHandoffActions]="shiftHandoffActions()"
-          [nextWorkflowSteps]="nextWorkflowSteps()"
-          [moduleEntryCount]="moduleEntryCount()"
-          [visualAssetCount]="visualAssetCount"
-          [todayText]="todayText"
-          [riskPath]="riskPath"
-        />
       </div>
 
       @if (moreOpen) {
@@ -162,7 +113,7 @@ const COMMAND_SUGGESTIONS = [
           [serviceHealthLabel]="serviceHealthLabel()"
           [serviceHealthLatencyLabel]="serviceHealthLatencyLabel()"
           [riskCount]="commandData().risks.length"
-          [groups]="extraDockGroups()"
+          [groups]="moduleMapGroups()"
           [itemIsActive]="itemIsActive"
           (close)="closeModuleMap()"
         />
@@ -184,7 +135,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
   protected searchQuery = '';
   protected readonly searchResults = signal<Array<{ type: string; label: string; description?: string; path: string }>>([]);
   protected readonly quickCreateActions = QUICK_CREATE_ACTIONS;
-  protected readonly visualAssetCount = COMMAND_CENTER_PHOTOS.length;
   protected readonly primaryDockItems = DOCK_ITEMS;
   protected readonly desktopDockItems = dockItemsByKeys(DESKTOP_DOCK_KEYS);
   protected readonly compactDockItems = dockItemsByKeys(COMPACT_DOCK_KEYS);
@@ -211,15 +161,9 @@ export class AppShellComponent implements OnInit, OnDestroy {
   protected readonly visibleDockGroups = computed<DockGroup[]>(() => groupedDockItems(this.visibleDockItems()));
   protected readonly currentWorkflow = computed<WorkflowBlueprint>(() => workflowForUrl(this.currentUrl()));
   protected readonly activeWorkflowStep = computed<WorkflowStage>(() => activeWorkflowStage(this.currentWorkflow(), this.currentUrl()));
-  protected readonly workflowSignals = computed(() => buildWorkflowSignals(this.commandData(), this.currentWorkflow()));
-  protected readonly nextWorkflowSteps = computed<WorkflowStage[]>(() => nextWorkflowSteps(this.currentWorkflow(), this.activeWorkflowStep()));
-  protected readonly workflowEvidenceTiles = computed(() => workflowEvidenceTiles(this.currentWorkflow(), COMMAND_CENTER_PHOTOS));
-  protected readonly pageEvidenceTiles = computed(() => pageEvidenceTiles(this.currentWorkflow(), COMMAND_CENTER_PHOTOS));
-  protected readonly shiftHandoffActions = computed(() => buildShiftHandoffActions(this.currentWorkflow(), this.workflowSignals(), this.nextWorkflowSteps()));
-  protected readonly extraDockGroups = computed(() => {
-    const visibleKeys = new Set(this.visibleDockItems().map(item => item.key));
+  protected readonly moduleMapGroups = computed(() => {
     const all = [
-      ...DOCK_ITEMS.filter(item => !visibleKeys.has(item.key)),
+      ...DOCK_ITEMS,
       ...MORE_DOCK_ITEMS
     ];
     const seen = new Set<string>();
@@ -231,8 +175,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
       return true;
     }));
   });
-  protected readonly moduleEntryCount = computed(() => moduleEntryCount(this.extraDockGroups()));
-  protected readonly shellRisks = computed(() => this.commandData().risks.slice(0, 3));
   private commandDataLoadedAt = 0;
   private commandDataLoading = false;
   private serviceHealthLoadedAt = 0;
@@ -395,18 +337,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
     this.loadCommandData(true);
     this.loadServiceHealth(true);
     this.messages.add({ severity: 'success', summary: '运营数据已同步', detail: '顶部指标、风险队列、服务状态和业务入口已刷新。' });
-  }
-
-  protected readonly riskPath = (risk: ManufacturingCommandCenter['risks'][number]): string => {
-    return riskPath(risk);
-  };
-
-  compactMoney(value: number): string {
-    return compactMoney(value);
-  }
-
-  compactNumber(value: number): string {
-    return compactNumber(value);
   }
 
   initials(user: { full_name?: string | null; username?: string | null; email?: string | null }): string {

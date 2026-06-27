@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
 import { catchError, filter, of } from 'rxjs';
 
@@ -19,12 +20,63 @@ interface RegisterPolicy {
   documents?: RegisterPolicyDocument[];
 }
 
+type RegisterPolicyDocumentId = 'terms' | 'privacy' | 'data_scope';
+
 interface RegisterPolicyDocument {
-  id: string;
+  id: RegisterPolicyDocumentId;
   title: string;
   summary: string;
   items: string[];
 }
+
+const DEFAULT_POLICY_VERSION = '2026.06';
+const POLICY_SCROLL_DELAYS = [0, 80, 240, 520] as const;
+const POLICY_DOCUMENT_INDEX: Record<RegisterPolicyDocumentId, string> = {
+  terms: '01',
+  privacy: '02',
+  data_scope: '03'
+};
+const DEFAULT_REGISTER_POLICY_DOCUMENTS: ReadonlyArray<RegisterPolicyDocument> = [
+  {
+    id: 'terms',
+    title: 'NEXUS Prime 服务许可',
+    summary: '普通成员准入、业务动作、文件上传、审计责任和管理员授权规则。',
+    items: [
+      '注册成功后系统创建普通成员账号，不自动授予用户管理、审计删除、全局权限配置、部署设置等高风险能力。',
+      '账号仅用于 NEXUS Prime 内的制造台账、采购审批、销售履约、财务应收、报表分析、文件归档和协同演示业务。',
+      '用户应使用真实邮箱、姓名或岗位昵称、所属部门和业务岗位；管理员可根据岗位补充分组、角色和业务权限。',
+      '用户名需为 3-32 位字母、数字、点、下划线或短横线；密码至少 8 位，并同时包含字母和数字。',
+      '禁止上传恶意脚本、伪装可执行文件、含敏感凭据的配置文件或与业务无关的大文件；文件中心会记录上传人、时间和类型。',
+      '采购审批、盘点调整、信用冻结、文件删除等关键动作会进入审计日志，便于课程演示、部署检查和责任追踪。'
+    ]
+  },
+  {
+    id: 'privacy',
+    title: '隐私与身份资料说明',
+    summary: '账号资料、通知、头像、偏好设置、审计归属和前端安全边界说明。',
+    items: [
+      '注册资料包括邮箱、用户名、姓名或岗位昵称、手机号、部门、岗位和界面偏好设置。',
+      '这些资料用于登录识别、通知送达、头像展示、业务负责人展示和审计日志归属。',
+      '头像文件存放在专用头像目录或生产持久化存储，不与采购合同、质检附件、报表文件等业务附件混放。',
+      '系统不会在浏览器端保存数据库连接串、部署 Token、Supabase secret、Cloudinary secret 或 AI API Key。',
+      '管理员可以查看业务审计与账号状态，但普通成员无法访问用户管理、角色配置和全局安全配置。',
+      '生产部署时应通过 HTTPS、SameSite Cookie、CSRF Token 和环境变量隔离保护登录会话。'
+    ]
+  },
+  {
+    id: 'data_scope',
+    title: '数据使用范围',
+    summary: '库存、采购、履约、应收、文件、报表和 AI 经营分析的数据边界。',
+    items: [
+      '系统会把注册账号与后续上传、评论、报表生成、AI 会话、业务写入和审批动作建立关联。',
+      '库存、采购、销售、履约、应收、信用、盘点、质检和维护数据仅用于系统内业务流转、演示分析和审计追踪。',
+      'AI 分析只通过后端读取经营汇总和用户输入；外部模型调用由服务端统一转发，并可降级为本地分析。',
+      '文件附件存放在专用文件目录或生产持久化存储；Seed 图片和演示素材位于前端公共资源。',
+      '生产部署应使用 Supabase PostgreSQL、Vercel 环境变量和 Cloudinary 或等价对象存储承载持久文件。',
+      '管理员可按岗位分配采购、销售、文件、报表、AI、系统审计等权限，普通成员只能访问被授权的业务范围。'
+    ]
+  }
+];
 
 @Component({
   standalone: true,
@@ -80,7 +132,7 @@ interface RegisterPolicyDocument {
           </h1>
           <p>普通成员账号适用于制造台账、采购、销售、文件、报表与协同流程。注册前请确认账号边界、隐私资料和业务数据范围。</p>
           <div class="policy-actions">
-            <strong>版本 {{ policy()?.terms_version || '2026.06' }}</strong>
+            <strong>版本 {{ policyVersion() }}</strong>
             <a routerLink="/auth/login" [queryParams]="{ mode: 'register' }">创建账号</a>
           </div>
         </div>
@@ -110,7 +162,7 @@ interface RegisterPolicyDocument {
         <aside class="policy-index">
           @for (document of registerPolicyDocuments(); track document.id) {
             <button type="button" (click)="scrollToDocument(document.id)" [class.active]="activeDocument() === document.id">
-              <span>{{ document.id === 'terms' ? '01' : document.id === 'privacy' ? '02' : '03' }}</span>
+              <span>{{ documentIndexLabel(document.id) }}</span>
               <strong>{{ document.title }}</strong>
             </button>
           }
@@ -120,7 +172,7 @@ interface RegisterPolicyDocument {
           @for (document of registerPolicyDocuments(); track document.id) {
             <article [id]="document.id" class="policy-document">
               <header>
-                <span>{{ document.id === 'terms' ? '01' : document.id === 'privacy' ? '02' : '03' }}</span>
+                <span>{{ documentIndexLabel(document.id) }}</span>
                 <h2>{{ document.title }}</h2>
                 <p>{{ document.summary }}</p>
               </header>
@@ -136,32 +188,38 @@ interface RegisterPolicyDocument {
     </main>
   `
 })
-export class RegisterPolicyPage implements OnInit, AfterViewInit {
+export class RegisterPolicyPage implements OnInit, AfterViewInit, OnDestroy {
   protected readonly theme = inject(ThemeService);
   protected readonly poster = LANDING_POSTER;
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly policy = signal<RegisterPolicy | null>(null);
-  protected readonly activeDocument = signal<'terms' | 'privacy' | 'data_scope'>('terms');
+  protected readonly activeDocument = signal<RegisterPolicyDocumentId>('terms');
+  private readonly scrollTimers = new Set<ReturnType<typeof setTimeout>>();
   private hasDocumentFragment = false;
 
   ngOnInit(): void {
     this.api.get<RegisterPolicy>('auth/register-policy').pipe(
-      catchError(() => of(null))
+      catchError(() => of(null)),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(result => {
       if (result) {
         this.policy.set(result);
         this.queueInitialScroll();
       }
     });
-    this.route.fragment.subscribe(fragment => {
+    this.route.fragment.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(fragment => {
       const target = this.validDocumentId(fragment);
       this.hasDocumentFragment = Boolean(target);
       this.activeDocument.set(target ?? 'terms');
       this.queueInitialScroll();
     });
-    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.queueInitialScroll();
     });
   }
@@ -170,14 +228,27 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
     this.queueInitialScroll();
   }
 
+  ngOnDestroy(): void {
+    this.clearScrollTimers();
+  }
+
   scrollToDocument(id: string, updateUrl = true): void {
     const target = this.validDocumentId(id) ?? 'terms';
     this.activeDocument.set(target);
+    this.clearScrollTimers();
     if (updateUrl) {
       this.hasDocumentFragment = true;
       this.router.navigate([], { fragment: target, replaceUrl: false });
     }
     this.performPolicyScroll(target, updateUrl ? 'smooth' : 'auto');
+  }
+
+  policyVersion(): string {
+    return this.policy()?.terms_version || DEFAULT_POLICY_VERSION;
+  }
+
+  documentIndexLabel(id: RegisterPolicyDocumentId): string {
+    return POLICY_DOCUMENT_INDEX[id];
   }
 
   toggleTheme(): void {
@@ -208,55 +279,17 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
     });
   }
 
-  registerPolicyDocuments(): RegisterPolicyDocument[] {
-    return this.policy()?.documents?.length ? this.policy()!.documents! : [
-      {
-        id: 'terms',
-        title: 'NEXUS Prime 服务许可',
-        summary: '普通成员准入、业务动作、文件上传、审计责任和管理员授权规则。',
-        items: [
-          '注册成功后系统创建普通成员账号，不自动授予用户管理、审计删除、全局权限配置、部署设置等高风险能力。',
-          '账号仅用于 NEXUS Prime 内的制造台账、采购审批、销售履约、财务应收、报表分析、文件归档和协同演示业务。',
-          '用户应使用真实邮箱、姓名或岗位昵称、所属部门和业务岗位；管理员可根据岗位补充分组、角色和业务权限。',
-          '用户名需为 3-32 位字母、数字、点、下划线或短横线；密码至少 8 位，并同时包含字母和数字。',
-          '禁止上传恶意脚本、伪装可执行文件、含敏感凭据的配置文件或与业务无关的大文件；文件中心会记录上传人、时间和类型。',
-          '采购审批、盘点调整、信用冻结、文件删除等关键动作会进入审计日志，便于课程演示、部署检查和责任追踪。'
-        ]
-      },
-      {
-        id: 'privacy',
-        title: '隐私与身份资料说明',
-        summary: '账号资料、通知、头像、偏好设置、审计归属和前端安全边界说明。',
-        items: [
-          '注册资料包括邮箱、用户名、姓名或岗位昵称、手机号、部门、岗位和界面偏好设置。',
-          '这些资料用于登录识别、通知送达、头像展示、业务负责人展示和审计日志归属。',
-          '头像文件存放在专用头像目录或生产持久化存储，不与采购合同、质检附件、报表文件等业务附件混放。',
-          '系统不会在浏览器端保存数据库连接串、部署 Token、Supabase secret、Cloudinary secret 或 AI API Key。',
-          '管理员可以查看业务审计与账号状态，但普通成员无法访问用户管理、角色配置和全局安全配置。',
-          '生产部署时应通过 HTTPS、SameSite Cookie、CSRF Token 和环境变量隔离保护登录会话。'
-        ]
-      },
-      {
-        id: 'data_scope',
-        title: '数据使用范围',
-        summary: '库存、采购、履约、应收、文件、报表和 AI 经营分析的数据边界。',
-        items: [
-          '系统会把注册账号与后续上传、评论、报表生成、AI 会话、业务写入和审批动作建立关联。',
-          '库存、采购、销售、履约、应收、信用、盘点、质检和维护数据仅用于系统内业务流转、演示分析和审计追踪。',
-          'AI 分析只通过后端读取经营汇总和用户输入；外部模型调用由服务端统一转发，并可降级为本地分析。',
-          '文件附件存放在专用文件目录或生产持久化存储；Seed 图片和演示素材位于前端公共资源。',
-          '生产部署应使用 Supabase PostgreSQL、Vercel 环境变量和 Cloudinary 或等价对象存储承载持久文件。',
-          '管理员可按岗位分配采购、销售、文件、报表、AI、系统审计等权限，普通成员只能访问被授权的业务范围。'
-        ]
-      }
-    ];
+  registerPolicyDocuments(): ReadonlyArray<RegisterPolicyDocument> {
+    const documents = this.policy()?.documents;
+    return documents?.length ? documents : DEFAULT_REGISTER_POLICY_DOCUMENTS;
   }
 
-  private validDocumentId(id: string | null | undefined): 'terms' | 'privacy' | 'data_scope' | null {
+  private validDocumentId(id: string | null | undefined): RegisterPolicyDocumentId | null {
     return id === 'terms' || id === 'privacy' || id === 'data_scope' ? id : null;
   }
 
   private queueInitialScroll(): void {
+    this.clearScrollTimers();
     if (this.hasDocumentFragment) {
       this.queuePolicyScroll(this.activeDocument());
       return;
@@ -265,18 +298,31 @@ export class RegisterPolicyPage implements OnInit, AfterViewInit {
   }
 
   private queuePageTop(): void {
-    [0, 80, 240, 520].forEach(delay => {
-      setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), delay);
-    });
+    this.queueScrollSequence(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   }
 
-  private queuePolicyScroll(id: 'terms' | 'privacy' | 'data_scope'): void {
-    [0, 80, 240, 520].forEach(delay => {
-      setTimeout(() => this.performPolicyScroll(id, 'auto'), delay);
-    });
+  private queuePolicyScroll(id: RegisterPolicyDocumentId): void {
+    this.queueScrollSequence(() => this.performPolicyScroll(id, 'auto'));
   }
 
-  private performPolicyScroll(id: 'terms' | 'privacy' | 'data_scope', behavior: ScrollBehavior): void {
+  private queueScrollSequence(action: () => void): void {
+    POLICY_SCROLL_DELAYS.forEach(delay => this.queueScrollTask(action, delay));
+  }
+
+  private queueScrollTask(action: () => void, delay: number): void {
+    const timer = setTimeout(() => {
+      this.scrollTimers.delete(timer);
+      action();
+    }, delay);
+    this.scrollTimers.add(timer);
+  }
+
+  private clearScrollTimers(): void {
+    this.scrollTimers.forEach(timer => clearTimeout(timer));
+    this.scrollTimers.clear();
+  }
+
+  private performPolicyScroll(id: RegisterPolicyDocumentId, behavior: ScrollBehavior): void {
     const target = document.getElementById(id);
     if (!target) {
       return;

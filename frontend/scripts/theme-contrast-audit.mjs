@@ -58,7 +58,7 @@ for (const theme of themes) {
     await login(page, theme);
 
     for (const route of routes) {
-      await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+      await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
       await page.waitForTimeout(600);
       await applyTheme(page, theme);
@@ -199,8 +199,19 @@ for (const theme of themes) {
           background.a = 1;
           return background;
         };
+        const imageCardSelector = [
+          '.field-evidence-grid a',
+          '.page-evidence-grid a',
+          '.mobile-field-evidence-strip a',
+          '.context-workflow-photo',
+          '.command-photo-strip a',
+          '.command-evidence-rail figure',
+          '.module-photo-rail a',
+          '.command-visual-board figure',
+          '.settings-visual-rail figure'
+        ].join(',');
         const effectiveBackground = element => {
-          const imageCard = element.closest('.field-evidence-grid a, .page-evidence-grid a, .command-photo-strip a, .module-photo-rail a');
+          const imageCard = element.closest(imageCardSelector);
           if (imageCard) {
             return { r: 14, g: 23, b: 20, a: 1 };
           }
@@ -223,7 +234,7 @@ for (const theme of themes) {
             if (!text.length || element.closest('.module-photo-rail, .command-photo-strip')) {
               return false;
             }
-            if (element.matches('.field-evidence-grid a, .page-evidence-grid a, .mobile-field-evidence-strip a')) {
+            if (element.matches('.field-evidence-grid a, .page-evidence-grid a, .mobile-field-evidence-strip a, .context-workflow-photo, .command-evidence-rail figure, .command-visual-board figure, .settings-visual-rail figure')) {
               return false;
             }
             if (element.children.length && !hasDirectText(element) && !element.matches('button, .p-button, input, textarea, select')) {
@@ -399,7 +410,7 @@ if (failed.length) {
 }
 
 async function login(page, theme) {
-  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded' });
   await applyTheme(page, theme);
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);

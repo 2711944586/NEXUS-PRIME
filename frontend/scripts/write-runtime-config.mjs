@@ -9,7 +9,7 @@ const sentryDsn = process.env.NEXUS_SENTRY_DSN || process.env.SENTRY_DSN || '';
 const sentryEnvironment = process.env.NEXUS_SENTRY_ENVIRONMENT || process.env.VERCEL_ENV || process.env.NODE_ENV || '';
 const sentryRelease = process.env.NEXUS_SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || '';
 const sentryTracesSampleRate = Number(process.env.NEXUS_SENTRY_TRACES_SAMPLE_RATE || 0);
-const localApiBaseUrl = process.env.NEXUS_LOCAL_API_BASE_URL || 'http://127.0.0.1:5000/api/v1';
+const localApiBaseUrl = process.env.NEXUS_LOCAL_API_BASE_URL || 'http://127.0.0.1:5001/api/v1';
 const useLocalDefault = args.has('--local') || process.env.NEXUS_RUNTIME_CONFIG_LOCAL === '1';
 const apiBaseUrl = explicitApiBaseUrl || (useLocalDefault ? localApiBaseUrl : '');
 const isManagedDeployBuild = process.env.VERCEL === '1' || process.env.NETLIFY === 'true' || process.env.CF_PAGES === '1';

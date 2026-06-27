@@ -14,12 +14,6 @@ import { ShiftHandoffAction, WorkflowEvidenceTile, WorkflowSignal } from './app-
   imports: [CommonModule, RouterLink, ProgressBarModule],
   template: `
     <aside class="atlas-context-panel" aria-label="运营上下文">
-      <section class="context-block live">
-        <span>链路健康</span>
-        <strong>{{ shellHealth }}%</strong>
-        <p-progressbar [value]="shellHealth" [showValue]="false" />
-      </section>
-
       <section class="context-block">
         <div class="context-title">
           <span>风险队列</span>
@@ -48,31 +42,9 @@ import { ShiftHandoffAction, WorkflowEvidenceTile, WorkflowSignal } from './app-
         <div><span>逾期</span><strong>{{ overdueAmountLabel }}</strong></div>
       </section>
 
-      <section class="context-block workflow-signal-block">
-        <div class="context-title">
-          <span>执行信号</span>
-          <em>{{ currentWorkflow.title }}</em>
-        </div>
-        <div class="workflow-signal-list" aria-label="当前业务执行信号">
-          @for (signal of workflowSignals; track signal.label) {
-            <a
-              [routerLink]="signal.path"
-              [class.warning]="signal.tone === 'warning'"
-              [class.danger]="signal.tone === 'danger'"
-              [class.success]="signal.tone === 'success'"
-              [class.info]="signal.tone === 'info'"
-            >
-              <span>{{ signal.label }}</span>
-              <strong>{{ signal.value }}</strong>
-              <em>{{ signal.caption }}</em>
-            </a>
-          }
-        </div>
-      </section>
-
       <section class="context-block workflow-context-block">
         <div class="context-title">
-          <span>当前闭环</span>
+          <span>当前节点</span>
           <em>{{ activeWorkflowStep.label }}</em>
         </div>
         <figure class="context-workflow-photo">
@@ -82,7 +54,6 @@ import { ShiftHandoffAction, WorkflowEvidenceTile, WorkflowSignal } from './app-
             <strong>{{ currentWorkflow.photo.caption }}</strong>
           </figcaption>
         </figure>
-        <p>{{ currentWorkflow.summary }}</p>
         <div class="workflow-step-rail" aria-label="业务闭环节点">
           @for (stage of currentWorkflow.stages; track stage.key) {
             <a
@@ -151,7 +122,7 @@ import { ShiftHandoffAction, WorkflowEvidenceTile, WorkflowSignal } from './app-
           <em>工作流</em>
         </div>
         @for (stage of nextWorkflowSteps; track stage.key) {
-          <a class="context-action" [routerLink]="stage.path">{{ stage.label }} · {{ stage.metric }}</a>
+          <a class="context-action" [routerLink]="stage.path">{{ stage.label }} / {{ stage.metric }}</a>
         }
       </section>
     </aside>

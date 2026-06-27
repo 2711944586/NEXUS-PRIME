@@ -22,6 +22,7 @@ backend/instance/*
 .env
 .env.*
 !.env.example
+!.env.mainland.example
 !backend/.env.example
 !frontend/.env.example
 
@@ -87,6 +88,10 @@ frontend/public/runtime-config.js
 output/
 frontend/output/
 .playwright-cli/
+.playwright-mcp/
+audit-*.png
+reactbits-*.png
+overview-desktop.png
 playwright-report/
 test-results/
 coverage/

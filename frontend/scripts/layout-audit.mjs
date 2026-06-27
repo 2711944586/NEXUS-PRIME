@@ -73,7 +73,8 @@ for (const viewport of viewports) {
   await login(page);
 
   for (const route of routes) {
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
     await page.waitForTimeout(650);
     const audit = await page.evaluate(() => {
       const selectors = [
@@ -168,6 +169,9 @@ for (const viewport of viewports) {
         }
         const element = node.parentElement;
         if (!element || element.closest('script, style, svg, canvas, .p-toast, .p-tooltip, .dock-popover, [role="tooltip"]')) {
+          continue;
+        }
+        if (element.closest('.field-evidence-grid a, .page-evidence-grid a, .mobile-field-evidence-strip a, .context-workflow-photo, .command-photo-strip a, .command-evidence-rail figure, .module-photo-rail a, .command-visual-board figure, .settings-visual-rail figure')) {
           continue;
         }
         if (!visible(element)) {
@@ -282,7 +286,7 @@ if (failed.length) {
 console.log(`Layout audit passed for ${results.length} page checks. Report: ${path.join(outDir, 'report.json')}`);
 
 async function login(page) {
-  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded' });
   const email = page.locator('input[type="email"], input[name="email"]').first();
   const password = page.locator('input[type="password"], input[name="password"]').first();
   await email.fill(credentials.email);

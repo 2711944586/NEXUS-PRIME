@@ -1,5 +1,5 @@
 param(
-    [int]$BackendPort = 5000,
+    [int]$BackendPort = 5001,
     [int]$FrontendPort = 4200,
     [int]$MaxPortTries = 30,
     [int]$StartupTimeoutSeconds = 90,
@@ -12,7 +12,8 @@ param(
     [switch]$NoWait,
     [switch]$CheckOnly,
     [switch]$Docker,
-    [switch]$Build
+    [switch]$Build,
+    [switch]$ResetWorkspace
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,6 +25,7 @@ $VenvDir = Join-Path $Root 'venv'
 $Python = Join-Path $VenvDir 'Scripts\python.exe'
 $NodeModules = Join-Path $FrontendDir 'node_modules'
 $InstallScript = Join-Path $Root 'scripts\install-dependencies.ps1'
+$CleanScript = Join-Path $Root 'scripts\clean-workspace.ps1'
 $RuntimeConfig = Join-Path $FrontendDir 'public\runtime-config.js'
 $BackendEntry = Join-Path $BackendDir 'run.py'
 $FrontendPackage = Join-Path $FrontendDir 'package.json'
@@ -60,7 +62,7 @@ Common local options:
   -CheckOnly       Validate prerequisites and ports without starting servers.
 
 Port and timeout options:
-  -BackendPort     Preferred backend port. Default: 5000.
+  -BackendPort     Preferred backend port. Default: 5001.
   -FrontendPort    Preferred frontend port. Default: 4200.
   -MaxPortTries    Number of sequential ports to try if preferred ports are busy.
   -StartupTimeoutSeconds
@@ -70,6 +72,7 @@ Docker options:
   -Docker          Use docker compose for postgres, redis, backend, worker, beat, frontend.
   -Build           Rebuild Docker images during docker compose startup.
   -CheckOnly       With -Docker, also validate docker-compose.yml without starting containers.
+  -ResetWorkspace   Stop workspace dev processes and clear local build caches before startup.
 
 Examples:
   .\scripts\dev.ps1 -CheckOnly
@@ -135,6 +138,9 @@ function Test-DevPrerequisites {
     if (-not (Test-Command 'npm')) {
         $issues += 'npm is not available on PATH.'
     }
+    if (-not (Test-Command 'node')) {
+        $issues += 'node is not available on PATH.'
+    }
     return $issues
 }
 
@@ -162,40 +168,23 @@ function Assert-DockerComposeConfig {
 }
 
 function Write-RuntimeConfig([string]$ApiBaseUrl) {
-    $runtimeDir = Split-Path -Parent $RuntimeConfig
-    if (-not (Test-Path -LiteralPath $runtimeDir)) {
-        New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null
-    }
+    Assert-CommandExists 'node' 'Install Node.js LTS and reopen this terminal.'
 
-    $encodedApiBaseUrl = $ApiBaseUrl | ConvertTo-Json -Compress
-    $sentryDsn = Get-FirstEnv @('NEXUS_SENTRY_DSN', 'SENTRY_DSN')
-    $sentryEnvironment = Get-FirstEnv @('NEXUS_SENTRY_ENVIRONMENT', 'VERCEL_ENV', 'NODE_ENV')
-    $sentryRelease = Get-FirstEnv @('NEXUS_SENTRY_RELEASE', 'VERCEL_GIT_COMMIT_SHA')
-    $sentryTracesSampleRateRaw = Get-FirstEnv @('NEXUS_SENTRY_TRACES_SAMPLE_RATE') '0'
-    $sentryTracesSampleRate = 0.0
-    if (-not [double]::TryParse(
-        $sentryTracesSampleRateRaw,
-        [System.Globalization.NumberStyles]::Float,
-        [System.Globalization.CultureInfo]::InvariantCulture,
-        [ref]$sentryTracesSampleRate
-    )) {
-        $sentryTracesSampleRate = 0.0
+    $previousApiBase = $env:NEXUS_LOCAL_API_BASE_URL
+    $previousRuntimeLocal = $env:NEXUS_RUNTIME_CONFIG_LOCAL
+    try {
+        Push-Location $FrontendDir
+        $env:NEXUS_LOCAL_API_BASE_URL = $ApiBaseUrl
+        $env:NEXUS_RUNTIME_CONFIG_LOCAL = '1'
+        & node 'scripts/write-runtime-config.mjs' '--local'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Writing frontend runtime config failed.'
+        }
+    } finally {
+        Pop-Location
+        $env:NEXUS_LOCAL_API_BASE_URL = $previousApiBase
+        $env:NEXUS_RUNTIME_CONFIG_LOCAL = $previousRuntimeLocal
     }
-
-    $encodedSentryDsn = $sentryDsn | ConvertTo-Json -Compress
-    $encodedSentryEnvironment = $sentryEnvironment | ConvertTo-Json -Compress
-    $encodedSentryRelease = $sentryRelease | ConvertTo-Json -Compress
-    $encodedSentryTracesSampleRate = $sentryTracesSampleRate.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-    $content = @"
-window.NEXUS_RUNTIME_CONFIG = {
-  apiBaseUrl: $encodedApiBaseUrl,
-  sentryDsn: $encodedSentryDsn,
-  sentryEnvironment: $encodedSentryEnvironment,
-  sentryRelease: $encodedSentryRelease,
-  sentryTracesSampleRate: $encodedSentryTracesSampleRate
-};
-"@
-    Set-Content -LiteralPath $RuntimeConfig -Value $content -Encoding UTF8
 }
 
 function Start-DevProcess($Title, $WorkingDirectory, $Command) {
@@ -206,6 +195,7 @@ function Start-DevProcess($Title, $WorkingDirectory, $Command) {
 
     $safeTitle = ConvertTo-SingleQuotedPowerShellString $Title
     return Start-Process -FilePath $pwsh -WorkingDirectory $WorkingDirectory -ArgumentList @(
+        '-NoProfile',
         '-NoExit',
         '-ExecutionPolicy', 'Bypass',
         '-Command',
@@ -331,11 +321,19 @@ if ($CheckOnly) {
     Write-Host "Backend API : $ApiBaseUrl"
     Write-Host "Frontend SPA: $FrontendUrl"
     Write-Host "Health probe: $BackendHealthUrl"
+    Write-Host "Start cmd   : .\scripts\dev.ps1 -BackendPort $BackendPort -FrontendPort $FrontendPort"
     Write-Host 'No servers were started because -CheckOnly was provided.'
     return
 }
 
 Assert-CommandExists 'npm' 'Install Node.js LTS and reopen this terminal.'
+
+if ($ResetWorkspace) {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $CleanScript -StopDevServers
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Workspace cleanup failed.'
+    }
+}
 
 if ($Install -or -not (Test-Path $Python) -or -not (Test-Path $NodeModules)) {
     if ($NoInstall) {

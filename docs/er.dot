@@ -1,0 +1,112 @@
+digraph nexus_prime_er {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    pad="0.35",
+    nodesep="0.55",
+    ranksep="0.9",
+    splines=ortho,
+    fontname="Microsoft YaHei",
+    label="NEXUS Prime ERP ER overview",
+    labelloc=t,
+    fontsize=24
+  ];
+  node [
+    shape=record,
+    style="rounded,filled",
+    fillcolor="#f8fafc",
+    color="#8aa1b5",
+    fontname="Microsoft YaHei",
+    fontsize=10,
+    margin="0.08,0.05"
+  ];
+  edge [
+    color="#567184",
+    arrowsize=0.65,
+    fontname="Microsoft YaHei",
+    fontsize=8
+  ];
+
+  auth_users [label="{auth_users|PK id\lFK role_id\lFK department_id\lusername / email\l}"];
+  auth_roles [label="{auth_roles|PK id\lname\l}"];
+  auth_departments [label="{auth_departments|PK id\lFK parent_id\lname\l}"];
+  biz_partners [label="{biz_partners|PK id\lpartner_type\lname\lrisk_level\l}"];
+  biz_products [label="{biz_products|PK id\lFK category_id\lFK supplier_id\lsku / name / price\l}"];
+  biz_categories [label="{biz_categories|PK id\lname\l}"];
+  stock_warehouses [label="{stock_warehouses|PK id\lcode / name\lregion\l}"];
+  stock_quantities [label="{stock_quantities|PK id\lFK product_id\lFK warehouse_id\lquantity / shelf\l}"];
+  stock_movements [label="{stock_movements|PK id\lFK product_id\lFK warehouse_id\lFK created_by\lmovement_type / quantity\l}"];
+  stock_alerts [label="{stock_alerts|PK id\lFK product_id\lFK warehouse_id\llevel / status\l}"];
+  stock_takes [label="{stock_takes|PK id\lFK warehouse_id\lFK created_by\lstatus\l}"];
+  stock_take_items [label="{stock_take_items|PK id\lFK take_id\lFK product_id\lsystem / counted qty\l}"];
+  purchase_orders [label="{purchase_orders|PK id\lFK supplier_id\lFK warehouse_id\lFK submitted_by\lstatus / amount\l}"];
+  purchase_order_items [label="{purchase_order_items|PK id\lFK order_id\lFK product_id\lquantity / unit_price\l}"];
+  supplier_performance [label="{supplier_performance|PK id\lFK supplier_id\lon_time_rate\lquality_score\l}"];
+  trade_orders [label="{trade_orders|PK id\lFK customer_id\lFK seller_id\lstatus / amount\l}"];
+  trade_order_items [label="{trade_order_items|PK id\lFK order_id\lFK product_id\lquantity / unit_price\l}"];
+  finance_receivables [label="{finance_receivables|PK id\lFK order_id\lFK customer_id\lamount / paid / status\l}"];
+  finance_payments [label="{finance_payments|PK id\lFK receivable_id\lFK customer_id\lFK operator_id\lamount\l}"];
+  finance_customer_credit [label="{finance_customer_credit|PK id\lFK customer_id\lFK frozen_by\lcredit_limit / status\l}"];
+  workflow_definitions [label="{workflow_definitions|PK id\lcode / version\l}"];
+  workflow_instances [label="{workflow_instances|PK id\lFK definition_id\lFK applicant_id\lbusiness_key / status\l}"];
+  workflow_tasks [label="{workflow_tasks|PK id\lFK instance_id\lFK assignee_id\lstatus\l}"];
+  cms_articles [label="{cms_articles|PK id\lFK author_id\ltitle / status\l}"];
+  cms_attachments [label="{cms_attachments|PK id\lFK uploader_id\lFK article_id\lfile_name\l}"];
+  generated_reports [label="{generated_reports|PK id\lFK subscription_id\lFK generated_by\lreport_type / status\l}"];
+  sys_notifications [label="{sys_notifications|PK id\lFK user_id\ltype / status\l}"];
+  sys_ai_sessions [label="{sys_ai_sessions|PK id\lFK user_id\ltitle\l}"];
+  sys_ai_messages [label="{sys_ai_messages|PK id\lFK session_id\lrole / content\l}"];
+  sys_audit_logs [label="{sys_audit_logs|PK id\lFK user_id\laction / resource\l}"];
+  background_jobs [label="{background_jobs|PK id\lFK created_by\ljob_type / status\l}"];
+  domain_events [label="{domain_events|PK id\laggregate_type\laggregate_id\levent_type\l}"];
+
+  auth_roles -> auth_users [label="1:N"];
+  auth_departments -> auth_users [label="1:N"];
+  auth_departments -> auth_departments [label="parent"];
+
+  biz_categories -> biz_products [label="1:N"];
+  biz_partners -> biz_products [label="supplier"];
+  biz_products -> stock_quantities [label="1:N"];
+  stock_warehouses -> stock_quantities [label="1:N"];
+  biz_products -> stock_movements [label="1:N"];
+  stock_warehouses -> stock_movements [label="1:N"];
+  auth_users -> stock_movements [label="records"];
+  biz_products -> stock_alerts [label="1:N"];
+  stock_warehouses -> stock_alerts [label="1:N"];
+  stock_warehouses -> stock_takes [label="1:N"];
+  stock_takes -> stock_take_items [label="1:N"];
+  biz_products -> stock_take_items [label="1:N"];
+
+  biz_partners -> purchase_orders [label="supplier"];
+  stock_warehouses -> purchase_orders [label="receives"];
+  auth_users -> purchase_orders [label="submit/approve"];
+  purchase_orders -> purchase_order_items [label="1:N"];
+  biz_products -> purchase_order_items [label="1:N"];
+  biz_partners -> supplier_performance [label="1:1"];
+
+  biz_partners -> trade_orders [label="customer"];
+  auth_users -> trade_orders [label="seller"];
+  trade_orders -> trade_order_items [label="1:N"];
+  biz_products -> trade_order_items [label="1:N"];
+
+  trade_orders -> finance_receivables [label="bills"];
+  biz_partners -> finance_receivables [label="owes"];
+  finance_receivables -> finance_payments [label="settled by"];
+  biz_partners -> finance_customer_credit [label="1:1"];
+  auth_users -> finance_payments [label="records"];
+
+  workflow_definitions -> workflow_instances [label="1:N"];
+  auth_users -> workflow_instances [label="applicant"];
+  workflow_instances -> workflow_tasks [label="1:N"];
+  auth_users -> workflow_tasks [label="assignee"];
+
+  auth_users -> cms_articles [label="author"];
+  cms_articles -> cms_attachments [label="1:N"];
+  auth_users -> cms_attachments [label="uploader"];
+  auth_users -> generated_reports [label="generator"];
+  auth_users -> sys_notifications [label="recipient"];
+  auth_users -> sys_audit_logs [label="actor"];
+  auth_users -> sys_ai_sessions [label="owner"];
+  sys_ai_sessions -> sys_ai_messages [label="1:N"];
+  auth_users -> background_jobs [label="creator"];
+}

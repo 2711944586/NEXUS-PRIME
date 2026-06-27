@@ -432,11 +432,11 @@ export class ProcurementPage implements OnInit {
   ];
   protected readonly ordersQuery = injectQuery(() => this.procurement.ordersQuery({
     page: 1,
-    page_size: 100,
+    page_size: 12,
     q: this.query().trim()
   }));
   protected readonly rows = computed(() => this.ordersQuery.data()?.items ?? []);
-  protected readonly loading = computed(() => this.ordersQuery.isPending() || this.ordersQuery.isFetching() || this.controlLoading());
+  protected readonly loading = computed(() => this.ordersQuery.isPending() || this.ordersQuery.isFetching());
   protected readonly error = computed(() => {
     const error = this.ordersQuery.error();
     return error ? error.message || '无法读取采购数据。' : '';

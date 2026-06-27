@@ -1,11 +1,47 @@
 type EChartsHost = {
   registerPreprocessor: (preprocessor: (option: Record<string, unknown>) => void) => void;
+  getInstanceByDom?: (dom: HTMLElement) => EChartsInstance | undefined;
 };
 
 type ChartNode = Record<string, unknown>;
+type EChartsInstance = {
+  getOption: () => ChartNode;
+  setOption: (option: ChartNode, opts?: { notMerge?: boolean; lazyUpdate?: boolean; silent?: boolean }) => void;
+  resize: () => void;
+};
 
 const LEGEND_TEXT_COLOR = 'rgba(100,116,139,.95)';
 const TOOLTIP_TEXT_COLOR = 'rgba(15,23,42,.94)';
+const CHART_THEMES = {
+  light: {
+    palette: ['#1f6f8b', '#27836f', '#9b752c', '#b91c1c', '#6d6f93', '#475569'],
+    text: 'rgba(16,32,51,.92)',
+    muted: 'rgba(48,63,84,.82)',
+    faint: 'rgba(48,63,84,.68)',
+    grid: 'rgba(34,49,68,.14)',
+    axis: 'rgba(34,49,68,.2)',
+    tooltipBackground: 'rgba(255,255,255,.98)',
+    tooltipText: 'rgba(7,20,33,.96)',
+    tooltipPointer: 'rgba(31,88,117,.9)',
+    pieBorder: 'rgba(255,255,255,.76)',
+    zoomFill: 'rgba(31,111,139,.16)'
+  },
+  dark: {
+    palette: ['#76d8ff', '#68e0bd', '#d6ad55', '#fb7185', '#b497cf', '#c5d5cf'],
+    text: 'rgba(248,250,252,.92)',
+    muted: 'rgba(226,239,255,.76)',
+    faint: 'rgba(226,239,255,.62)',
+    grid: 'rgba(148,163,184,.18)',
+    axis: 'rgba(148,163,184,.24)',
+    tooltipBackground: 'rgba(8,13,22,.94)',
+    tooltipText: 'rgba(248,250,252,.94)',
+    tooltipPointer: 'rgba(96,165,250,.86)',
+    pieBorder: 'rgba(8,13,22,.72)',
+    zoomFill: 'rgba(118,216,255,.16)'
+  }
+} as const;
+
+type ChartTheme = typeof CHART_THEMES[keyof typeof CHART_THEMES];
 let registered = false;
 
 export function configureEchartsLayout(echarts: EChartsHost): void {
@@ -18,11 +54,13 @@ export function configureEchartsLayout(echarts: EChartsHost): void {
     normalizeInteraction(option);
     normalizePieSeries(option);
     normalizeRadar(option);
+    normalizeTheme(option);
   });
 
   registered = true;
   if (typeof window !== 'undefined') {
     (window as typeof window & { __NEXUS_ECHARTS_LAYOUT_GUARD__?: boolean }).__NEXUS_ECHARTS_LAYOUT_GUARD__ = true;
+    window.addEventListener('nexus-theme-change', () => refreshRenderedCharts(echarts), { passive: true });
   }
 }
 
@@ -37,8 +75,9 @@ function normalizeInteraction(option: ChartNode): void {
   const tooltip = isNode(option['tooltip']) ? option['tooltip'] : {};
   const toolbox = isNode(option['toolbox']) ? option['toolbox'] : {};
 
-  option['animationDuration'] ??= 520;
-  option['animationDurationUpdate'] ??= 420;
+  option['animation'] = false;
+  option['animationDuration'] = 0;
+  option['animationDurationUpdate'] = 0;
   option['animationEasing'] ??= 'cubicOut';
 
   option['tooltip'] = {
@@ -106,6 +145,173 @@ function normalizeInteraction(option: ChartNode): void {
       item['symbolSize'] ??= 7;
     }
   }
+}
+
+function normalizeTheme(option: ChartNode): void {
+  const theme = currentChartTheme();
+  option['backgroundColor'] = 'transparent';
+  option['color'] = Array.isArray(option['color']) && option['color'].length ? option['color'] : [...theme.palette];
+
+  normalizeThemeLegends(option, theme);
+  normalizeThemeAxes(option, theme);
+  normalizeThemeTooltip(option, theme);
+  normalizeThemeToolbox(option, theme);
+  normalizeThemeZoom(option, theme);
+  normalizeThemeSeries(option, theme);
+  normalizeThemeRadar(option, theme);
+}
+
+function normalizeThemeLegends(option: ChartNode, theme: ChartTheme): void {
+  for (const legend of toNodeList(option['legend'])) {
+    const textStyle = ensureNode(legend, 'textStyle');
+    legend['pageTextStyle'] = { ...(isNode(legend['pageTextStyle']) ? legend['pageTextStyle'] : {}), color: theme.faint, fontSize: 10 };
+    legend['pageIconColor'] = theme.muted;
+    legend['pageIconInactiveColor'] = theme.axis;
+    legend['inactiveColor'] = theme.faint;
+    legend['textStyle'] = {
+      ...textStyle,
+      color: theme.muted,
+      fontSize: textStyle['fontSize'] ?? 11,
+      overflow: textStyle['overflow'] ?? 'truncate'
+    };
+  }
+}
+
+function normalizeThemeAxes(option: ChartNode, theme: ChartTheme): void {
+  for (const axis of [...toNodeList(option['xAxis']), ...toNodeList(option['yAxis'])]) {
+    const axisLabel = ensureNode(axis, 'axisLabel');
+    const axisLine = ensureNode(axis, 'axisLine');
+    const axisLineStyle = ensureNode(axisLine, 'lineStyle');
+    const splitLine = ensureNode(axis, 'splitLine');
+    const splitLineStyle = ensureNode(splitLine, 'lineStyle');
+    const nameTextStyle = ensureNode(axis, 'nameTextStyle');
+
+    axis['axisLabel'] = {
+      ...axisLabel,
+      color: theme.faint,
+      fontWeight: axisLabel['fontWeight'] ?? 700,
+      hideOverlap: axisLabel['hideOverlap'] ?? true
+    };
+    axisLine['lineStyle'] = { ...axisLineStyle, color: theme.axis };
+    splitLine['lineStyle'] = { ...splitLineStyle, color: theme.grid };
+    axis['nameTextStyle'] = { ...nameTextStyle, color: theme.faint, fontWeight: nameTextStyle['fontWeight'] ?? 700 };
+  }
+}
+
+function normalizeThemeTooltip(option: ChartNode, theme: ChartTheme): void {
+  const tooltip = ensureNode(option, 'tooltip');
+  const textStyle = ensureNode(tooltip, 'textStyle');
+  tooltip['backgroundColor'] = theme.tooltipBackground;
+  tooltip['borderColor'] = 'transparent';
+  tooltip['extraCssText'] = 'box-shadow: 0 14px 34px rgba(15,23,42,.16); border-radius: 10px;';
+  tooltip['textStyle'] = { ...textStyle, color: theme.tooltipText, fontSize: textStyle['fontSize'] ?? 12, fontWeight: textStyle['fontWeight'] ?? 700 };
+
+  if (isNode(tooltip['axisPointer'])) {
+    const axisPointer = tooltip['axisPointer'];
+    if (isNode(axisPointer['label'])) {
+      axisPointer['label'] = {
+        ...axisPointer['label'],
+        color: '#ffffff',
+        backgroundColor: theme.tooltipPointer
+      };
+    }
+    if (isNode(axisPointer['lineStyle'])) {
+      axisPointer['lineStyle'] = { ...axisPointer['lineStyle'], color: theme.axis };
+    }
+  }
+}
+
+function normalizeThemeToolbox(option: ChartNode, theme: ChartTheme): void {
+  const toolbox = isNode(option['toolbox']) ? option['toolbox'] : null;
+  if (!toolbox) {
+    return;
+  }
+  toolbox['iconStyle'] = {
+    ...(isNode(toolbox['iconStyle']) ? toolbox['iconStyle'] : {}),
+    borderColor: theme.faint
+  };
+  toolbox['emphasis'] = {
+    ...(isNode(toolbox['emphasis']) ? toolbox['emphasis'] : {}),
+    iconStyle: {
+      ...(isNode(toolbox['emphasis']) && isNode(toolbox['emphasis']['iconStyle']) ? toolbox['emphasis']['iconStyle'] : {}),
+      borderColor: theme.text
+    }
+  };
+}
+
+function normalizeThemeZoom(option: ChartNode, theme: ChartTheme): void {
+  for (const zoom of toNodeList(option['dataZoom'])) {
+    zoom['borderColor'] = theme.axis;
+    zoom['fillerColor'] = theme.zoomFill;
+    zoom['textStyle'] = { ...(isNode(zoom['textStyle']) ? zoom['textStyle'] : {}), color: theme.faint };
+    zoom['handleStyle'] = {
+      ...(isNode(zoom['handleStyle']) ? zoom['handleStyle'] : {}),
+      color: theme.muted,
+      borderColor: theme.axis
+    };
+  }
+}
+
+function normalizeThemeSeries(option: ChartNode, theme: ChartTheme): void {
+  const series = toNodeList(option['series']);
+  for (const [index, item] of series.entries()) {
+    const color = theme.palette[index % theme.palette.length];
+    const itemStyle = ensureNode(item, 'itemStyle');
+    const lineStyle = ensureNode(item, 'lineStyle');
+
+    if (!('color' in itemStyle) && (item['type'] === 'bar' || item['type'] === 'pie' || item['type'] === 'treemap')) {
+      itemStyle['color'] = color;
+    }
+    if (item['type'] === 'line' && !('color' in lineStyle)) {
+      lineStyle['color'] = color;
+    }
+    if (item['type'] === 'pie') {
+      itemStyle['borderColor'] = itemStyle['borderColor'] ?? theme.pieBorder;
+    }
+
+    const label = isNode(item['label']) ? item['label'] : null;
+    if (label && !('color' in label)) {
+      label['color'] = theme.text;
+    }
+  }
+}
+
+function normalizeThemeRadar(option: ChartNode, theme: ChartTheme): void {
+  for (const radar of toNodeList(option['radar'])) {
+    const axisName = ensureNode(radar, 'axisName');
+    const splitLine = ensureNode(radar, 'splitLine');
+    const splitLineStyle = ensureNode(splitLine, 'lineStyle');
+    const axisLine = ensureNode(radar, 'axisLine');
+    const axisLineStyle = ensureNode(axisLine, 'lineStyle');
+
+    radar['axisName'] = { ...axisName, color: theme.muted, fontWeight: axisName['fontWeight'] ?? 700 };
+    splitLine['lineStyle'] = { ...splitLineStyle, color: theme.grid };
+    axisLine['lineStyle'] = { ...axisLineStyle, color: theme.axis };
+  }
+}
+
+function currentChartTheme(): ChartTheme {
+  if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark-cockpit')) {
+    return CHART_THEMES.dark;
+  }
+  return CHART_THEMES.light;
+}
+
+function refreshRenderedCharts(echarts: EChartsHost): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined' || !echarts.getInstanceByDom) {
+    return;
+  }
+  window.requestAnimationFrame(() => {
+    for (const element of document.querySelectorAll<HTMLElement>('[_echarts_instance_]')) {
+      const instance = echarts.getInstanceByDom?.(element);
+      if (!instance) {
+        continue;
+      }
+      const option = instance.getOption();
+      instance.setOption(option, { notMerge: false, lazyUpdate: true, silent: true });
+      instance.resize();
+    }
+  });
 }
 
 function normalizeAxisZoom(option: ChartNode): void {
@@ -277,4 +483,14 @@ function toNodeList(value: unknown): ChartNode[] {
 
 function isNode(value: unknown): value is ChartNode {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function ensureNode(parent: ChartNode, key: string): ChartNode {
+  const value = parent[key];
+  if (isNode(value)) {
+    return value;
+  }
+  const next: ChartNode = {};
+  parent[key] = next;
+  return next;
 }

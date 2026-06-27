@@ -678,13 +678,14 @@ export class SettingsPage implements OnInit {
       ai: this.api.get<AiSettings>('ai/settings').pipe(catchError(() => of(EMPTY_AI_SETTINGS))),
       deployment: this.api.get<DeploymentReadiness>('operations/deployment-readiness').pipe(catchError(() => of(EMPTY_DEPLOYMENT_READINESS)))
     }).pipe(finalize(() => this.loading.set(false))).subscribe(({ preferences, ai, deployment }) => {
+      const currentPreferences = this.theme.preferences();
       this.preferenceDraft = {
-        theme: preferences.theme ?? this.theme.mode(),
-        density: preferences.density ?? 'compact',
-        default_workspace: preferences.default_workspace ?? '/app/overview',
-        charts_motion: preferences.charts_motion ?? 'standard',
-        dock_labels: preferences.dock_labels ?? 'hover',
-        context_panel: preferences.context_panel ?? 'visible'
+        theme: currentPreferences.theme ?? this.theme.mode(),
+        density: preferences.density ?? currentPreferences.density ?? 'compact',
+        default_workspace: preferences.default_workspace ?? currentPreferences.default_workspace ?? '/app/overview',
+        charts_motion: preferences.charts_motion ?? currentPreferences.charts_motion ?? 'standard',
+        dock_labels: preferences.dock_labels ?? currentPreferences.dock_labels ?? 'hover',
+        context_panel: preferences.context_panel ?? currentPreferences.context_panel ?? 'visible'
       };
       this.theme.setPreferences(this.preferenceDraft, false);
       this.aiSettings.set(ai);

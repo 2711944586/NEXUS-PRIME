@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -186,6 +187,7 @@ export class RecordDetailPage implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly messages = inject(MessageService);
   private readonly confirm = inject(ConfirmationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -204,7 +206,7 @@ export class RecordDetailPage implements OnInit {
   protected readonly detailFlowCards = computed(() => buildDetailFlowCards(this.config(), this.record()));
 
   ngOnInit(): void {
-    this.route.data.subscribe(data => {
+    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(data => {
       this.config.set(DETAIL_CONFIGS[(data['detail'] as DetailKey) ?? 'products']);
       this.id.set(Number(this.route.snapshot.paramMap.get('id') ?? 0));
       this.load();

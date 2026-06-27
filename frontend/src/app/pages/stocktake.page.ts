@@ -226,7 +226,7 @@ export class StocktakePage implements OnInit {
   load(): void {
     this.loading.set(true);
     forkJoin({
-      takes: this.api.list<DataRecord>('stocktakes', { page: 1, page_size: 120, sort: 'created_at', order: 'desc' }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
+      takes: this.api.list<DataRecord>('stocktakes', { page: 1, page_size: 12, sort: 'created_at', order: 'desc' }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
       warehouses: this.api.lookup('lookups/warehouses').pipe(catchError(() => of([])))
     }).pipe(finalize(() => this.loading.set(false))).subscribe(({ takes, warehouses }) => {
       this.rows.set(takes.items);

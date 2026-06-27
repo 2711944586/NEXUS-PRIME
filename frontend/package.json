@@ -21,6 +21,7 @@
     "audit:visual-assets": "node scripts/visual-assets-audit.mjs",
     "audit:shell": "node scripts/shell-interaction-audit.mjs",
     "audit:supplier": "node scripts/supplier-collaboration-audit.mjs",
+    "capture:final-screenshots": "node scripts/capture-final-screenshots.mjs",
     "api:generate": "openapi-typescript ../backend/openapi.json -o src/app/core/api/generated/schema.d.ts",
     "api:check": "python ../scripts/check-openapi-sync.py",
     "e2e": "playwright test",

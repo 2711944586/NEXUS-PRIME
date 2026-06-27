@@ -107,11 +107,30 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
               进入盘点
             </a>
           </div>
+          <section class="flow-fast-lane" aria-label="仓配执行快线">
+            <article>
+              <span>库存水位</span>
+              <strong>{{ network().summary.lowStockCount }} 项需复核</strong>
+              <em>{{ network().summary.warehouseCount }} 座仓库在线</em>
+            </article>
+            <article>
+              <span>当班吞吐</span>
+              <strong>{{ network().summary.totalThroughput }} 批流转</strong>
+              <em>调拨、入库、发货同步监控</em>
+            </article>
+            @for (link of fastLaneLinks(); track link.label) {
+              <a class="business-data-row" [routerLink]="link.path">
+                <span>{{ link.kicker }}</span>
+                <strong>{{ link.label }}</strong>
+                <em>{{ link.detail }}</em>
+              </a>
+            }
+          </section>
         </div>
 
         <div class="flow-hero-map" aria-label="仓配链路" nexusReveal [nexusRevealDelay]="130" nexusSpotlight>
           @for (node of flowNodes(); track node.label) {
-            <a [routerLink]="node.path" [class.warning]="node.tone === 'warning'">
+            <a class="business-data-row" [routerLink]="node.path" [class.warning]="node.tone === 'warning'">
               <span>{{ node.kicker }}</span>
               <strong>{{ node.label }}</strong>
               <em>{{ node.metric }}</em>
@@ -122,6 +141,37 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           <i class="flow-pulse p3"></i>
         </div>
       </header>
+
+      <section class="atlas-panel flow-compact-workbench" aria-label="仓配流向执行摘要" nexusReveal [nexusRevealDelay]="140">
+        <div class="atlas-panel-head">
+          <div>
+            <span class="atlas-kicker">执行摘要</span>
+            <h2>节点、仓库与下一步</h2>
+          </div>
+        </div>
+        <div class="flow-compact-grid">
+          @for (node of flowNodes(); track node.label) {
+            <a class="business-data-row" [routerLink]="node.path" [class.warning]="node.tone === 'warning'">
+              <span>{{ node.kicker }}</span>
+              <strong>{{ node.label }}</strong>
+              <em>{{ node.metric }}</em>
+            </a>
+          }
+          @for (warehouse of command().warehouse_heat; track warehouse.name) {
+            <a class="business-data-row" routerLink="/app/inventory/stock">
+              <span>{{ warehouse.name }}</span>
+              <strong>{{ compactNumber(warehouse.stock_quantity) }}</strong>
+              <em>{{ warehouse.slot_count }} 个库位</em>
+            </a>
+          }
+        </div>
+        <nav class="governance-action-strip" aria-label="仓配流向快捷动作">
+          <a routerLink="/app/dispatch">调度中心</a>
+          <a routerLink="/app/inventory/replenishment">补货建议</a>
+          <a routerLink="/app/stocktakes">现场盘点</a>
+          <a routerLink="/app/reports">流向报表</a>
+        </nav>
+      </section>
 
       <section class="flow-grid">
         <article class="atlas-panel flow-network-panel" nexusReveal [nexusRevealDelay]="160" nexusSpotlight>
@@ -156,12 +206,11 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
                   [attr.y2]="link.y2"
                   [attr.stroke-width]="link.width"
                 ></line>
-                <text class="warehouse-network-link-label" [attr.x]="link.midX" [attr.y]="link.midY - 3">{{ link.value }}</text>
               }
             </svg>
             @for (node of network().nodes; track node.id) {
               <a
-                class="warehouse-network-node"
+                class="warehouse-network-node business-data-row"
                 [class.warning]="node.tone === 'warning'"
                 [class.danger]="node.tone === 'danger'"
                 [class.supplier]="node.kind === 'supplier'"
@@ -189,7 +238,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           </div>
           <div class="warehouse-load-list">
             @for (warehouse of command().warehouse_heat; track warehouse.name) {
-              <a routerLink="/app/inventory/stock">
+              <a class="business-data-row" routerLink="/app/inventory/stock">
                 <span>{{ warehouse.name }}</span>
                 <strong>{{ compactNumber(warehouse.stock_quantity) }}</strong>
                 <p-progressbar [value]="loadRate(warehouse.stock_quantity)" [showValue]="false" />
@@ -256,7 +305,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           </div>
           <div class="flow-risk-stack">
             @for (risk of command().risks.slice(0, 7); track risk.title + risk.type) {
-              <a [routerLink]="riskPath(risk)" [class.critical]="risk.level === 'critical'">
+              <a class="business-data-row" [routerLink]="riskPath(risk)" [class.critical]="risk.level === 'critical'">
                 <p-tag [severity]="risk.level === 'critical' ? 'danger' : 'warn'" [value]="risk.type" />
                 <strong>{{ risk.title }}</strong>
                 <span>{{ risk.description }}</span>
@@ -307,6 +356,16 @@ export class WarehouseFlowPage implements OnInit {
     { kicker: '03', label: this.command().warehouse_heat[1]?.name ?? '区域仓', metric: `${this.command().flows[1]?.value ?? 0} 单调拨`, path: '/app/dispatch', tone: 'warning' },
     { kicker: '04', label: '客户发货', metric: `${this.command().flows[2]?.value ?? 0} 单`, path: '/app/sales/orders', tone: 'success' }
   ]);
+  protected readonly fastLaneLinks = computed(() => [
+    { kicker: '调度', label: '调度中心', detail: `${this.command().risks.length} 个优先事项`, path: '/app/dispatch' },
+    { kicker: '补货', label: '补货建议', detail: `${this.command().kpis.low_stock_products ?? 0} 项低水位`, path: '/app/inventory/replenishment' },
+    { kicker: '盘点', label: '现场盘点', detail: `${this.stock().length} 条库存样本`, path: '/app/stocktakes' },
+    { kicker: '采购', label: '采购订单', detail: `${this.command().kpis.pending_purchase ?? 0} 单待跟进`, path: '/app/procurement/orders' },
+    { kicker: '销售', label: '销售订单', detail: this.compactNumber(this.command().kpis.order_amount), path: '/app/sales/orders' },
+    { kicker: '移动', label: '移动扫码', detail: '入库、移库、发货扫码', path: '/app/mobile-terminal' },
+    { kicker: '资料', label: '仓配资料', detail: '凭证、照片、附件归档', path: '/app/files' },
+    { kicker: '报表', label: '流向报表', detail: '库存流水与吞吐趋势', path: '/app/reports' }
+  ]);
   protected readonly activeChart = computed<EChartsCoreOption>(() => {
     if (this.chartMode() === 'heat') {
       return this.heatChart();
@@ -325,7 +384,7 @@ export class WarehouseFlowPage implements OnInit {
     this.loading.set(true);
     forkJoin({
       command: this.api.get<ManufacturingCommandCenter>('manufacturing/command-center').pipe(catchError(() => of(EMPTY_COMMAND))),
-      stock: this.api.list<DataRecord>('stock', { page: 1, page_size: 180, sort: 'updated_at', order: 'desc' }).pipe(catchError(() => of(emptyPageResult<DataRecord>())))
+      stock: this.api.list<DataRecord>('stock', { page: 1, page_size: 24, sort: 'updated_at', order: 'desc' }).pipe(catchError(() => of(emptyPageResult<DataRecord>())))
     }).pipe(finalize(() => this.loading.set(false))).subscribe(({ command, stock }) => {
       this.command.set(command);
       this.stock.set(stock.items);

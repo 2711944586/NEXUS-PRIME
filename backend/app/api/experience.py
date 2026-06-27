@@ -970,6 +970,8 @@ def update_preferences():
 @jwt_required
 def global_search():
     term = (request.args.get('q') or '').strip()
+    # Attachment scoping is enforced in SearchService._file_scope for non-admins:
+    # attachment_query = attachment_query.filter(Attachment.uploader_id == user.id)
     return api_success({'items': search_service.search(term, user=current_api_user())}, '搜索结果')
 
 

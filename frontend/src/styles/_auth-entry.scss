@@ -5350,7 +5350,7 @@
     z-index: -5;
     overflow: hidden;
     pointer-events: none;
-    background: #070b09 url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    background-color: #070b09;
   }
 
   .nexus-login-redesign .auth-video-bg {
@@ -5435,7 +5435,7 @@
   }
 
   html.light-luxury .nexus-login-redesign .auth-video-stage {
-    background: #eef3ee url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    background-color: #eef3ee;
   }
 
   html.light-luxury .nexus-login-redesign .auth-video-bg {
@@ -5913,7 +5913,7 @@
   }
 
   html.dark-cockpit .nexus-login-redesign .auth-video-stage {
-    background: #010302 url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    background-color: #010302;
   }
 
   html.dark-cockpit .nexus-login-redesign .auth-video-bg {

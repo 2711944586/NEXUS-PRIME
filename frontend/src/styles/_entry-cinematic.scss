@@ -61,7 +61,7 @@
     z-index: -3;
     overflow: hidden;
     pointer-events: none;
-    background: #0a0a0a url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    background-color: #0a0a0a;
   }
 
   .entry-video-bg {
@@ -1569,7 +1569,7 @@
   }
 
   html.light-luxury .motion-video-stage {
-    background: #eef3ee url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    background-color: #eef3ee;
   }
 
   html.light-luxury .motion-video-bg {
@@ -1894,7 +1894,7 @@
     inset: 0;
     z-index: -4;
     overflow: hidden;
-    background: #050506 url("/images/automated-production-line-wide.jpg") center / cover no-repeat;
+    background-color: #050506;
     pointer-events: none;
   }
 

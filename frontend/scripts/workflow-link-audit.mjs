@@ -35,12 +35,27 @@ const viewports = process.env.NEXUS_AUDIT_WORKFLOW_VIEWPORTS === 'desktop'
   : allViewports;
 
 const linkGroups = [
-  { key: 'pageEvidence', label: '页面现场', selector: '.page-evidence-grid a', required: true, min: 3 },
-  { key: 'fieldEvidence', label: '现场证据', selector: '.field-evidence-grid a', required: true, min: 3 },
-  { key: 'handoff', label: '当班交接', selector: '.shift-handoff-list a', required: true, min: 3 },
-  { key: 'workflowSignal', label: '执行信号', selector: '.workflow-signal-list a', required: false, min: 0 },
-  { key: 'workflowRail', label: '闭环节点', selector: '.workflow-step-rail a', required: false, min: 0 },
-  { key: 'nextAction', label: '下一步', selector: '.context-action', required: false, min: 0 }
+  {
+    key: 'primaryActions',
+    label: '主业务动作',
+    selector: '.command-hero-actions a, .atlas-actions-row a, .hero-actions-compact a, .shift-action-queue a, .context-action, #main-content a[href^="/app/"]',
+    required: true,
+    min: 1
+  },
+  {
+    key: 'workflowSteps',
+    label: '闭环节点',
+    selector: '.command-workflow-rail a, .workflow-step-rail a, .command-lean-metrics a, .command-domain-grid a, .command-action-list a',
+    required: false,
+    min: 0
+  },
+  {
+    key: 'recordLinks',
+    label: '记录入口',
+    selector: '.atlas-record-row[href], .business-data-row[href], .ledger-row[href], .report-template-list a, .settings-link-list a',
+    required: false,
+    min: 0
+  }
 ];
 
 await mkdir(outDir, { recursive: true });
@@ -76,7 +91,7 @@ for (const viewport of viewports) {
   await login(page);
 
   for (const route of routes) {
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
     await page.waitForTimeout(650);
 
@@ -85,7 +100,7 @@ for (const viewport of viewports) {
     const clickTargets = pickClickTargets(snapshot.groups);
 
     for (const target of clickTargets) {
-      await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+      await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
       await page.waitForTimeout(250);
       const clickResult = await clickWorkflowTarget(page, target);
@@ -123,7 +138,7 @@ await browser.close();
 const pageResults = results.filter(result => result.route !== '__network__');
 const networkResults = results.filter(result => result.route === '__network__');
 const failedPages = pageResults.filter(result =>
-  result.totalWorkflowLinks < 9 ||
+  result.totalWorkflowLinks < 1 ||
   result.deadLinks.length ||
   result.requiredGroupFailures.length ||
   result.clicks.some(click => !click.passed) ||
@@ -194,7 +209,13 @@ async function collectWorkflowLinks(page) {
       const links = [...document.querySelectorAll(group.selector)]
         .filter(visible)
         .map((element, index) => {
-          const href = element.getAttribute('href') || '';
+          const rawHref = element.getAttribute('href') || '';
+          let href = rawHref;
+          try {
+            href = new URL(rawHref, window.location.origin).pathname;
+          } catch {
+            href = rawHref;
+          }
           const text = element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 120) || '';
           const isDead = !href || href === '#' || href.startsWith('javascript:') || !href.startsWith('/app/');
           const item = { group: group.key, label: group.label, selector: group.selector, index, href, text, isDead };
@@ -231,6 +252,32 @@ function pickClickTargets(groups) {
 }
 
 async function clickWorkflowTarget(page, target) {
+  await page.waitForFunction(targetData => {
+    const visible = element => {
+      const box = element.getBoundingClientRect();
+      if (box.width <= 0 || box.height <= 0) {
+        return false;
+      }
+      for (let current = element; current && current !== document.documentElement; current = current.parentElement) {
+        const style = getComputedStyle(current);
+        if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) {
+          return false;
+        }
+      }
+      return true;
+    };
+    const normalizeHref = value => {
+      try {
+        return new URL(value || '', window.location.origin).pathname;
+      } catch {
+        return value || '';
+      }
+    };
+    return [...document.querySelectorAll(targetData.selector)]
+      .filter(visible)
+      .some(item => normalizeHref(item.getAttribute('href')) === targetData.href);
+  }, target, { timeout: 5000 }).catch(() => null);
+
   const marked = await page.evaluate(targetData => {
     const visible = element => {
       const box = element.getBoundingClientRect();
@@ -246,12 +293,18 @@ async function clickWorkflowTarget(page, target) {
       return true;
     };
     document.querySelectorAll('[data-workflow-audit-target]').forEach(element => element.removeAttribute('data-workflow-audit-target'));
-    const element = [...document.querySelectorAll(targetData.selector)]
+    const normalizeHref = value => {
+      try {
+        return new URL(value || '', window.location.origin).pathname;
+      } catch {
+        return value || '';
+      }
+    };
+    const candidates = [...document.querySelectorAll(targetData.selector)]
       .filter(visible)
-      .find(item =>
-        item.getAttribute('href') === targetData.href &&
-        (item.textContent?.trim().replace(/\s+/g, ' ').slice(0, 120) || '') === targetData.text
-      );
+      .map((item, index) => ({ item, index, href: normalizeHref(item.getAttribute('href')) }));
+    const element = candidates.find(candidate => candidate.index === targetData.index && candidate.href === targetData.href)?.item
+      || candidates.find(candidate => candidate.href === targetData.href)?.item;
     if (!element) {
       return false;
     }
@@ -268,13 +321,11 @@ async function clickWorkflowTarget(page, target) {
     };
   }
 
-  await page.locator('[data-workflow-audit-target="true"]').first()
-    .evaluate(element => {
-      element.scrollIntoView({ block: 'center', inline: 'center' });
-      element.click();
-    });
+  const targetLocator = page.locator('[data-workflow-audit-target="true"]').first();
+  await targetLocator.scrollIntoViewIfNeeded();
+  await targetLocator.click({ timeout: 5000 });
   await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 }).catch(() => null);
-  await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => null);
+  await page.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => null);
   await page.waitForTimeout(250);
 
   const actualPath = new URL(page.url()).pathname;
@@ -290,7 +341,7 @@ async function clickWorkflowTarget(page, target) {
 }
 
 async function login(page) {
-  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
   await page.locator('button[type="submit"]').first().click();

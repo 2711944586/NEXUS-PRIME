@@ -107,7 +107,7 @@ const EMPTY_ANALYTICS: ExecutiveAnalytics = {
             </div>
           </div>
           @for (item of actionQueue(); track item.title) {
-            <a [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
+            <a class="business-data-row" [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
               <span>{{ item.metric }}</span>
               <strong>{{ item.title }}</strong>
               <em>{{ item.body }}</em>
@@ -217,14 +217,17 @@ export class ContractCollectionPage implements OnInit {
   load(): void {
     this.loading.set(true);
     forkJoin({
-      receivables: this.api.list<DataRecord>('receivables', { page: 1, page_size: 160 }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
-      credits: this.api.get<{ items: DataRecord[] }>('finance/credits').pipe(catchError(() => of({ items: [] }))),
-      analytics: this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(catchError(() => of(EMPTY_ANALYTICS)))
+      receivables: this.api.list<DataRecord>('receivables', { page: 1, page_size: 24 }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
+      credits: this.api.list<DataRecord>('credits', { page: 1, page_size: 24 }).pipe(catchError(() => of(emptyPageResult<DataRecord>())))
     }).pipe(finalize(() => this.loading.set(false))).subscribe(result => {
       this.receivables.set(result.receivables.items);
       this.credits.set(result.credits.items);
-      this.analytics.set(result.analytics);
       this.setPage(1);
+    });
+    this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(
+      catchError(() => of(EMPTY_ANALYTICS))
+    ).subscribe(analytics => {
+      this.analytics.set(analytics);
     });
   }
 

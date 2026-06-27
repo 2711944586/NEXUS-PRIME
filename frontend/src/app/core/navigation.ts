@@ -3,13 +3,10 @@ import { DockGroup, DockItem } from './models';
 export const DESKTOP_DOCK_KEYS = [
   'overview',
   'materials',
-  'flow',
   'procurement',
   'fulfillment',
-  'stocktake',
   'receivables',
-  'reports',
-  'notifications'
+  'reports'
 ] as const;
 
 export const COMPACT_DOCK_KEYS = [
@@ -17,9 +14,7 @@ export const COMPACT_DOCK_KEYS = [
   'materials',
   'procurement',
   'fulfillment',
-  'receivables',
-  'reports',
-  'notifications'
+  'reports'
 ] as const;
 
 export const MOBILE_DOCK_KEYS = ['overview', 'materials', 'procurement', 'fulfillment', 'reports'] as const;

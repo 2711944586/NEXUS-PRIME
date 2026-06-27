@@ -10,6 +10,8 @@ Use the root script so the frontend runtime API address is written automatically
 ..\scripts\dev.ps1
 ```
 
+The root script defaults to `http://127.0.0.1:5001/api/v1` for the backend API and `http://127.0.0.1:4200` for the Angular dev server. It writes `public/runtime-config.js` before the frontend starts.
+
 Direct frontend commands:
 
 ```powershell

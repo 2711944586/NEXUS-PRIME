@@ -6,6 +6,10 @@ const rootDir = path.resolve(process.cwd(), '..');
 const frontendConfigPath = path.resolve(process.cwd(), 'src', 'app', 'core', 'resource-workflow.ts');
 const backendDir = path.resolve(rootDir, 'backend');
 const outDir = path.resolve(rootDir, 'output', 'playwright', `api-contract-audit-${Date.now()}`);
+const defaultPython = process.platform === 'win32'
+  ? path.resolve(rootDir, 'venv', 'Scripts', 'python.exe')
+  : path.resolve(rootDir, 'venv', 'bin', 'python');
+const pythonExecutable = process.env.NEXUS_AUDIT_PYTHON || defaultPython;
 
 await mkdir(outDir, { recursive: true });
 
@@ -109,7 +113,7 @@ for rule in sorted(app.url_map.iter_rules(), key=lambda r: str(r)):
     })
 print(json.dumps(routes, ensure_ascii=False))
 `;
-  const result = spawnSync('python', ['-c', script], {
+  const result = spawnSync(pythonExecutable, ['-c', script], {
     cwd: backendDir,
     encoding: 'utf8',
     env: {

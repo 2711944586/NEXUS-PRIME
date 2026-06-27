@@ -202,7 +202,9 @@ function layoutPosition(kind: WarehouseNetworkNodeKind, index: number): { x: num
     { x: 36, y: 74 },
     { x: 64, y: 24 },
     { x: 50, y: 78 },
-    { x: 76, y: 74 }
+    { x: 76, y: 74 },
+    { x: 24, y: 76 },
+    { x: 78, y: 28 }
   ];
   return positions[Math.max(0, index - 1) % positions.length];
 }

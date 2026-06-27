@@ -38,8 +38,9 @@ def test_root_dev_entrypoints_cover_docker_and_local_modes():
     assert "Assert-DockerComposeConfig" in dev_script
     assert "-BackendPort" in dev_script
     assert "-FrontendPort" in dev_script
-    assert "sentryDsn" in dev_script
-    assert "sentryTracesSampleRate" in dev_script
+    assert "scripts/write-runtime-config.mjs" in dev_script
+    assert "NEXUS_SENTRY_DSN" in dev_script
+    assert "NEXUS_SENTRY_TRACES_SAMPLE_RATE" in dev_script
     assert "dev:" in makefile
     assert "docker compose up -d" in makefile
     assert "worker:" in makefile
@@ -60,5 +61,5 @@ def test_env_examples_document_compose_runtime_boundaries():
 
     assert "DATABASE_URL=postgresql+psycopg2://nexus:nexus@postgres:5432/nexus_prime" in root_env
     assert "CELERY_BROKER_URL=redis://redis:6379/0" in root_env
-    assert "NEXUS_API_BASE_URL=http://127.0.0.1:5000/api/v1" in root_env
+    assert "NEXUS_API_BASE_URL=http://127.0.0.1:5001/api/v1" in root_env
     assert "CELERY_BROKER_URL=redis://localhost:6379/0" in backend_env

@@ -126,6 +126,16 @@ const EMPTY_MOBILE: MobileTerminalPayload = {
             </article>
           </div>
 
+          <nav class="governance-action-strip" aria-label="移动扫码快捷动作">
+            <a routerLink="/app/procurement/orders">收货扫码</a>
+            <a routerLink="/app/stocktakes">盘点录入</a>
+            <a routerLink="/app/sales/orders">发货确认</a>
+            <a routerLink="/app/inventory/stock">库位流水</a>
+            <a routerLink="/app/dispatch">月台调度</a>
+            <a routerLink="/app/files">现场附件</a>
+            <button type="button" (click)="chartMode.set('zones')">库区视图</button>
+          </nav>
+
           @if (loading()) {
             <p-skeleton height="112px" />
           } @else {

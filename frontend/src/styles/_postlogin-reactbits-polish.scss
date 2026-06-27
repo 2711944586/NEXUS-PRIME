@@ -1,0 +1,931 @@
+@layer app {
+  html.operations-console {
+    --post-page-max: 1440px;
+    --post-panel-radius: 14px;
+    --post-inner-radius: 10px;
+    --post-control-radius: 8px;
+    --post-gap: 16px;
+    --post-gap-tight: 10px;
+    --post-border: color-mix(in srgb, var(--rb-line-strong) 72%, transparent);
+    --post-border-hot: color-mix(in srgb, var(--rb-accent) 34%, var(--rb-line));
+    --post-panel-fill:
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-surface-strong) 90%, transparent), color-mix(in srgb, var(--rb-surface) 96%, transparent)),
+      radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--rb-accent) 8%, transparent), transparent 32%),
+      radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--rb-violet) 7%, transparent), transparent 36%);
+    --post-panel-fill-hover:
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-surface-strong) 94%, transparent), color-mix(in srgb, var(--rb-surface) 98%, transparent)),
+      radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--rb-accent) 12%, transparent), transparent 34%),
+      radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--rb-violet) 9%, transparent), transparent 38%);
+    --post-card-fill:
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-surface-strong) 66%, transparent), color-mix(in srgb, var(--rb-surface-soft) 90%, transparent));
+    --post-card-fill-hover:
+      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rb-accent) 12%, transparent), transparent 72%),
+      color-mix(in srgb, var(--rb-surface-strong) 78%, transparent);
+    --post-hero-fill:
+      linear-gradient(90deg, color-mix(in srgb, var(--rb-accent) 12%, transparent), transparent 44%, color-mix(in srgb, var(--rb-violet) 9%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-surface-strong) 92%, transparent), color-mix(in srgb, var(--rb-surface) 96%, transparent));
+    --post-chart-grid: color-mix(in srgb, var(--rb-line) 76%, transparent);
+    --post-shadow: var(--rb-shadow);
+    --post-shadow-hot: var(--rb-shadow-strong), 0 0 34px color-mix(in srgb, var(--rb-accent) 11%, transparent);
+    --post-focus: 0 0 0 3px color-mix(in srgb, var(--rb-accent) 18%, transparent);
+  }
+
+  html.operations-console.dark-cockpit {
+    --post-panel-fill:
+      linear-gradient(180deg, rgba(22, 20, 28, .88), rgba(16, 13, 20, .72)),
+      radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--rb-accent) 9%, transparent), transparent 32%),
+      radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--rb-violet) 8%, transparent), transparent 36%);
+    --post-card-fill:
+      linear-gradient(180deg, rgba(27, 31, 42, .74), rgba(17, 15, 22, .72));
+  }
+
+  html.operations-console.light-luxury {
+    --post-panel-fill:
+      linear-gradient(180deg, rgba(255, 255, 255, .94), rgba(247, 250, 255, .82)),
+      radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--rb-accent) 8%, transparent), transparent 32%),
+      radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--rb-violet) 6%, transparent), transparent 36%);
+    --post-card-fill:
+      linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(238, 244, 250, .7));
+  }
+
+  html.operations-console .atlas-stage {
+    min-width: 0;
+    padding-bottom: 48px;
+  }
+
+  html.operations-console .skip-main-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 10000;
+    display: inline-flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--post-border-hot);
+    border-radius: var(--post-control-radius);
+    color: var(--rb-ink-strong);
+    background: var(--rb-surface-strong);
+    box-shadow: var(--post-shadow-hot);
+    font-family: var(--rb-font-code);
+    font-size: .78rem;
+    font-weight: 720;
+    text-decoration: none;
+    transform: translateY(-150%);
+    transition: transform var(--rb-fast) var(--rb-ease);
+  }
+
+  html.operations-console .skip-main-link:focus-visible {
+    transform: translateY(0);
+  }
+
+  html.operations-console .ops-atlas-page,
+  html.operations-console .detail-page {
+    width: min(100%, var(--post-page-max));
+    margin-inline: auto;
+    gap: var(--post-gap);
+  }
+
+  html.operations-console .ops-atlas-page > *,
+  html.operations-console .detail-page > *,
+  html.operations-console .ops-atlas-page :is(section, article, aside, div, form),
+  html.operations-console .detail-page :is(section, article, aside, div, form) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(h1, h2, h3, h4, p, strong, b, em, small, span, label, a, button),
+  html.operations-console .detail-page :is(h1, h2, h3, h4, p, strong, b, em, small, span, label, a, button) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(h1, h2, h3),
+  html.operations-console .detail-page :is(h1, h2, h3) {
+    color: var(--rb-ink-strong);
+    letter-spacing: 0;
+    text-wrap: balance;
+  }
+
+  html.operations-console .ops-atlas-page :is(p, li, .atlas-panel-head em, .hero-narrative p, .detail-title p),
+  html.operations-console .detail-page :is(p, li, .panel-title em) {
+    text-wrap: pretty;
+  }
+
+  html.operations-console .ops-atlas-page :is(strong, b, [class*="metric"], [class*="amount"], [class*="score"], [class*="rate"]),
+  html.operations-console .detail-page :is(strong, b, [class*="metric"], [class*="amount"], [class*="score"], [class*="rate"]) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  html.operations-console .atlas-shell :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--rb-accent) 64%, transparent);
+    outline-offset: 3px;
+    box-shadow: var(--post-focus);
+  }
+
+  html.operations-console .ops-atlas-page > header[class*="hero"],
+  html.operations-console .detail-hero {
+    border-color: var(--post-border);
+    border-radius: var(--post-panel-radius);
+    background: var(--post-hero-fill);
+    box-shadow: var(--post-shadow-hot);
+  }
+
+  html.operations-console .ops-atlas-page > header[class*="hero"]::before,
+  html.operations-console .detail-hero::before {
+    background:
+      linear-gradient(105deg, transparent 0 35%, color-mix(in srgb, var(--rb-accent) 13%, transparent) 46%, transparent 57% 100%),
+      linear-gradient(90deg, color-mix(in srgb, var(--rb-ink) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-ink) 6%, transparent) 1px, transparent 1px);
+    background-size: 240% 100%, 58px 58px, 58px 58px;
+    opacity: .78;
+  }
+
+  html.operations-console .ops-atlas-page > header[class*="hero"]::after,
+  html.operations-console .detail-hero::after {
+    background:
+      radial-gradient(circle at 16% 10%, color-mix(in srgb, var(--rb-accent) 16%, transparent), transparent 28%),
+      radial-gradient(circle at 86% 84%, color-mix(in srgb, var(--rb-accent-2) 10%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-ink-strong) 4%, transparent), transparent 52%);
+    opacity: .88;
+  }
+
+  html.operations-console .hero-narrative,
+  html.operations-console .detail-title {
+    max-width: 40rem;
+  }
+
+  html.operations-console .hero-narrative h1,
+  html.operations-console .detail-title h1 {
+    max-width: 17ch;
+    font-size: 3.15rem;
+    line-height: .98;
+    letter-spacing: 0;
+  }
+
+  html.operations-console .hero-narrative p,
+  html.operations-console .detail-title p {
+    max-width: 64ch;
+    color: color-mix(in srgb, var(--rb-muted) 92%, var(--rb-ink));
+    font-size: 1rem;
+    line-height: 1.72;
+  }
+
+  html.operations-console .atlas-kicker,
+  html.operations-console .eyebrow,
+  html.operations-console .atlas-panel-head > div > span,
+  html.operations-console .context-title span,
+  html.operations-console .workbench-title span,
+  html.operations-console .detail-card .panel-title span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0;
+  }
+
+  html.operations-console .atlas-panel,
+  html.operations-console .module-workbench,
+  html.operations-console .resource-workbench-host,
+  html.operations-console .page-evidence-strip,
+  html.operations-console .mobile-field-evidence-strip,
+  html.operations-console .atlas-context-panel,
+  html.operations-console .context-block,
+  html.operations-console .detail-card,
+  html.operations-console .detail-shell {
+    border-color: var(--post-border);
+    border-radius: var(--post-panel-radius);
+    background: var(--post-panel-fill);
+    box-shadow: var(--post-shadow);
+    backdrop-filter: blur(20px) saturate(1.18);
+  }
+
+  html.operations-console .atlas-panel:hover,
+  html.operations-console .module-workbench:hover,
+  html.operations-console .page-evidence-strip:hover,
+  html.operations-console .context-block:hover,
+  html.operations-console .detail-card:hover {
+    border-color: var(--post-border-hot);
+    background: var(--post-panel-fill-hover);
+    box-shadow: var(--post-shadow-hot);
+  }
+
+  html.operations-console .atlas-panel:not([class*="hero"])::after,
+  html.operations-console .module-workbench::after,
+  html.operations-console .resource-workbench-host::after,
+  html.operations-console .context-block::after,
+  html.operations-console .detail-card::after,
+  html.operations-console .detail-shell::after,
+  html.operations-console .report-preview-card::after,
+  html.operations-console .security-health-card::after,
+  html.operations-console .stocktake-scanner::after,
+  html.operations-console .quality-score-card::after,
+  html.operations-console .notification-meter::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at var(--spotlight-x, 50%) var(--spotlight-y, 0%), color-mix(in srgb, var(--rb-accent) 18%, transparent), transparent 12rem),
+      linear-gradient(105deg, transparent 0 42%, color-mix(in srgb, var(--rb-ink-strong) 7%, transparent) 50%, transparent 58% 100%);
+    background-size: auto, 240% 100%;
+    opacity: .14;
+    transition: opacity var(--rb-med) var(--rb-ease);
+  }
+
+  html.operations-console .atlas-panel:not([class*="hero"]) > *,
+  html.operations-console .module-workbench > *,
+  html.operations-console .resource-workbench-host > *,
+  html.operations-console .context-block > *,
+  html.operations-console .detail-card > *,
+  html.operations-console .detail-shell > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  html.operations-console .atlas-panel:not([class*="hero"]):hover::after,
+  html.operations-console .module-workbench:hover::after,
+  html.operations-console .resource-workbench-host:hover::after,
+  html.operations-console .context-block:hover::after,
+  html.operations-console .detail-card:hover::after,
+  html.operations-console .report-preview-card:hover::after,
+  html.operations-console .security-health-card:hover::after,
+  html.operations-console .stocktake-scanner:hover::after,
+  html.operations-console .quality-score-card:hover::after,
+  html.operations-console .notification-meter:hover::after {
+    opacity: .34;
+    animation: post-login-glare 1.1s var(--rb-ease) both;
+  }
+
+  html.operations-console .atlas-panel-head {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  html.operations-console .atlas-panel-head h2,
+  html.operations-console .workbench-title strong,
+  html.operations-console .detail-card .panel-title h2 {
+    font-size: 1.12rem;
+    font-weight: 780;
+    line-height: 1.16;
+  }
+
+  html.operations-console .atlas-panel-head p,
+  html.operations-console .atlas-panel-head em,
+  html.operations-console .workbench-title p,
+  html.operations-console .context-title em,
+  html.operations-console .field-helper {
+    color: var(--rb-muted);
+    line-height: 1.55;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .report-preview-card,
+    .security-health-card,
+    .stocktake-scanner,
+    .notification-meter,
+    .task-hero-metrics,
+    .file-hero-analytics,
+    .file-type-tower,
+    .quality-score-card,
+    .quality-rings,
+    .quality-inspection-hero-stack,
+    .maintenance-reliability-stack,
+    .mobile-governance-stack,
+    .dispatch-kpi-stack,
+    .dispatch-network,
+    .ai-hero-chart,
+    .ai-live-brief,
+    .content-hero-chart,
+    .report-sheet,
+    .report-insights,
+    .settings-note,
+    .file-detail-preview
+  ) {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--post-border);
+    border-radius: var(--post-panel-radius);
+    background: var(--post-panel-fill);
+    box-shadow: var(--post-shadow);
+    backdrop-filter: blur(18px) saturate(1.14);
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .budget-command-card,
+    .budget-cost-card,
+    .budget-variance-card,
+    .capacity-plan-card,
+    .capacity-shift-card,
+    .contract-risk-card,
+    .contract-timeline-card,
+    .customer-health-card,
+    .customer-credit-card,
+    .supplier-score-card,
+    .supplier-risk-card,
+    .integration-health-card,
+    .integration-flow-card,
+    .rule-workbench-card,
+    .rule-simulation-card,
+    .stock-card,
+    .stocktake-card,
+    .replenishment-card,
+    .procurement-card,
+    .sales-order-card,
+    .receivable-card,
+    .service-ticket-card,
+    .article-card,
+    .user-governance-card,
+    .audit-event-card,
+    .profile-card,
+    .settings-card
+  ) {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--post-border);
+    border-radius: var(--post-panel-radius);
+    background: var(--post-panel-fill);
+    box-shadow: var(--post-shadow);
+    backdrop-filter: blur(18px) saturate(1.14);
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .ai-metric-mosaic a,
+    .ai-action-list a,
+    .ai-sample-actions a,
+    .ai-risk-list a,
+    .ai-related-list a,
+    .ai-session-list button,
+    .ai-guardrail-row,
+    .ai-draft-action-row,
+    .file-card,
+    .file-governance-list a,
+    .report-template-list button,
+    .report-job-row,
+    .report-queue-list a,
+    .report-mini-card,
+    .notification-task,
+    .task-queue-card,
+    .task-action-list a,
+    .quality-issue-card,
+    .quality-runbook-list article,
+    .quality-lineage-list article,
+    .quality-inspection-queue-main,
+    .quality-inspection-selected-card,
+    .quality-inspection-supplier-list article,
+    .quality-inspection-defect-grid article,
+    .quality-inspection-lot-list article,
+    .quality-inspection-doc-list a,
+    .quality-inspection-boundary-list article,
+    .quality-inspection-flow-list article,
+    .quality-inspection-runbook-list article,
+    .maintenance-workorder-main,
+    .maintenance-selected-card,
+    .maintenance-spare-list article,
+    .maintenance-technician-grid article,
+    .mobile-queue-main,
+    .mobile-scan-card,
+    .mobile-device-grid article,
+    .mobile-zone-list article,
+    .mobile-flow-list article,
+    .mobile-boundary-list article,
+    .mobile-runbook-list article,
+    .settings-link-list a,
+    .deployment-domain-grid article,
+    .deployment-token-grid article,
+    .deployment-copy-grid article,
+    .erp-capability-grid article,
+    .dispatch-workcard,
+    .dispatch-task-empty,
+    .slot-heat-grid article,
+    .service-kpi-grid article
+  ),
+  html.operations-console .detail-page :is(
+    .detail-metric,
+    .detail-flow-board article,
+    .field-row,
+    .detail-timeline-item,
+    .related-list a,
+    .audit-strip div,
+    .file-detail-download
+  ) {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--post-border);
+    border-radius: var(--post-inner-radius);
+    background: var(--post-card-fill);
+    box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--rb-ink-strong) 7%, transparent);
+    transition:
+      transform var(--rb-med) var(--rb-ease),
+      border-color var(--rb-med) ease,
+      background var(--rb-med) ease,
+      box-shadow var(--rb-med) ease;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .kpi-card,
+    .metric-card,
+    .stat-card,
+    .summary-card,
+    .signal-card,
+    .risk-card,
+    .event-card,
+    .timeline-card,
+    .queue-card,
+    .order-card,
+    .inventory-card,
+    .supplier-card,
+    .customer-card,
+    .contract-card,
+    .integration-card,
+    .rule-card,
+    .budget-card,
+    .capacity-card,
+    .maintenance-card,
+    .receivable-card,
+    .service-card,
+    .profile-card,
+    .settings-card,
+    [class$="-card"],
+    [class$="-row"],
+    [class$="-item"]
+  ) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .ai-metric-mosaic a,
+    .ai-action-list a,
+    .ai-sample-actions a,
+    .ai-risk-list a,
+    .ai-related-list a,
+    .ai-session-list button,
+    .file-card,
+    .file-governance-list a,
+    .report-template-list button,
+    .report-job-row,
+    .report-queue-list a,
+    .report-mini-card,
+    .notification-task,
+    .task-queue-card,
+    .quality-issue-card,
+    .quality-inspection-queue-main,
+    .maintenance-workorder-main,
+    .mobile-queue-main,
+    .settings-link-list a,
+    .dispatch-workcard
+  ):hover,
+  html.operations-console .detail-page :is(
+    .detail-metric,
+    .detail-flow-board article,
+    .field-row,
+    .detail-timeline-item,
+    .related-list a,
+    .audit-strip div
+  ):hover {
+    border-color: var(--post-border-hot);
+    background: var(--post-card-fill-hover);
+    box-shadow: 0 12px 32px color-mix(in srgb, #000 14%, transparent), 0 0 24px color-mix(in srgb, var(--rb-accent) 10%, transparent);
+    transform: translateY(-2px);
+  }
+
+  html.operations-console .ops-atlas-page :is([class*="-grid"], [class*="-stack"], [class*="-strip"], [class*="-list"]) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    [class*="-grid"],
+    [class*="-matrix"],
+    [class*="-mosaic"],
+    [class*="-board"]
+  ) {
+    align-items: stretch;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    [class*="-grid"] > *,
+    [class*="-matrix"] > *,
+    [class*="-mosaic"] > *,
+    [class*="-stack"] > *,
+    [class*="-list"] > *
+  ) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    .settings-option-grid,
+    .settings-form-grid,
+    .deployment-domain-grid,
+    .deployment-token-grid,
+    .deployment-copy-grid,
+    .erp-capability-grid,
+    .file-card-grid,
+    .content-card-grid,
+    .ai-metric-mosaic,
+    .ai-draft-action-list,
+    .ai-guardrail-list,
+    .notification-stack,
+    .task-queue-stack,
+    .quality-issue-stack
+  ) {
+    gap: var(--post-gap-tight);
+  }
+
+  html.operations-console .ops-atlas-page :is(
+    [echarts],
+    .mini-chart,
+    .hero-mini-chart,
+    .hero-trend-chart,
+    .command-big-chart,
+    .realtime-metrics-chart,
+    .business-rhythm-chart,
+    .material-chart,
+    .flow-main-chart,
+    .report-chart,
+    .ai-chart,
+    .ai-hero-mini-chart,
+    .file-vault-chart,
+    .security-chart,
+    .stocktake-chart,
+    .notification-chart,
+    .task-chart,
+    .executive-chart,
+    .quality-chart,
+    .quality-inspection-chart,
+    .maintenance-chart,
+    .mobile-terminal-chart,
+    .dispatch-chart
+  ) {
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--post-border) 72%, transparent);
+    border-radius: var(--post-inner-radius);
+    background:
+      linear-gradient(90deg, var(--post-chart-grid) 1px, transparent 1px),
+      linear-gradient(180deg, var(--post-chart-grid) 1px, transparent 1px),
+      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rb-accent) 8%, transparent), transparent 62%),
+      color-mix(in srgb, var(--rb-canvas) 28%, transparent);
+    background-size: 44px 44px, 44px 44px, auto, auto;
+    box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--rb-ink-strong) 7%, transparent);
+  }
+
+  html.operations-console .ops-atlas-page :is(.p-button, button, a[pButton]) {
+    min-height: 40px;
+    border-radius: var(--post-control-radius);
+    letter-spacing: 0;
+    transition:
+      transform var(--rb-fast) var(--rb-ease),
+      border-color var(--rb-fast) ease,
+      background var(--rb-fast) ease,
+      box-shadow var(--rb-fast) ease,
+      color var(--rb-fast) ease;
+  }
+
+  html.operations-console .ops-atlas-page :is(.p-button, button, a[pButton]):not(:disabled):active {
+    transform: translateY(1px) scale(.99);
+  }
+
+  html.operations-console .ops-atlas-page :is(.mode-switch, .metric-mode-switch, .shift-lens-switch, .report-mode-switch, .quality-inspection-chart-tabs, .maintenance-chart-tabs, .mobile-chart-tabs) {
+    border: 1px solid var(--post-border);
+    border-radius: var(--post-control-radius);
+    background: color-mix(in srgb, var(--rb-surface-soft) 88%, transparent);
+    box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--rb-ink-strong) 7%, transparent);
+  }
+
+  html.operations-console .ops-atlas-page :is(.mode-switch, .metric-mode-switch, .shift-lens-switch, .report-mode-switch, .quality-inspection-chart-tabs, .maintenance-chart-tabs, .mobile-chart-tabs) button.active {
+    color: var(--rb-ink-strong);
+    border-color: color-mix(in srgb, var(--rb-accent) 42%, var(--rb-line));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--rb-accent) 30%, transparent), color-mix(in srgb, var(--rb-accent-2) 18%, transparent)),
+      color-mix(in srgb, var(--rb-surface-strong) 84%, transparent);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--rb-accent) 14%, transparent);
+  }
+
+  html.operations-console .ops-atlas-page :is(.p-inputtext, input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+    min-height: 42px;
+    border-radius: var(--post-control-radius);
+  }
+
+  html.operations-console .ops-atlas-page :is(.p-inputtext, input:not([type="checkbox"]):not([type="radio"]), textarea, select)::placeholder {
+    color: color-mix(in srgb, var(--rb-muted) 72%, transparent);
+  }
+
+  html.operations-console .ops-atlas-page :is(.p-dropdown, .p-multiselect, .p-calendar, .p-inputnumber, .p-inputgroup) {
+    min-width: 0;
+  }
+
+  html.operations-console .ops-atlas-page :is(textarea, .ai-composer-shell textarea) {
+    line-height: 1.55;
+    resize: vertical;
+  }
+
+  html.operations-console .ai-message-stream,
+  html.operations-console .ai-composer,
+  html.operations-console .ai-analysis-output {
+    border: 1px solid color-mix(in srgb, var(--post-border) 84%, transparent);
+    border-radius: var(--post-panel-radius);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--rb-canvas) 32%, transparent), color-mix(in srgb, var(--rb-surface) 72%, transparent)),
+      linear-gradient(90deg, color-mix(in srgb, var(--rb-line) 80%, transparent) 1px, transparent 1px);
+    background-size: auto, 36px 36px;
+  }
+
+  html.operations-console .ai-message-card {
+    border-color: var(--post-border);
+    border-radius: var(--post-inner-radius);
+    background: var(--post-card-fill);
+  }
+
+  html.operations-console .ai-message:not(.assistant) .ai-message-card {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--rb-accent) 24%, transparent), color-mix(in srgb, var(--rb-accent-2) 14%, transparent)),
+      color-mix(in srgb, var(--rb-surface-strong) 86%, transparent);
+  }
+
+  html.operations-console .ai-message-avatar,
+  html.operations-console .file-icon,
+  html.operations-console .detail-flow-board article i,
+  html.operations-console .quality-scan-status i,
+  html.operations-console .toolbar-icon,
+  html.operations-console .dock-icon {
+    border-radius: var(--post-control-radius);
+  }
+
+  html.operations-console .ai-prompt-chip,
+  html.operations-console .file-detail-chip,
+  html.operations-console .report-template-list button,
+  html.operations-console .settings-note span,
+  html.operations-console .quality-scan-status,
+  html.operations-console .p-tag {
+    border-radius: 7px;
+    font-family: var(--rb-font-code);
+    letter-spacing: 0;
+  }
+
+  html.operations-console .file-card {
+    cursor: pointer;
+    display: grid;
+    align-content: start;
+  }
+
+  html.operations-console .file-card:focus-visible {
+    border-color: var(--post-border-hot);
+  }
+
+  html.operations-console .file-detail-preview {
+    display: grid;
+    grid-template-columns: minmax(220px, .8fr) minmax(0, 1fr);
+    gap: var(--post-gap);
+    align-items: stretch;
+  }
+
+  html.operations-console .file-detail-visual,
+  html.operations-console .report-preview-canvas {
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--post-border) 78%, transparent);
+    border-radius: var(--post-inner-radius);
+    background:
+      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--rb-accent) 10%, transparent), transparent 58%),
+      color-mix(in srgb, var(--rb-canvas) 34%, transparent);
+  }
+
+  html.operations-console .security-health-card,
+  html.operations-console .stocktake-scanner,
+  html.operations-console .notification-meter {
+    display: grid;
+    gap: var(--post-gap-tight);
+    align-content: start;
+  }
+
+  html.operations-console .settings-option-grid button,
+  html.operations-console .settings-link-list a {
+    text-align: left;
+  }
+
+  html.operations-console .settings-note {
+    padding: 14px;
+  }
+
+  html.operations-console .quality-scan-status.success,
+  html.operations-console .ai-guardrail-row.success,
+  html.operations-console .detail-flow-board article.success {
+    border-color: color-mix(in srgb, var(--rb-accent-2) 40%, var(--rb-line));
+  }
+
+  html.operations-console .quality-scan-status.failed,
+  html.operations-console .ai-guardrail-row.danger,
+  html.operations-console .detail-flow-board article.danger,
+  html.operations-console .notification-task.priority {
+    border-color: color-mix(in srgb, #ff6f8f 44%, var(--rb-line));
+  }
+
+  html.operations-console .ai-guardrail-row.warning,
+  html.operations-console .ai-draft-action-row.high,
+  html.operations-console .task-queue-card.p0,
+  html.operations-console .quality-issue-card.p0 {
+    border-color: color-mix(in srgb, var(--rb-warm) 46%, var(--rb-line));
+  }
+
+  html.operations-console .atlas-record-ledger,
+  html.operations-console .workbench-records,
+  html.operations-console .ai-message-stream,
+  html.operations-console .notification-stack,
+  html.operations-console .task-queue-stack {
+    scrollbar-color: color-mix(in srgb, var(--rb-accent) 40%, transparent) transparent;
+  }
+
+  html.operations-console .atlas-record-ledger::-webkit-scrollbar,
+  html.operations-console .workbench-records::-webkit-scrollbar,
+  html.operations-console .ai-message-stream::-webkit-scrollbar,
+  html.operations-console .notification-stack::-webkit-scrollbar,
+  html.operations-console .task-queue-stack::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  html.operations-console .atlas-record-ledger::-webkit-scrollbar-thumb,
+  html.operations-console .workbench-records::-webkit-scrollbar-thumb,
+  html.operations-console .ai-message-stream::-webkit-scrollbar-thumb,
+  html.operations-console .notification-stack::-webkit-scrollbar-thumb,
+  html.operations-console .task-queue-stack::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rb-accent) 38%, transparent);
+    background-clip: padding-box;
+  }
+
+  html.operations-console .p-dialog .p-dialog-header,
+  html.operations-console .p-dialog .p-dialog-content,
+  html.operations-console .p-dialog .p-dialog-footer {
+    background: transparent;
+  }
+
+  html.operations-console .p-datatable,
+  html.operations-console .p-dataview,
+  html.operations-console .p-tabview,
+  html.operations-console .p-accordion,
+  html.operations-console .p-card {
+    color: var(--rb-ink);
+  }
+
+  html.operations-console .p-datatable .p-datatable-thead > tr > th,
+  html.operations-console .p-datatable .p-datatable-tbody > tr > td {
+    border-color: color-mix(in srgb, var(--post-border) 78%, transparent);
+    background: transparent;
+  }
+
+  html.operations-console .p-datatable .p-datatable-thead > tr > th {
+    color: var(--rb-faint);
+    font-family: var(--rb-font-code);
+    font-size: .72rem;
+    letter-spacing: 0;
+  }
+
+  html.operations-console .p-datatable .p-datatable-tbody > tr {
+    transition: background var(--rb-fast) ease, color var(--rb-fast) ease;
+  }
+
+  html.operations-console .p-datatable .p-datatable-tbody > tr:hover {
+    background: color-mix(in srgb, var(--rb-accent) 8%, transparent);
+  }
+
+  html.operations-console .empty-state,
+  html.operations-console .quality-empty,
+  html.operations-console .dispatch-task-empty,
+  html.operations-console .dock-empty-state {
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    min-height: 132px;
+    padding: 18px;
+    color: var(--rb-muted);
+    text-align: center;
+  }
+
+  @keyframes post-login-glare {
+    from {
+      background-position: 0 0, -160% 50%;
+    }
+
+    to {
+      background-position: 0 0, 160% 50%;
+    }
+  }
+
+  @media (max-width: 1280px) {
+    html.operations-console .hero-narrative h1,
+    html.operations-console .detail-title h1 {
+      font-size: 2.65rem;
+    }
+
+    html.operations-console .ops-atlas-page,
+    html.operations-console .detail-page {
+      --post-gap: 14px;
+    }
+  }
+
+  @media (max-width: 860px) {
+    html.operations-console .ops-atlas-page,
+    html.operations-console .detail-page {
+      width: 100%;
+      --post-panel-radius: 12px;
+      --post-gap: 12px;
+    }
+
+    html.operations-console .hero-narrative h1,
+    html.operations-console .detail-title h1 {
+      font-size: 2.1rem;
+      line-height: 1.04;
+    }
+
+    html.operations-console .hero-narrative p,
+    html.operations-console .detail-title p {
+      font-size: .94rem;
+      line-height: 1.62;
+    }
+
+    html.operations-console .ops-atlas-page > header[class*="hero"],
+    html.operations-console .detail-hero {
+      padding: 16px;
+    }
+
+    html.operations-console .file-detail-preview {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 620px) {
+    html.operations-console .atlas-stage {
+      padding-bottom: 92px;
+    }
+
+    html.operations-console .hero-narrative h1,
+    html.operations-console .detail-title h1 {
+      font-size: 1.78rem;
+    }
+
+    html.operations-console .ops-atlas-page :is(.atlas-actions-row, .detail-actions, .workbench-toolbar, .ai-draft-action-controls, .notification-task-actions, .task-queue-actions) {
+      align-items: stretch;
+    }
+
+    html.operations-console .ops-atlas-page :is(.atlas-actions-row .p-button, .detail-actions .p-button, .workbench-toolbar .p-button, .ai-draft-action-controls .p-button, .notification-task-actions .p-button, .task-queue-actions .p-button) {
+      width: 100%;
+      justify-content: center;
+    }
+
+    html.operations-console .ops-atlas-page :is(.ai-message, .notification-task, .task-queue-card) {
+      gap: 10px;
+    }
+
+    html.operations-console .ops-atlas-page :is(
+      [class*="-grid"],
+      [class*="-matrix"],
+      [class*="-mosaic"],
+      .detail-layout,
+      .file-detail-preview
+    ) {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .p-datatable-wrapper {
+      border-radius: var(--post-inner-radius);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.operations-console .atlas-panel:not([class*="hero"]):hover::after,
+    html.operations-console .module-workbench:hover::after,
+    html.operations-console .resource-workbench-host:hover::after,
+    html.operations-console .context-block:hover::after,
+    html.operations-console .detail-card:hover::after,
+    html.operations-console .report-preview-card:hover::after,
+    html.operations-console .security-health-card:hover::after,
+    html.operations-console .stocktake-scanner:hover::after,
+    html.operations-console .quality-score-card:hover::after,
+    html.operations-console .notification-meter:hover::after {
+      animation: none !important;
+    }
+
+    html.operations-console .ops-atlas-page :is(
+      .ai-metric-mosaic a,
+      .ai-action-list a,
+      .ai-sample-actions a,
+      .ai-risk-list a,
+      .ai-related-list a,
+      .ai-session-list button,
+      .file-card,
+      .report-template-list button,
+      .report-job-row,
+      .report-queue-list a,
+      .report-mini-card,
+      .notification-task,
+      .task-queue-card,
+      .quality-issue-card,
+      .quality-inspection-queue-main,
+      .maintenance-workorder-main,
+      .mobile-queue-main,
+      .settings-link-list a,
+      .dispatch-workcard
+    ):hover {
+      transform: none !important;
+    }
+  }
+}

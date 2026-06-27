@@ -86,6 +86,8 @@ export class ThemeService {
     root.classList.add(`context-panel-${prefs.context_panel ?? 'visible'}`);
     root.classList.add(`charts-motion-${prefs.charts_motion ?? 'standard'}`);
     root.setAttribute('data-theme', this.mode());
+    const win = this.document.defaultView;
+    win?.dispatchEvent(new win.CustomEvent('nexus-theme-change', { detail: { theme: this.mode(), preferences: prefs } }));
   }
 
   private readTheme(): ThemeMode {

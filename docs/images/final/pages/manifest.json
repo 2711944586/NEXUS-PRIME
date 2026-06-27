@@ -1,0 +1,464 @@
+[
+  {
+    "file": "pages/desktop-light-luxury-overview.png",
+    "route": "/app/overview",
+    "title": "运营控制塔",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-metrics.png",
+    "route": "/app/metrics",
+    "title": "经营指标中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-tasks.png",
+    "route": "/app/tasks",
+    "title": "任务异常中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-inventory-products.png",
+    "route": "/app/inventory/products",
+    "title": "物料库存图谱",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-inventory-stock.png",
+    "route": "/app/inventory/stock",
+    "title": "仓配流向图",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-inventory-replenishment.png",
+    "route": "/app/inventory/replenishment",
+    "title": "采购补货建议",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-sales-orders.png",
+    "route": "/app/sales/orders",
+    "title": "客户窗口与发货调度台",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-procurement-orders.png",
+    "route": "/app/procurement/orders",
+    "title": "采购协同控制台",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-suppliers-performance.png",
+    "route": "/app/suppliers/performance",
+    "title": "供应商协同",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-dispatch.png",
+    "route": "/app/dispatch",
+    "title": "仓配调度中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-data-quality.png",
+    "route": "/app/data-quality",
+    "title": "数据质量中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-quality.png",
+    "route": "/app/quality",
+    "title": "质量检验中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-customers.png",
+    "route": "/app/customers",
+    "title": "客户经营中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-capacity.png",
+    "route": "/app/capacity",
+    "title": "产能计划中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-maintenance.png",
+    "route": "/app/maintenance",
+    "title": "设备维护中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-contracts.png",
+    "route": "/app/contracts",
+    "title": "合同回款中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-service.png",
+    "route": "/app/service",
+    "title": "售后服务中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-rules.png",
+    "route": "/app/rules",
+    "title": "规则引擎中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-integrations.png",
+    "route": "/app/integrations",
+    "title": "集成监控中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-budget.png",
+    "route": "/app/budget",
+    "title": "预算成本中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-mobile-terminal.png",
+    "route": "/app/mobile-terminal",
+    "title": "移动扫码终端",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-finance-receivables.png",
+    "route": "/app/finance/receivables",
+    "title": "账龄风险墙",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-finance-credits.png",
+    "route": "/app/finance/credits",
+    "title": "客户信用中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-stocktakes.png",
+    "route": "/app/stocktakes",
+    "title": "库存盘点中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-reports.png",
+    "route": "/app/reports",
+    "title": "报表工作室",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-files.png",
+    "route": "/app/files",
+    "title": "文件资料库",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-content-articles.png",
+    "route": "/app/content/articles",
+    "title": "公告与知识库",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-system-users.png",
+    "route": "/app/system/users",
+    "title": "系统安全中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-system-audit.png",
+    "route": "/app/system/audit",
+    "title": "审计日志",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-notifications.png",
+    "route": "/app/notifications",
+    "title": "任务通知中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-ai.png",
+    "route": "/app/ai",
+    "title": "经营分析台",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-profile.png",
+    "route": "/app/profile",
+    "title": "个人中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/desktop-light-luxury-settings.png",
+    "route": "/app/settings",
+    "title": "控制中心",
+    "viewport": "desktop",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-overview.png",
+    "route": "/app/overview",
+    "title": "运营控制塔",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-metrics.png",
+    "route": "/app/metrics",
+    "title": "经营指标中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-tasks.png",
+    "route": "/app/tasks",
+    "title": "任务异常中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-inventory-products.png",
+    "route": "/app/inventory/products",
+    "title": "物料库存图谱",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-inventory-stock.png",
+    "route": "/app/inventory/stock",
+    "title": "仓配流向图",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-inventory-replenishment.png",
+    "route": "/app/inventory/replenishment",
+    "title": "采购补货建议",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-sales-orders.png",
+    "route": "/app/sales/orders",
+    "title": "客户窗口与发货调度台",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-procurement-orders.png",
+    "route": "/app/procurement/orders",
+    "title": "采购协同控制台",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-suppliers-performance.png",
+    "route": "/app/suppliers/performance",
+    "title": "供应商协同",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-dispatch.png",
+    "route": "/app/dispatch",
+    "title": "仓配调度中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-data-quality.png",
+    "route": "/app/data-quality",
+    "title": "数据质量中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-quality.png",
+    "route": "/app/quality",
+    "title": "质量检验中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-customers.png",
+    "route": "/app/customers",
+    "title": "客户经营中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-capacity.png",
+    "route": "/app/capacity",
+    "title": "产能计划中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-maintenance.png",
+    "route": "/app/maintenance",
+    "title": "设备维护中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-contracts.png",
+    "route": "/app/contracts",
+    "title": "合同回款中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-service.png",
+    "route": "/app/service",
+    "title": "售后服务中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-rules.png",
+    "route": "/app/rules",
+    "title": "规则引擎中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-integrations.png",
+    "route": "/app/integrations",
+    "title": "集成监控中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-budget.png",
+    "route": "/app/budget",
+    "title": "预算成本中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-mobile-terminal.png",
+    "route": "/app/mobile-terminal",
+    "title": "移动扫码终端",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-finance-receivables.png",
+    "route": "/app/finance/receivables",
+    "title": "账龄风险墙",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-finance-credits.png",
+    "route": "/app/finance/credits",
+    "title": "客户信用中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-stocktakes.png",
+    "route": "/app/stocktakes",
+    "title": "库存盘点中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-reports.png",
+    "route": "/app/reports",
+    "title": "报表工作室",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-files.png",
+    "route": "/app/files",
+    "title": "文件资料库",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-content-articles.png",
+    "route": "/app/content/articles",
+    "title": "公告与知识库",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-system-users.png",
+    "route": "/app/system/users",
+    "title": "系统安全中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-system-audit.png",
+    "route": "/app/system/audit",
+    "title": "审计日志",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-notifications.png",
+    "route": "/app/notifications",
+    "title": "任务通知中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-ai.png",
+    "route": "/app/ai",
+    "title": "经营分析台",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-profile.png",
+    "route": "/app/profile",
+    "title": "个人中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  },
+  {
+    "file": "pages/mobile-light-luxury-settings.png",
+    "route": "/app/settings",
+    "title": "控制中心",
+    "viewport": "mobile",
+    "theme": "light-luxury"
+  }
+]

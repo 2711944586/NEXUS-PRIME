@@ -95,6 +95,26 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
         }
       </section>
 
+      <section class="atlas-panel metrics-execution-strip" aria-label="经营闭环摘要">
+        <div class="atlas-panel-head">
+          <div>
+            <span class="atlas-kicker">闭环</span>
+            <h2>从收入到现金的当班闭环</h2>
+          </div>
+          <p-tag [severity]="todoTotal() ? 'warn' : 'success'" [value]="todoTotal() ? '需要处理' : '稳定'" />
+        </div>
+        <div class="metrics-execution-grid">
+          @for (item of workflowCards(); track item.label) {
+            <a class="business-data-row" [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
+              <span>{{ item.step }}</span>
+              <strong>{{ item.label }}</strong>
+              <em>{{ item.metric }}</em>
+              <small>{{ item.detail }}</small>
+            </a>
+          }
+        </div>
+      </section>
+
       <section class="metrics-grid">
         <article class="atlas-panel metrics-chart-panel wide">
           <div class="atlas-panel-head">
@@ -187,6 +207,64 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           </div>
         </article>
       </section>
+
+      <section class="metrics-decision-grid" aria-label="经营决策队列">
+        <article class="atlas-panel metrics-risk-ledger">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">风险</span>
+              <h2>风险与异常队列</h2>
+            </div>
+            <p-tag [severity]="command().risks.length ? 'warn' : 'success'" [value]="command().risks.length + ' 项'" />
+          </div>
+          <div class="metrics-risk-list">
+            @for (risk of riskRows(); track risk.title) {
+              <a class="business-data-row" [routerLink]="risk.path" [class.warning]="risk.tone === 'warning'">
+                <span>{{ risk.type }}</span>
+                <strong>{{ risk.title }}</strong>
+                <em>{{ risk.description }}</em>
+              </a>
+            }
+          </div>
+        </article>
+
+        <article class="atlas-panel metrics-action-queue">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">行动</span>
+              <h2>指标驱动动作</h2>
+            </div>
+            <p-tag severity="info" value="可执行" />
+          </div>
+          <div class="metrics-queue-stack">
+            @for (action of actionQueue(); track action.title) {
+              <a class="business-data-row" [routerLink]="cleanPath(action.path)" [class.warning]="action.priority === 'high'">
+                <span>{{ action.module }}</span>
+                <strong>{{ action.title }}</strong>
+                <em>{{ action.metric }} / {{ action.description }}</em>
+              </a>
+            }
+          </div>
+        </article>
+
+        <article class="atlas-panel metrics-routing-board">
+          <div class="atlas-panel-head">
+            <div>
+              <span class="atlas-kicker">入口</span>
+              <h2>跨模块处理入口</h2>
+            </div>
+          </div>
+          <div class="metrics-route-grid">
+            @for (route of routeCards(); track route.path) {
+              <a class="business-data-row" [routerLink]="route.path" [class.warning]="route.tone === 'warning'">
+                <span>{{ route.kicker }}</span>
+                <strong>{{ route.label }}</strong>
+                <em>{{ route.detail }}</em>
+              </a>
+            }
+          </div>
+        </article>
+      </section>
     </section>
   `
 })
@@ -219,6 +297,81 @@ export class ExecutiveMetricsPage implements OnInit {
     { label: '未收款', value: this.compactMoney(this.analytics().kpis.unpaid_amount), description: '应收账款余额', progress: Math.min(100, this.analytics().kpis.unpaid_amount / Math.max(this.analytics().kpis.total_sales, 1) * 100), path: '/app/finance/receivables', tone: this.analytics().kpis.unpaid_amount ? 'warning' : 'success' },
     { label: '采购审批', value: `${this.analytics().kpis.pending_purchase} 单`, description: '排队处理', progress: Math.min(100, this.analytics().kpis.pending_purchase * 12), path: '/app/procurement/orders', tone: this.analytics().kpis.pending_purchase ? 'warning' : 'success' },
     { label: '库存预警', value: `${this.analytics().kpis.active_alerts} 项`, description: '安全水位以下', progress: Math.min(100, this.analytics().kpis.active_alerts * 9), path: '/app/inventory/replenishment', tone: this.analytics().kpis.active_alerts ? 'warning' : 'success' }
+  ]);
+  protected readonly workflowCards = computed(() => [
+    {
+      step: '收入',
+      label: '销售履约',
+      metric: this.compactMoney(this.analytics().kpis.total_sales || this.command().kpis.order_amount),
+      detail: '从订单进入发货、开票和归档',
+      path: '/app/sales/orders',
+      tone: 'success'
+    },
+    {
+      step: '供应',
+      label: '采购审批',
+      metric: `${this.analytics().kpis.pending_purchase || this.command().kpis.pending_purchase} 单待办`,
+      detail: '审批、到货、质检和入库连续处理',
+      path: '/app/procurement/orders',
+      tone: (this.analytics().kpis.pending_purchase || this.command().kpis.pending_purchase) ? 'warning' : 'success'
+    },
+    {
+      step: '库存',
+      label: '仓库水位',
+      metric: this.compactNumber(this.command().kpis.stock_quantity || this.todo().stock_quantity),
+      detail: `${this.command().kpis.low_stock_products || this.analytics().kpis.active_alerts} 项低水位`,
+      path: '/app/inventory/stock',
+      tone: (this.command().kpis.low_stock_products || this.analytics().kpis.active_alerts) ? 'warning' : 'success'
+    },
+    {
+      step: '现金',
+      label: '应收回款',
+      metric: this.compactMoney(this.analytics().kpis.unpaid_amount || this.command().kpis.overdue_amount),
+      detail: '账龄、信用占用和催收动作',
+      path: '/app/finance/receivables',
+      tone: (this.analytics().kpis.unpaid_amount || this.command().kpis.overdue_amount) ? 'warning' : 'success'
+    },
+    {
+      step: '协作',
+      label: '通知任务',
+      metric: `${this.analytics().kpis.collaboration_items || this.todoTotal()} 项`,
+      detail: '通知、审批和复盘任务统一闭环',
+      path: '/app/tasks',
+      tone: (this.analytics().kpis.collaboration_items || this.todoTotal()) ? 'warning' : 'success'
+    }
+  ]);
+  protected readonly riskRows = computed(() => {
+    const rows = this.command().risks.length ? this.command().risks : [
+      { type: '库存', level: this.analytics().kpis.active_alerts ? 'warning' : 'normal', title: '库存预警复核', description: `${this.analytics().kpis.active_alerts} 项安全库存信号` },
+      { type: '采购', level: this.analytics().kpis.pending_purchase ? 'warning' : 'normal', title: '采购审批排队', description: `${this.analytics().kpis.pending_purchase} 单等待审批或收货` },
+      { type: '财务', level: this.analytics().kpis.unpaid_amount ? 'warning' : 'normal', title: '应收账款关注', description: `${this.compactMoney(this.analytics().kpis.unpaid_amount)} 未收款` }
+    ];
+    return rows.slice(0, 6).map(item => ({
+      type: item.type,
+      title: item.title,
+      description: item.description,
+      tone: item.level === 'critical' || item.level === 'warning' ? 'warning' : 'success',
+      path: this.riskPath(item.type)
+    }));
+  });
+  protected readonly actionQueue = computed(() => {
+    if (this.analytics().action_queue?.length) {
+      return this.analytics().action_queue!.slice(0, 8);
+    }
+    return [
+      { module: '库存', title: '复核低库存物料', priority: this.command().kpis.low_stock_products ? 'high' : 'normal', metric: `${this.command().kpis.low_stock_products} 项`, path: '/app/inventory/replenishment', description: '生成补货建议' },
+      { module: '采购', title: '推进采购审批', priority: this.command().kpis.pending_purchase ? 'high' : 'normal', metric: `${this.command().kpis.pending_purchase} 单`, path: '/app/procurement/orders', description: '确认审批和收货节奏' },
+      { module: '财务', title: '处理逾期应收', priority: this.command().kpis.overdue_amount ? 'high' : 'normal', metric: this.compactMoney(this.command().kpis.overdue_amount), path: '/app/finance/receivables', description: '同步催收和信用释放' },
+      { module: '报表', title: '生成经营日报', priority: 'normal', metric: '日报', path: '/app/reports', description: '归档经营指标和图表' }
+    ];
+  });
+  protected readonly routeCards = computed(() => [
+    { kicker: '01', label: '经营总览', detail: '控制塔和业务闭环', path: '/app/overview', tone: 'success' },
+    { kicker: '02', label: '任务异常', detail: `${this.todoTotal()} 项跨模块待办`, path: '/app/tasks', tone: this.todoTotal() ? 'warning' : 'success' },
+    { kicker: '03', label: '仓配流向', detail: `${this.command().warehouse_heat.length} 个仓库热区`, path: '/app/inventory/stock', tone: 'success' },
+    { kicker: '04', label: '质量检验', detail: '到货、抽检和异常处理', path: '/app/quality', tone: 'success' },
+    { kicker: '05', label: '客户经营', detail: `${this.analytics().top_customers?.length || 0} 个重点客户`, path: '/app/customers', tone: 'success' },
+    { kicker: '06', label: '系统审计', detail: '关键动作与权限留痕', path: '/app/system/audit', tone: 'success' }
   ]);
   protected readonly activeChart = computed<EChartsCoreOption>(() => {
     if (this.chartMode() === 'warehouse') {
@@ -357,6 +510,13 @@ export class ExecutiveMetricsPage implements OnInit {
     if (name.includes('回款')) return '/app/finance/receivables';
     if (name.includes('协作')) return '/app/notifications';
     return '/app/sales/orders';
+  }
+
+  protected riskPath(type: string): string {
+    if (type.includes('应收') || type.includes('财务') || type.includes('现金')) return '/app/finance/receivables';
+    if (type.includes('采购')) return '/app/procurement/orders';
+    if (type.includes('质量')) return '/app/quality';
+    return '/app/inventory/replenishment';
   }
 
   protected cleanPath(path: string): string {

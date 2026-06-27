@@ -306,12 +306,15 @@ export class OperationsTasksPage implements OnInit, OnDestroy {
     forkJoin({
       todo: this.api.get<OperationsTodoPayload>('operations/todo').pipe(catchError(() => of(EMPTY_TODO))),
       exceptions: this.api.get<OperationsExceptionsPayload>('operations/exceptions').pipe(catchError(() => of(EMPTY_EXCEPTIONS))),
-      taskQueue: this.api.get<OperationsTaskQueuePayload>('operations/task-queue').pipe(catchError(() => of(EMPTY_TASK_QUEUE))),
-      analytics: this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(catchError(() => of(EMPTY_ANALYTICS)))
-    }).pipe(finalize(() => this.loading.set(false))).subscribe(({ todo, exceptions, taskQueue, analytics }) => {
+      taskQueue: this.api.get<OperationsTaskQueuePayload>('operations/task-queue').pipe(catchError(() => of(EMPTY_TASK_QUEUE)))
+    }).pipe(finalize(() => this.loading.set(false))).subscribe(({ todo, exceptions, taskQueue }) => {
       this.todo.set(todo);
       this.exceptions.set(exceptions);
       this.taskQueue.set(taskQueue);
+    });
+    this.api.get<ExecutiveAnalytics>('analytics/executive').pipe(
+      catchError(() => of(EMPTY_ANALYTICS))
+    ).subscribe(analytics => {
       this.analytics.set(analytics);
     });
   }

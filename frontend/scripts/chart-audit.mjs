@@ -24,6 +24,11 @@ for (const token of ['normalizeInteraction', 'dataZoom', 'toolbox', 'axisPointer
     findings.push({ file: 'src/app/core/echarts-layout.ts', line: 1, issue: `ECharts 全局交互 guard 缺少 ${token} 配置。` });
   }
 }
+for (const token of ['normalizeTheme', 'CHART_THEMES', "option['animation'] = false", 'currentChartTheme', 'refreshRenderedCharts', 'nexus-theme-change', 'dark-cockpit', 'light']) {
+  if (!guard.includes(token)) {
+    findings.push({ file: 'src/app/core/echarts-layout.ts', line: 1, issue: `ECharts 企业主题 guard 缺少 ${token} 配置。` });
+  }
+}
 
 for (const file of files) {
   const source = await readFile(path.join(pagesDir, file), 'utf8');

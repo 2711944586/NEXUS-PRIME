@@ -96,7 +96,7 @@ function Stop-WorkspaceProcess([int]$ProcessId, [string]$Reason) {
 }
 
 if ($StopDevServers) {
-    $ports = @(5000) + (4200..4230) + (4300..4310)
+    $ports = @(5000, 5001) + (4200..4230) + (4300..4310)
     for ($attempt = 1; $attempt -le 4; $attempt++) {
         $processIds = Get-NetTCPConnection -LocalPort $ports -State Listen -ErrorAction SilentlyContinue |
             Select-Object -ExpandProperty OwningProcess -Unique

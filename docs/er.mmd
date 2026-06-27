@@ -1,24 +1,415 @@
 erDiagram
-  auth_users }o--|| auth_roles : "has role"
-  auth_users }o--|| auth_departments : "belongs to"
+  auth_roles {
+    int id PK
+    string name
+    string description
+  }
+  auth_permissions {
+    int id PK
+    string code
+    string name
+  }
+  auth_departments {
+    int id PK
+    int parent_id FK
+    string name
+  }
+  auth_users {
+    int id PK
+    int role_id FK
+    int department_id FK
+    string username
+    string email
+    bool is_active
+  }
+  roles_permissions {
+    int role_id FK
+    int permission_id FK
+  }
 
-  biz_products }o--|| biz_categories : "in category"
-  biz_products }o--|| biz_partners : "supplier"
-  biz_products }o--o{ biz_tags : "tagged via biz_product_tags"
+  biz_partners {
+    int id PK
+    string partner_type
+    string name
+    string contact_phone
+    string risk_level
+  }
+  biz_categories {
+    int id PK
+    string name
+  }
+  biz_tags {
+    int id PK
+    string name
+  }
+  biz_products {
+    int id PK
+    int category_id FK
+    int supplier_id FK
+    string sku
+    string name
+    decimal price
+  }
+  biz_product_tags {
+    int product_id FK
+    int tag_id FK
+  }
 
-  stock_quantities }o--|| biz_products : "product"
-  stock_quantities }o--|| stock_warehouses : "warehouse"
-  stock_logs }o--|| biz_products : "for product"
-  stock_logs }o--|| stock_warehouses : "in warehouse"
+  stock_warehouses {
+    int id PK
+    string code
+    string name
+    string region
+  }
+  stock_quantities {
+    int id PK
+    int product_id FK
+    int warehouse_id FK
+    decimal quantity
+    string shelf_location
+  }
+  stock_balances {
+    int id PK
+    int product_id FK
+    int warehouse_id FK
+    decimal available_quantity
+    decimal reserved_quantity
+  }
+  stock_movements {
+    int id PK
+    int product_id FK
+    int warehouse_id FK
+    int created_by FK
+    string movement_type
+    decimal quantity
+  }
+  stock_logs {
+    int id PK
+    int product_id FK
+    int warehouse_id FK
+    int operator_id FK
+    string action
+  }
+  stock_alerts {
+    int id PK
+    int product_id FK
+    int warehouse_id FK
+    int resolved_by FK
+    string level
+    string status
+  }
+  stock_replenishment_suggestions {
+    int id PK
+    int product_id FK
+    int warehouse_id FK
+    int supplier_id FK
+    int processed_by FK
+    int purchase_order_id FK
+    string status
+  }
+  stock_takes {
+    int id PK
+    int warehouse_id FK
+    int created_by FK
+    int approved_by FK
+    string status
+  }
+  stock_take_items {
+    int id PK
+    int take_id FK
+    int product_id FK
+    int counted_by FK
+    decimal system_quantity
+    decimal counted_quantity
+  }
+  stock_take_history {
+    int id PK
+    int take_id FK
+    int operator_id FK
+    string action
+  }
 
-  trade_orders }o--|| biz_partners : "customer"
-  trade_order_items }o--|| trade_orders : "in order"
-  trade_order_items }o--|| biz_products : "product"
+  purchase_orders {
+    int id PK
+    int supplier_id FK
+    int warehouse_id FK
+    int submitted_by FK
+    int approved_by FK
+    string status
+    decimal total_amount
+  }
+  purchase_order_items {
+    int id PK
+    int order_id FK
+    int product_id FK
+    decimal quantity
+    decimal unit_price
+  }
+  purchase_price_history {
+    int id PK
+    int product_id FK
+    int supplier_id FK
+    decimal price
+  }
+  supplier_performance {
+    int id PK
+    int supplier_id FK
+    decimal on_time_rate
+    decimal quality_score
+  }
 
-  cms_attachments }o--|| cms_articles : "belongs to"
+  trade_orders {
+    int id PK
+    int customer_id FK
+    int seller_id FK
+    string status
+    decimal total_amount
+  }
+  trade_order_items {
+    int id PK
+    int order_id FK
+    int product_id FK
+    decimal quantity
+    decimal unit_price
+  }
 
-  finance_payments }o--|| finance_receivables : "settles"
-  finance_statements }o--|| biz_partners : "for partner"
+  finance_customer_credit {
+    int id PK
+    int customer_id FK
+    int frozen_by FK
+    decimal credit_limit
+    string status
+  }
+  finance_receivables {
+    int id PK
+    int order_id FK
+    int customer_id FK
+    decimal amount
+    decimal paid_amount
+    string status
+  }
+  finance_payments {
+    int id PK
+    int receivable_id FK
+    int customer_id FK
+    int operator_id FK
+    decimal amount
+  }
+  finance_statements {
+    int id PK
+    int customer_id FK
+    int generated_by FK
+    decimal statement_amount
+  }
 
-  sys_ai_messages }o--|| sys_ai_sessions : "in session"
+  workflow_definitions {
+    int id PK
+    string code
+    string name
+    string version
+  }
+  workflow_instances {
+    int id PK
+    int definition_id FK
+    int applicant_id FK
+    string business_key
+    string status
+  }
+  workflow_tasks {
+    int id PK
+    int instance_id FK
+    int assignee_id FK
+    int action_by FK
+    string status
+  }
+  workflow_logs {
+    int id PK
+    int instance_id FK
+    int task_id FK
+    int actor_id FK
+    string action
+  }
 
+  cms_articles {
+    int id PK
+    int author_id FK
+    string title
+    string status
+  }
+  cms_article_comments {
+    int id PK
+    int article_id FK
+    int author_id FK
+    int parent_id FK
+    text content
+  }
+  cms_attachments {
+    int id PK
+    int uploader_id FK
+    int article_id FK
+    string file_name
+  }
+
+  report_subscriptions {
+    int id PK
+    int user_id FK
+    string report_type
+    string schedule
+  }
+  generated_reports {
+    int id PK
+    int subscription_id FK
+    int generated_by FK
+    string report_type
+    string status
+  }
+  reporting_daily_metrics {
+    int id PK
+    date metric_date
+    string metric_key
+    decimal metric_value
+  }
+  reporting_projection_states {
+    int id PK
+    string projection_name
+    string status
+  }
+
+  sys_notifications {
+    int id PK
+    int user_id FK
+    string type
+    string status
+  }
+  sys_audit_logs {
+    int id PK
+    int user_id FK
+    string action
+    string resource
+  }
+  sys_ai_sessions {
+    int id PK
+    int user_id FK
+    string title
+  }
+  sys_ai_messages {
+    int id PK
+    int session_id FK
+    string role
+    text content
+  }
+  ai_action_drafts {
+    int id PK
+    int created_by FK
+    int confirmed_by FK
+    int rejected_by FK
+    string status
+  }
+  document_chunks {
+    int id PK
+    string source_type
+    string source_id
+    text content
+  }
+  background_jobs {
+    int id PK
+    int created_by FK
+    string job_type
+    string status
+  }
+  domain_events {
+    int id PK
+    string aggregate_type
+    string aggregate_id
+    string event_type
+  }
+
+  auth_roles ||--o{ auth_users : assigns
+  auth_departments ||--o{ auth_users : owns
+  auth_departments ||--o{ auth_departments : parents
+  auth_roles ||--o{ roles_permissions : grants
+  auth_permissions ||--o{ roles_permissions : maps
+
+  biz_categories ||--o{ biz_products : classifies
+  biz_partners ||--o{ biz_products : supplies
+  biz_products ||--o{ biz_product_tags : tagged
+  biz_tags ||--o{ biz_product_tags : labels
+
+  biz_products ||--o{ stock_quantities : stocked
+  stock_warehouses ||--o{ stock_quantities : holds
+  biz_products ||--o{ stock_balances : balances
+  stock_warehouses ||--o{ stock_balances : balances
+  biz_products ||--o{ stock_movements : moves
+  stock_warehouses ||--o{ stock_movements : moves
+  auth_users ||--o{ stock_movements : records
+  biz_products ||--o{ stock_logs : logs
+  stock_warehouses ||--o{ stock_logs : logs
+  auth_users ||--o{ stock_logs : operates
+  biz_products ||--o{ stock_alerts : alerts
+  stock_warehouses ||--o{ stock_alerts : alerts
+  auth_users ||--o{ stock_alerts : resolves
+  biz_products ||--o{ stock_replenishment_suggestions : replenishes
+  stock_warehouses ||--o{ stock_replenishment_suggestions : requests
+  biz_partners ||--o{ stock_replenishment_suggestions : fulfills
+  purchase_orders ||--o{ stock_replenishment_suggestions : converts
+  stock_warehouses ||--o{ stock_takes : counted
+  auth_users ||--o{ stock_takes : creates
+  auth_users ||--o{ stock_takes : approves
+  stock_takes ||--o{ stock_take_items : contains
+  biz_products ||--o{ stock_take_items : counted
+  auth_users ||--o{ stock_take_items : counts
+  stock_takes ||--o{ stock_take_history : audits
+
+  biz_partners ||--o{ purchase_orders : supplier
+  stock_warehouses ||--o{ purchase_orders : receiving
+  auth_users ||--o{ purchase_orders : submits
+  auth_users ||--o{ purchase_orders : approves
+  purchase_orders ||--o{ purchase_order_items : contains
+  biz_products ||--o{ purchase_order_items : purchased
+  biz_products ||--o{ purchase_price_history : priced
+  biz_partners ||--o{ purchase_price_history : quoted
+  biz_partners ||--|| supplier_performance : scored
+
+  biz_partners ||--o{ trade_orders : customer
+  auth_users ||--o{ trade_orders : seller
+  trade_orders ||--o{ trade_order_items : contains
+  biz_products ||--o{ trade_order_items : sold
+
+  biz_partners ||--|| finance_customer_credit : credit
+  auth_users ||--o{ finance_customer_credit : freezes
+  trade_orders ||--o{ finance_receivables : bills
+  biz_partners ||--o{ finance_receivables : owes
+  finance_receivables ||--o{ finance_payments : settled_by
+  biz_partners ||--o{ finance_payments : pays
+  auth_users ||--o{ finance_payments : records
+  biz_partners ||--o{ finance_statements : statement
+  auth_users ||--o{ finance_statements : generates
+
+  workflow_definitions ||--o{ workflow_instances : instantiates
+  auth_users ||--o{ workflow_instances : applies
+  workflow_instances ||--o{ workflow_tasks : creates
+  auth_users ||--o{ workflow_tasks : assigned
+  auth_users ||--o{ workflow_tasks : acts
+  workflow_instances ||--o{ workflow_logs : records
+  workflow_tasks ||--o{ workflow_logs : logs
+  auth_users ||--o{ workflow_logs : writes
+
+  auth_users ||--o{ cms_articles : authors
+  cms_articles ||--o{ cms_article_comments : comments
+  auth_users ||--o{ cms_article_comments : comments
+  cms_article_comments ||--o{ cms_article_comments : replies
+  cms_articles ||--o{ cms_attachments : attaches
+  auth_users ||--o{ cms_attachments : uploads
+
+  auth_users ||--o{ report_subscriptions : subscribes
+  report_subscriptions ||--o{ generated_reports : schedules
+  auth_users ||--o{ generated_reports : generates
+
+  auth_users ||--o{ sys_notifications : receives
+  auth_users ||--o{ sys_audit_logs : triggers
+  auth_users ||--o{ sys_ai_sessions : owns
+  sys_ai_sessions ||--o{ sys_ai_messages : contains
+  auth_users ||--o{ ai_action_drafts : creates
+  auth_users ||--o{ ai_action_drafts : confirms
+  auth_users ||--o{ ai_action_drafts : rejects
+  auth_users ||--o{ background_jobs : starts

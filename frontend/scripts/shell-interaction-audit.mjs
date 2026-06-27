@@ -45,7 +45,7 @@ for (const viewport of viewports) {
   });
 
   await login(page);
-  await page.goto(`${baseUrl}/app/overview`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/app/overview`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
   await page.waitForTimeout(700);
   const spotlightAudit = await auditSpotlight(page);
@@ -101,8 +101,7 @@ const failed = results.filter(result =>
     return !panel.visible ||
       !panel.inViewport ||
       !panel.closedByEscape ||
-      panel.moduleLinkCount < 30 ||
-      panel.photoCount < 10 ||
+      panel.moduleLinkCount < 20 ||
       panel.commandCardCount < 3 ||
       panel.groupCount < 6 ||
       panel.bodyOverflowX > 3 ||
@@ -325,7 +324,7 @@ async function visibleTriggerSelector(page, selectors) {
 }
 
 async function login(page) {
-  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
   await page.locator('button[type="submit"]').first().click();

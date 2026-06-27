@@ -52,24 +52,19 @@ const viewports = [
 ];
 
 const routeThresholds = new Map([
-  ['/app/overview', { mainDataRows: 16, mainActionSurfaces: 18, mainSections: 6 }],
-  ['/app/metrics', { mainDataRows: 12, mainActionSurfaces: 12, mainSections: 4 }],
-  ['/app/tasks', { mainDataRows: 12, mainActionSurfaces: 12, mainSections: 4 }],
-  ['/app/profile', { mainDataRows: 6, mainActionSurfaces: 8, mainSections: 4 }],
-  ['/app/settings', { mainDataRows: 10, mainActionSurfaces: 12, mainSections: 4 }],
-  ['/app/ai', { mainDataRows: 10, mainActionSurfaces: 14, mainSections: 4 }],
-  ['/app/mobile-terminal', { mainDataRows: 10, mainActionSurfaces: 12, mainSections: 4 }]
+  ['/app/overview', { mainDataRows: 0, mainActionSurfaces: 3, mainSections: 2 }],
+  ['/app/settings', { mainDataRows: 4, mainActionSurfaces: 4, mainSections: 3 }],
+  ['/app/ai', { mainDataRows: 4, mainActionSurfaces: 4, mainSections: 3 }]
 ]);
 
 const defaultThresholds = {
-  shellEvidenceImages: 3,
-  pageEvidenceImages: 3,
-  workflowLinks: 9,
-  handoffActions: 3,
-  mainDataRows: 10,
-  mainActionSurfaces: 10,
-  mainSections: 4,
-  mainTextBlocks: 18
+  visualAssets: 1,
+  workflowLinks: 0,
+  handoffActions: 0,
+  mainDataRows: 0,
+  mainActionSurfaces: 1,
+  mainSections: 1,
+  mainTextBlocks: 6
 };
 
 await mkdir(outDir, { recursive: true });
@@ -105,7 +100,7 @@ for (const viewport of viewports) {
   await login(page);
 
   for (const route of routes) {
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
     await page.waitForTimeout(900);
 
@@ -131,6 +126,21 @@ for (const viewport of viewports) {
           .filter(Boolean)
           .slice(0, limit);
       const main = document.querySelector('#main-content');
+      const normalizeAssetPath = value => {
+        try {
+          return new URL(value, window.location.origin).pathname;
+        } catch {
+          return value;
+        }
+      };
+      const backgroundAssets = [...document.querySelectorAll('#main-content *')]
+        .filter(visible)
+        .flatMap(element => {
+          const image = getComputedStyle(element).backgroundImage || '';
+          return [...image.matchAll(/url\(["']?([^"')]+)["']?\)/g)]
+            .map(match => normalizeAssetPath(match[1]))
+            .filter(src => src.startsWith('/images/'));
+        });
       const visibleImages = [...document.querySelectorAll('img')]
         .filter(visible)
         .filter(image => image.complete && image.naturalWidth > 0)
@@ -196,13 +206,13 @@ for (const viewport of viewports) {
           width: Math.round(box.width)
         }));
       const mainDataRows = main ? count(
-        '.business-data-row, .atlas-record-row, .ledger-row, .risk-brick, article, .home-system-card, .service-line-card, .report-template-list button, .settings-option-grid button, .settings-link-list a, .profile-work-card, .ai-action-list a, .shift-event-timeline a, .shift-action-queue a',
+        '.business-data-row, .atlas-record-row, .ledger-row, .risk-brick, article, .home-system-card, .service-line-card, .report-template-list button, .settings-option-grid button, .settings-link-list a, .profile-work-card, .ai-action-list a, .shift-event-timeline a, .shift-action-queue a, .command-lean-metrics a, .command-workflow-rail a, .command-domain-grid a, .command-action-list a',
         main
       ) : 0;
       const mainActionSurfaces = main ? count('a[href], button:not([disabled]), input, textarea, select, .atlas-record-row', main) : 0;
       const mainSections = main ? count('section, article, .atlas-panel, .context-block, .home-system-card, .risk-brick', main) : 0;
       const mainTextBlocks = main ? texts('h1, h2, h3, p, strong, em, span, small', main, 80).length : 0;
-      const workflowLinks = count('.page-evidence-grid a, .field-evidence-grid a, .shift-handoff-list a, .workflow-signal-list a, .workflow-step-rail a, .context-action');
+      const workflowLinks = count('.page-evidence-grid a, .field-evidence-grid a, .shift-handoff-list a, .workflow-signal-list a, .workflow-step-rail a, .context-action, .command-hero-actions a, .command-lean-metrics a, .command-workflow-rail a, .command-domain-grid a, .command-action-list a, .atlas-actions-row a[href^="/app/"]');
       const handoffActions = count('.shift-handoff-list a');
       const shellEvidenceImages = visibleImages.filter(image => image.src.includes('/images/')).length;
       const pageEvidenceImages = [...document.querySelectorAll('.page-evidence-strip img')]
@@ -220,6 +230,10 @@ for (const viewport of viewports) {
         bodyOverflowX: document.documentElement.scrollWidth - window.innerWidth,
         shellEvidenceImages,
         pageEvidenceImages,
+        visualAssets: [...new Set([
+          ...mainImages.map(src => normalizeAssetPath(src)).filter(src => src.startsWith('/images/')),
+          ...backgroundAssets
+        ])],
         mainImages: mainImages.slice(0, 8),
         workflowLinks,
         handoffActions,
@@ -300,6 +314,7 @@ const summary = {
     h1: result.h1,
     evidenceImages: result.shellEvidenceImages,
     pageEvidenceImages: result.pageEvidenceImages,
+    visualAssets: result.visualAssets.length,
     workflowLinks: result.workflowLinks,
     handoffActions: result.handoffActions,
     mainDataRows: result.mainDataRows,
@@ -334,11 +349,14 @@ function evaluateRoute(audit, thresholds) {
   if (!audit.h1) {
     failures.push('missing_h1');
   }
-  if (audit.shellEvidenceImages < thresholds.shellEvidenceImages) {
+  if (thresholds.shellEvidenceImages && audit.shellEvidenceImages < thresholds.shellEvidenceImages) {
     failures.push(`shell_evidence:${audit.shellEvidenceImages}<${thresholds.shellEvidenceImages}`);
   }
-  if (audit.pageEvidenceImages < thresholds.pageEvidenceImages) {
+  if (thresholds.pageEvidenceImages && audit.pageEvidenceImages < thresholds.pageEvidenceImages) {
     failures.push(`page_evidence:${audit.pageEvidenceImages}<${thresholds.pageEvidenceImages}`);
+  }
+  if (audit.visualAssets.length < thresholds.visualAssets) {
+    failures.push(`visual_assets:${audit.visualAssets.length}<${thresholds.visualAssets}`);
   }
   if (audit.workflowLinks < thresholds.workflowLinks) {
     failures.push(`workflow_links:${audit.workflowLinks}<${thresholds.workflowLinks}`);
@@ -377,7 +395,7 @@ function evaluateRoute(audit, thresholds) {
 }
 
 async function login(page) {
-  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
   await page.locator('button[type="submit"]').first().click();

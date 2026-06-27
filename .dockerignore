@@ -2,6 +2,7 @@
 .github
 .pytest_cache
 .playwright-cli
+.playwright-mcp
 .vscode
 output
 legacy
@@ -25,5 +26,9 @@ frontend/public/runtime-config.js
 .env
 .env.*
 !.env.example
+!.env.mainland.example
 !backend/.env.example
 !frontend/.env.example
+audit-*.png
+reactbits-*.png
+overview-desktop.png

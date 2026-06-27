@@ -73,6 +73,16 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
             <strong>{{ command().flows.length }}</strong>
           </article>
         </aside>
+
+        <nav class="governance-action-strip dispatch-action-strip" aria-label="仓配调度快捷动作">
+          <a class="business-data-row" routerLink="/app/inventory/stock">库存流水</a>
+          <a class="business-data-row" routerLink="/app/inventory/replenishment">补货建议</a>
+          <a class="business-data-row" routerLink="/app/stocktakes">盘点中心</a>
+          <a class="business-data-row" routerLink="/app/procurement/orders">采购到货</a>
+          <a class="business-data-row" routerLink="/app/sales/orders">销售发货</a>
+          <a class="business-data-row" routerLink="/app/mobile-terminal">移动扫码</a>
+          <a class="business-data-row" routerLink="/app/reports">调度报表</a>
+        </nav>
       </header>
 
       <section class="dispatch-grid">
@@ -190,7 +200,7 @@ export class DispatchCenterPage implements OnInit {
   load(): void {
     this.loading.set(true);
     forkJoin({
-      stock: this.api.list<DataRecord>('stock', { page: 1, page_size: 160 }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
+      stock: this.api.list<DataRecord>('stock', { page: 1, page_size: 24 }).pipe(catchError(() => of(emptyPageResult<DataRecord>()))),
       command: this.api.get<ManufacturingCommandCenter>('manufacturing/command-center').pipe(catchError(() => of(EMPTY_COMMAND)))
     }).pipe(finalize(() => this.loading.set(false))).subscribe(({ stock, command }) => {
       this.stock.set(stock.items);

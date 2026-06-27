@@ -1,25 +1,25 @@
 html {
   color-scheme: light;
-  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
-  --font-mono: "SFMono-Regular", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
+  --font-sans: "Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", "Cascadia Mono", "Roboto Mono", Consolas, monospace;
 
-  --bg: #f6f7fb;
-  --bg-alt: #e8edf5;
-  --surface: rgba(255, 255, 255, .94);
+  --bg: #f8fbff;
+  --bg-alt: #edf4fb;
+  --surface: rgba(255, 255, 255, .97);
   --surface-strong: #ffffff;
-  --surface-muted: #f1f4f8;
-  --surface-raised: rgba(255, 255, 255, .98);
-  --surface-glass: rgba(255, 255, 255, .78);
-  --surface-inset: #e4eaf2;
+  --surface-muted: #f4f7fb;
+  --surface-raised: rgba(255, 255, 255, .99);
+  --surface-glass: rgba(255, 255, 255, .86);
+  --surface-inset: #ecf2f8;
   --ink: #172033;
   --ink-strong: #07101f;
   --ink-soft: #253149;
   --muted: #637087;
   --muted-strong: #47546a;
   --muted-warm: #756851;
-  --line: rgba(23, 32, 51, .13);
-  --line-strong: rgba(23, 32, 51, .24);
-  --line-subtle: rgba(23, 32, 51, .08);
+  --line: rgba(23, 32, 51, .1);
+  --line-strong: rgba(23, 32, 51, .2);
+  --line-subtle: rgba(23, 32, 51, .06);
 
   --accent: #1e40af;
   --accent-contrast: #ffffff;
@@ -50,11 +50,11 @@ html {
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 10px;
-  --shadow-subtle: 0 1px 2px rgba(17, 28, 46, .04);
-  --shadow-sm: 0 2px 8px rgba(17, 28, 46, .06);
-  --shadow-md: 0 4px 16px rgba(17, 28, 46, .08);
-  --shadow-lg: 0 8px 32px rgba(17, 28, 46, .10);
-  --shadow-xl: 0 16px 64px rgba(17, 28, 46, .12);
+  --shadow-subtle: 0 1px 2px rgba(17, 28, 46, .03);
+  --shadow-sm: 0 2px 8px rgba(17, 28, 46, .05);
+  --shadow-md: 0 4px 16px rgba(17, 28, 46, .07);
+  --shadow-lg: 0 8px 32px rgba(17, 28, 46, .09);
+  --shadow-xl: 0 16px 64px rgba(17, 28, 46, .1);
   --shadow-ring: 0 0 0 1px var(--line-subtle), 0 8px 24px rgba(17, 28, 46, .08);
   --shadow-colored: 0 12px 40px rgba(30, 64, 175, .12);
 
@@ -76,7 +76,7 @@ html {
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
   --ease-decelerate: cubic-bezier(0, 0, .2, 1);
   --ease-accelerate: cubic-bezier(.3, 0, 1, 1);
-  --topbar-height: 84px;
+  --topbar-height: 72px;
 }
 
 html.dark-cockpit,

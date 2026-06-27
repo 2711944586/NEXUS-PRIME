@@ -114,6 +114,7 @@ import {
                   tooltipPosition="top"
                 >
                   <i class="pi pi-eye"></i>
+                  <span class="record-action-label">查看</span>
                 </a>
                 <button
                   pButton
@@ -128,6 +129,7 @@ import {
                   tooltipPosition="top"
                 >
                   <i class="pi pi-pencil"></i>
+                  <span class="record-action-label">编辑</span>
                 </button>
                 <button
                   pButton
@@ -143,6 +145,7 @@ import {
                   tooltipPosition="top"
                 >
                   <i class="pi pi-copy"></i>
+                  <span class="record-action-label">复制</span>
                 </button>
                 <button
                   pButton
@@ -159,6 +162,7 @@ import {
                   tooltipPosition="top"
                 >
                   <i class="pi pi-trash"></i>
+                  <span class="record-action-label">删除</span>
                 </button>
               </div>
             </article>

@@ -597,6 +597,73 @@
     background: transparent !important;
   }
 
+  .login-screen.nexus-login-redesign,
+  .policy-screen.nexus-login-redesign {
+    --auth-readable-ink: #07131f;
+    --auth-readable-muted: #526170;
+    --auth-readable-label: rgba(18, 32, 42, .78);
+    --auth-mark-ink: #fff;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign,
+  html.dark-cockpit .policy-screen.nexus-login-redesign {
+    --auth-readable-ink: #f4fffb;
+    --auth-readable-muted: rgba(219, 235, 226, .72);
+    --auth-readable-label: rgba(238, 248, 242, .82);
+    --auth-mark-ink: #f8faf5;
+  }
+
+  .login-screen.nexus-login-redesign .brand-lockup .brand-mark,
+  .login-screen.nexus-login-redesign .auth-orbit strong,
+  .policy-screen.nexus-login-redesign .policy-topbar .brand-mark,
+  .policy-screen.nexus-login-redesign .entry-brand-inline .brand-mark {
+    color: var(--auth-mark-ink) !important;
+    -webkit-text-fill-color: var(--auth-mark-ink);
+    background:
+      linear-gradient(135deg, #0b3655 0%, #256f8f 58%, #4d9b85 100%) !important;
+  }
+
+  html.dark-cockpit .login-screen.nexus-login-redesign .brand-lockup .brand-mark,
+  html.dark-cockpit .login-screen.nexus-login-redesign .auth-orbit strong,
+  html.dark-cockpit .policy-screen.nexus-login-redesign .policy-topbar .brand-mark,
+  html.dark-cockpit .policy-screen.nexus-login-redesign .entry-brand-inline .brand-mark {
+    background:
+      linear-gradient(135deg, #062436 0%, #167b95 58%, #3ba484 100%) !important;
+  }
+
+  .login-screen.nexus-login-redesign .brand-lockup .brand-mark::after,
+  .policy-screen.nexus-login-redesign .policy-topbar .brand-mark::after,
+  .policy-screen.nexus-login-redesign .entry-brand-inline .brand-mark::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .login-screen.nexus-login-redesign .auth-mode-strip strong,
+  .login-screen.nexus-login-redesign .login-role-switch strong,
+  .login-screen.nexus-login-redesign .login-capabilities strong,
+  .login-screen.nexus-login-redesign .register-verification > div strong,
+  .login-screen.nexus-login-redesign .register-consent-head strong,
+  .login-screen.nexus-login-redesign .auth-signal-chart strong {
+    color: var(--auth-readable-ink) !important;
+  }
+
+  .login-screen.nexus-login-redesign .brand-lockup p,
+  .login-screen.nexus-login-redesign .login-copy p,
+  .login-screen.nexus-login-redesign .auth-mode-strip em,
+  .login-screen.nexus-login-redesign .login-role-switch span,
+  .login-screen.nexus-login-redesign .login-capabilities span,
+  .login-screen.nexus-login-redesign .login-footnote > span,
+  .login-screen.nexus-login-redesign .register-policy-strip span,
+  .login-screen.nexus-login-redesign .register-consent > label,
+  .login-screen.nexus-login-redesign .auth-signal-chart em {
+    color: var(--auth-readable-muted) !important;
+  }
+
+  .login-screen.nexus-login-redesign .login-field > span,
+  .login-screen.nexus-login-redesign .register-verification > div span {
+    color: var(--auth-readable-label) !important;
+  }
+
   @media (max-width: 1180px) {
     .login-screen.nexus-login-redesign .login-composition,
     .login-screen.nexus-login-redesign .login-composition.register-composition,

@@ -22,6 +22,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 
 import { DockGroup, DockItem } from '../core/models';
+import { COMMAND_CENTER_PHOTOS, VisualAsset } from '../core/visual-assets';
 import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
 
 const ICONS = [
@@ -148,6 +149,18 @@ const ICONS = [
             }
           </section>
 
+          <section class="module-photo-rail" aria-label="业务现场证据">
+            @for (photo of modulePhotos; track photo.src) {
+              <figure>
+                <img [src]="photo.src" [alt]="photo.alt" loading="lazy" decoding="async" />
+                <figcaption>
+                  <span>{{ photo.label }}</span>
+                  <strong>{{ photo.caption }}</strong>
+                </figcaption>
+              </figure>
+            }
+          </section>
+
           <section class="drawer-section module-library">
             <div class="module-library-head">
               <span class="nav-group-label">模块库</span>
@@ -205,6 +218,8 @@ const ICONS = [
   `
 })
 export class AppModuleMapComponent {
+  protected readonly modulePhotos: VisualAsset[] = COMMAND_CENTER_PHOTOS.slice(0, 12);
+
   @Input({ required: true }) currentWorkflow!: WorkflowBlueprint;
   @Input({ required: true }) activeWorkflowStep!: WorkflowStage;
   @Input() shellHealth = 0;
