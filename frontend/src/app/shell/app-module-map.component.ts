@@ -22,6 +22,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 
 import { DockGroup, DockItem } from '../core/models';
+import type { NavigationState } from '../core/navigation';
 import { COMMAND_CENTER_PHOTOS, VisualAsset } from '../core/visual-assets';
 import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
 
@@ -116,9 +117,9 @@ const ICONS = [
 
           <section class="module-route-primer" aria-label="推荐跳转">
             <div>
-              <span>推荐路径</span>
-              <strong>{{ activeWorkflowStep.label }} 后续处理</strong>
-              <em>{{ activeWorkflowStep.metric }}</em>
+              <span>当前层级</span>
+              <strong>{{ navigation.activeGroup.label }} / {{ navigation.activeItem.shortLabel }}</strong>
+              <em>{{ navigation.activeGroup.summary }}</em>
             </div>
             @for (item of recommendedItems(); track item.path) {
               <a [routerLink]="item.path" (click)="close.emit()" [style.--dock-tone]="item.accent">
@@ -164,14 +165,18 @@ const ICONS = [
           <section class="drawer-section module-library">
             <div class="module-library-head">
               <span class="nav-group-label">模块库</span>
-              <strong>{{ groups.length }} 组</strong>
+              <strong>{{ groups.length }} 组 · 当前 {{ navigation.activeGroup.label }}</strong>
             </div>
             @for (group of groups; track group.key) {
-              <div class="drawer-group module-card-group" [style.--dock-group-tone]="group.tone">
+              <div
+                class="drawer-group module-card-group"
+                [class.active-group]="group.key === navigation.activeGroup.key"
+                [style.--dock-group-tone]="group.tone"
+              >
                 <div class="drawer-group-head">
                   <div>
                     <strong>{{ group.label }}</strong>
-                    <em>{{ group.items.length }} 个入口 · {{ groupActionCount(group) }} 个动作</em>
+                    <em>{{ group.summary || group.items.length + ' 个入口 · ' + groupActionCount(group) + ' 个动作' }}</em>
                   </div>
                   <a [routerLink]="group.items[0].path" (click)="close.emit()">进入{{ group.label }}</a>
                 </div>
@@ -220,6 +225,7 @@ const ICONS = [
 export class AppModuleMapComponent {
   protected readonly modulePhotos: VisualAsset[] = COMMAND_CENTER_PHOTOS.slice(0, 12);
 
+  @Input({ required: true }) navigation!: NavigationState;
   @Input({ required: true }) currentWorkflow!: WorkflowBlueprint;
   @Input({ required: true }) activeWorkflowStep!: WorkflowStage;
   @Input() shellHealth = 0;
@@ -232,10 +238,13 @@ export class AppModuleMapComponent {
   @Output() close = new EventEmitter<void>();
 
   recommendedItems(): DockItem[] {
-    const activePath = this.activeWorkflowStep.path;
     const flattened = this.groups.flatMap(group => group.items);
-    const active = flattened.find(item => item.path === activePath || item.activePaths?.some(path => activePath.startsWith(path)));
-    return [active, ...flattened].filter((item): item is DockItem => Boolean(item)).filter((item, index, list) => list.findIndex(entry => entry.path === item.path) === index).slice(0, 3);
+    const workflowItems = this.currentWorkflow.stages
+      .map(stage => flattened.find(item => item.path === stage.path || item.activePaths?.some(path => stage.path === path || stage.path.startsWith(`${path}/`))))
+      .filter((item): item is DockItem => Boolean(item));
+    return [this.navigation.activeItem, ...this.navigation.siblings, ...workflowItems]
+      .filter((item, index, list) => list.findIndex(entry => entry.key === item.key) === index)
+      .slice(0, 3);
   }
 
   groupQuickActions(group: DockGroup): Array<{ label: string; path: string }> {

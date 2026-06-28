@@ -1,4 +1,5 @@
 export type ThemeMode = 'dark-cockpit' | 'light-luxury';
+export type ThemeSource = 'system' | ThemeMode;
 
 export interface ApiEnvelope<T> {
   data: T;
@@ -1312,6 +1313,7 @@ export interface SupplierDeploymentCheck {
 
 export interface UserPreferences {
   theme?: ThemeMode;
+  theme_source?: ThemeSource;
   density?: 'compact' | 'comfortable';
   default_workspace?: string;
   charts_motion?: 'standard' | 'reduced';
@@ -1631,6 +1633,7 @@ export interface DockGroup {
   key: DockItem['dockGroup'];
   label: string;
   tone: string;
+  summary?: string;
   items: DockItem[];
 }
 

@@ -414,7 +414,13 @@ async function login(page, theme) {
   await applyTheme(page, theme);
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
-  await page.locator('button[type="submit"]').first().click();
+  const submit = page.locator('button[type="submit"]').first();
+  await submit.waitFor({ state: 'visible', timeout: 15000 });
+  await page.waitForFunction(() => {
+    const button = document.querySelector('button[type="submit"]');
+    return button && !button.hasAttribute('disabled');
+  }, null, { timeout: 15000 });
+  await submit.click();
   await page.waitForURL('**/app/**', { timeout: 15000 });
   await applyTheme(page, theme);
 }

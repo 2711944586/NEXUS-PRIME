@@ -133,7 +133,10 @@ def api_register():
         department_name=values['department_name'],
         position=values['position'],
         bio=(payload.get('bio') or '').strip() or None,
-        preferences={'theme': payload.get('theme') if payload.get('theme') in ('dark-cockpit', 'light-luxury') else 'dark-cockpit'},
+        preferences={
+            'theme': payload.get('theme') if payload.get('theme') in ('dark-cockpit', 'light-luxury') else 'dark-cockpit',
+            'theme_source': payload.get('theme_source') if payload.get('theme_source') in ('system', 'dark-cockpit', 'light-luxury') else 'system',
+        },
     )
     user.password = password
     db.session.add(user)

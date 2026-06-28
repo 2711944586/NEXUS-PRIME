@@ -428,6 +428,7 @@ def run_enterprise_data_seed(scale=3, multiplier=1, reset=False, seed=20241334, 
             'default_workspace': '运营',
             'recent': [{'label': '运营首页', 'path': '/app/overview', 'at': utcnow().isoformat()}],
             'theme': 'dark-cockpit',
+            'theme_source': 'system',
         },
     )
     admin.password = admin_password
@@ -991,6 +992,7 @@ def run_enterprise_seed(scale=3, multiplier=100, reset=False, seed=20241334, pas
             'default_workspace': '运营',
             'recent': [{'label': '运营首页', 'path': '/app/overview', 'at': now.isoformat()}],
             'theme': 'dark-cockpit',
+            'theme_source': 'system',
         },
     )
     admin.password = admin_password
@@ -1019,7 +1021,11 @@ def run_enterprise_seed(scale=3, multiplier=100, reset=False, seed=20241334, pas
             'phone': f'15{rng.randrange(100000000, 999999999)}',
             'position': pick(rng, positions),
             'bio': pick(rng, ['负责仓配现场协同', '跟进采购与供应商交期', '处理销售履约和客户窗口', '维护经营数据质量']),
-            'preferences': {'theme': 'dark-cockpit' if i % 2 == 0 else 'light-luxury', 'density': 'compact' if i % 3 else 'comfortable'},
+            'preferences': {
+                'theme': 'dark-cockpit' if i % 2 == 0 else 'light-luxury',
+                'theme_source': 'dark-cockpit' if i % 2 == 0 else 'light-luxury',
+                'density': 'compact' if i % 3 else 'comfortable'
+            },
             'is_active_user': True,
             'is_admin': False,
             'failed_login_attempts': 0,

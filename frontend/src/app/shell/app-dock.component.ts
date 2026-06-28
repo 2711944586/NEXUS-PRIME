@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideBarChart3,
@@ -9,7 +9,6 @@ import {
   LucideFolderOpen,
   LucideGauge,
   LucideLockKeyhole,
-  LucideMoreHorizontal,
   LucideNetwork,
   LucideScanLine,
   LucideSend,
@@ -21,6 +20,7 @@ import {
 } from '@lucide/angular';
 
 import { DockGroup, DockItem } from '../core/models';
+import type { NavigationState } from '../core/navigation';
 
 const ICONS = [
   LucideBarChart3,
@@ -30,7 +30,6 @@ const ICONS = [
   LucideFolderOpen,
   LucideGauge,
   LucideLockKeyhole,
-  LucideMoreHorizontal,
   LucideNetwork,
   LucideScanLine,
   LucideSend,
@@ -48,6 +47,10 @@ const ICONS = [
   imports: [CommonModule, RouterLink, ...ICONS],
   template: `
     <nav class="atlas-dock atlas-dock-island dock-grouped-island" aria-label="主业务流程导航">
+      <div class="dock-current-domain" [style.--dock-group-tone]="navigation.activeGroup.tone">
+        <span>当前域</span>
+        <strong>{{ navigation.activeGroup.label }}</strong>
+      </div>
       @for (group of groups; track group.key) {
         <section
           class="dock-capsule"
@@ -97,33 +100,12 @@ const ICONS = [
         </section>
       }
 
-      <section class="dock-capsule dock-capsule-more" [class.active]="moreActive">
-        <button
-          type="button"
-          class="atlas-dock-more"
-          [class.active]="moreActive"
-          (click)="moreOpen.emit($event)"
-          aria-label="查看更多模块"
-          aria-haspopup="dialog"
-          aria-controls="module-map-panel"
-          [attr.aria-expanded]="drawerOpen"
-        >
-          <svg lucideMoreHorizontal size="18" strokeWidth="2.35"></svg>
-          <span class="dock-label" aria-hidden="true">更多</span>
-          <span class="dock-popover more" aria-hidden="true">
-            <b>更多模块</b>
-          </span>
-        </button>
-      </section>
     </nav>
   `
 })
 export class AppDockComponent {
+  @Input({ required: true }) navigation!: NavigationState;
   @Input() groups: DockGroup[] = [];
-  @Input() drawerOpen = false;
-  @Input() moreActive = false;
   @Input({ required: true }) itemIsActive!: (item: DockItem) => boolean;
   @Input({ required: true }) groupIsActive!: (group: DockGroup) => boolean;
-
-  @Output() moreOpen = new EventEmitter<Event>();
 }

@@ -23,6 +23,7 @@ describe('motion primitives', () => {
     const scene = fixture.nativeElement.querySelector('.nexus-scene-background') as HTMLElement;
 
     expect(scene.getAttribute('aria-hidden')).toBe('true');
+    expect(scene.dataset['sceneMode']).toBe('login');
     expect(scene.style.getPropertyValue('--nexus-scene-image')).toContain('/images/receiving-dock-wide.jpg');
   });
 

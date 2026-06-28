@@ -8,8 +8,8 @@ import {
   LucideChevronRight,
   LucideCircleDollarSign,
   LucideLogOut,
+  LucideMonitor,
   LucideMoon,
-  LucideMoreHorizontal,
   LucidePlus,
   LucideRefreshCw,
   LucideSearch,
@@ -26,7 +26,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { AuthService } from '../core/auth.service';
-import { DockItem, ServiceHealth, User } from '../core/models';
+import { ServiceHealth, User } from '../core/models';
+import type { NavigationState } from '../core/navigation';
 import { ThemeService } from '../core/theme.service';
 
 export type QuickCreateAction = {
@@ -50,8 +51,8 @@ const ICONS = [
   LucideChevronRight,
   LucideCircleDollarSign,
   LucideLogOut,
+  LucideMonitor,
   LucideMoon,
-  LucideMoreHorizontal,
   LucidePlus,
   LucideRefreshCw,
   LucideSearch,
@@ -81,11 +82,19 @@ const ICONS = [
 
       <div class="atlas-location">
         <nav class="breadcrumbs" aria-label="当前位置">
-          <a routerLink="/app/overview">控制塔</a>
-          <svg lucideChevronRight size="14" strokeWidth="2.2"></svg>
-          <span>{{ activeDock.group }}</span>
+          @for (crumb of navigation.breadcrumbs; track crumb.key) {
+            @if (crumb.path && crumb.key !== 'item:' + navigation.activeItem.key) {
+              <a [routerLink]="crumb.path">{{ crumb.label }}</a>
+            } @else {
+              <span>{{ crumb.label }}</span>
+            }
+            @if (!$last) {
+              <svg lucideChevronRight size="14" strokeWidth="2.2"></svg>
+            }
+          }
         </nav>
-        <strong>{{ activeDock.label }}</strong>
+        <strong>{{ navigation.activeItem.label }}</strong>
+        <em>{{ navigation.activeGroup.summary }}</em>
       </div>
 
       <div class="atlas-search" role="search">
@@ -184,8 +193,19 @@ const ICONS = [
           <a pButton class="icon-action" [text]="true" [rounded]="true" routerLink="/app/settings" aria-label="全局设置" pTooltip="全局设置">
             <span class="toolbar-icon"><svg lucideSettings2 size="18" strokeWidth="2.2"></svg></span>
           </a>
-          <button pButton type="button" class="icon-action" [text]="true" [rounded]="true" (click)="theme.toggle()" aria-label="切换主题" pTooltip="切换主题">
-            @if (theme.mode() === 'dark-cockpit') {
+          <button
+            pButton
+            type="button"
+            class="icon-action theme-source-action"
+            [text]="true"
+            [rounded]="true"
+            (click)="theme.cycleSource()"
+            [attr.aria-label]="'主题：' + theme.sourceLabel()"
+            [pTooltip]="'主题：' + theme.sourceLabel()"
+          >
+            @if (theme.source() === 'system') {
+              <span class="toolbar-icon"><svg lucideMonitor size="18" strokeWidth="2.2"></svg></span>
+            } @else if (theme.mode() === 'dark-cockpit') {
               <span class="toolbar-icon"><svg lucideMoon size="18" strokeWidth="2.2"></svg></span>
             } @else {
               <span class="toolbar-icon"><svg lucideSun size="18" strokeWidth="2.2"></svg></span>
@@ -223,21 +243,6 @@ const ICONS = [
           >
             <span class="toolbar-icon"><svg lucideLogOut size="17" strokeWidth="2.35"></svg></span>
           </button>
-          <button
-            pButton
-            type="button"
-            class="icon-action"
-            [text]="true"
-            [rounded]="true"
-            (click)="moduleMapOpen.emit($event)"
-            aria-label="更多模块"
-            aria-haspopup="dialog"
-            aria-controls="module-map-panel"
-            [attr.aria-expanded]="moreOpen"
-            pTooltip="更多模块"
-          >
-            <span class="toolbar-icon"><svg lucideMoreHorizontal size="19" strokeWidth="2.3"></svg></span>
-          </button>
         </div>
       </div>
     </header>
@@ -248,12 +253,11 @@ export class AppTopbarComponent {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  @Input({ required: true }) activeDock!: DockItem;
+  @Input({ required: true }) navigation!: NavigationState;
   @Input() searchQuery = '';
   @Input() searchResults: CommandSearchResult[] = [];
   @Input() quickCreateActions: QuickCreateAction[] = [];
   @Input() createOpen = false;
-  @Input() moreOpen = false;
   @Input({ required: true }) serviceHealth!: ServiceHealth;
   @Input() serviceHealthLabel = '';
   @Input() serviceHealthLatencyLabel = '';
@@ -272,7 +276,6 @@ export class AppTopbarComponent {
   @Output() quickCreateClose = new EventEmitter<void>();
   @Output() refresh = new EventEmitter<void>();
   @Output() avatarBroken = new EventEmitter<string | null | undefined>();
-  @Output() moduleMapOpen = new EventEmitter<Event>();
 
   logout(): void {
     this.auth.logout();

@@ -11,19 +11,15 @@ import { DockGroup, DockItem, ManufacturingCommandCenter, ServiceHealth } from '
 import {
   COMPACT_DOCK_KEYS,
   DESKTOP_DOCK_KEYS,
-  dockItemForUrl,
-  dockItemMatchesUrl,
   dockItemsByKeys,
-  DOCK_ITEMS,
   groupedDockItems,
   MOBILE_DOCK_KEYS,
-  MORE_DOCK_ITEMS
+  navigationStateForUrl
 } from '../core/navigation';
 import { ThemeService } from '../core/theme.service';
 import { activeWorkflowStage, workflowForUrl } from '../core/workflow-blueprints';
 import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
 import { AppDockComponent } from './app-dock.component';
-import { AppModuleMapComponent } from './app-module-map.component';
 import { AppTopbarComponent, QuickCreateAction } from './app-topbar.component';
 import { ResourceWorkbenchComponent } from './resource-workbench.component';
 import { SceneBackgroundComponent } from '../motion';
@@ -66,26 +62,24 @@ const COMMAND_SUGGESTIONS = [
     FormsModule,
     RouterOutlet,
     AppDockComponent,
-    AppModuleMapComponent,
     AppTopbarComponent,
     ResourceWorkbenchComponent,
     SceneBackgroundComponent,
     WorkflowCommandStripComponent
   ],
   template: `
-    <div class="atlas-shell" [class.drawer-open]="moreOpen" [class.route-overview]="isOverviewRoute()">
-      <nexus-scene-background image="/images/automated-production-line-wide.jpg"></nexus-scene-background>
+    <div class="atlas-shell" [class.route-overview]="isOverviewRoute()">
+      <nexus-scene-background image="/images/automated-production-line-wide.jpg" mode="default"></nexus-scene-background>
       <a class="skip-main-link" href="#main-content">跳到主内容</a>
       @if (routeLoading()) {
         <div class="route-loading-bar" aria-hidden="true"></div>
       }
       <app-topbar
-        [activeDock]="activeDock()"
+        [navigation]="navigationState()"
         [searchQuery]="searchQuery"
         [searchResults]="searchResults()"
         [quickCreateActions]="quickCreateActions"
         [createOpen]="createOpen"
-        [moreOpen]="moreOpen"
         [serviceHealth]="serviceHealth()"
         [serviceHealthLabel]="serviceHealthLabel()"
         [serviceHealthLatencyLabel]="serviceHealthLatencyLabel()"
@@ -102,22 +96,20 @@ const COMMAND_SUGGESTIONS = [
         (quickCreateClose)="closeQuickCreate()"
         (refresh)="refreshShell()"
         (avatarBroken)="markAvatarBroken($event)"
-        (moduleMapOpen)="openModuleMap($event)"
       />
 
       <div class="atlas-workbench">
         <app-dock
+          [navigation]="navigationState()"
           [groups]="visibleDockGroups()"
-          [drawerOpen]="moreOpen"
-          [moreActive]="moreIsActive()"
           [itemIsActive]="itemIsActive"
           [groupIsActive]="groupIsActive"
-          (moreOpen)="openModuleMap($event)"
         />
 
         <main class="content-stage atlas-stage" id="main-content">
           @if (!isOverviewRoute()) {
             <app-workflow-command-strip
+              [navigation]="navigationState()"
               [workflow]="currentWorkflow()"
               [activeStage]="activeWorkflowStep()"
               [signals]="workflowSignals()"
@@ -133,20 +125,6 @@ const COMMAND_SUGGESTIONS = [
           }
         </main>
       </div>
-
-      @if (moreOpen) {
-        <app-module-map
-          [currentWorkflow]="currentWorkflow()"
-          [activeWorkflowStep]="activeWorkflowStep()"
-          [shellHealth]="shellHealth()"
-          [serviceHealthLabel]="serviceHealthLabel()"
-          [serviceHealthLatencyLabel]="serviceHealthLatencyLabel()"
-          [riskCount]="commandData().risks.length"
-          [groups]="moduleMapGroups()"
-          [itemIsActive]="itemIsActive"
-          (close)="closeModuleMap()"
-        />
-      }
     </div>
   `
 })
@@ -159,12 +137,10 @@ export class AppShellComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly currentUrl = signal(this.router.url || '/app/overview');
-  protected moreOpen = false;
   protected createOpen = false;
   protected searchQuery = '';
   protected readonly searchResults = signal<Array<{ type: string; label: string; description?: string; path: string }>>([]);
   protected readonly quickCreateActions = QUICK_CREATE_ACTIONS;
-  protected readonly primaryDockItems = DOCK_ITEMS;
   protected readonly desktopDockItems = dockItemsByKeys(DESKTOP_DOCK_KEYS);
   protected readonly compactDockItems = dockItemsByKeys(COMPACT_DOCK_KEYS);
   protected readonly mobileDockItems = dockItemsByKeys(MOBILE_DOCK_KEYS);
@@ -173,7 +149,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
   private readonly searchInput$ = new Subject<string>();
   protected readonly commandData = signal<ManufacturingCommandCenter>(EMPTY_COMMAND_CENTER);
   protected readonly serviceHealth = signal<ServiceHealth>(EMPTY_SERVICE_HEALTH);
-  protected readonly activeDock = computed<DockItem>(() => dockItemForUrl(this.currentUrl()));
+  protected readonly navigationState = computed(() => navigationStateForUrl(this.currentUrl()));
   protected readonly isOverviewRoute = computed(() => this.currentUrl().startsWith('/app/overview'));
   protected readonly dockDensity = signal<'desktop' | 'compact' | 'mobile'>('desktop');
   protected readonly brokenAvatarUrl = signal('');
@@ -193,20 +169,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
   protected readonly workflowSignals = computed(() => buildWorkflowSignals(this.commandData(), this.currentWorkflow()));
   protected readonly nextWorkflowSteps = computed(() => buildNextWorkflowSteps(this.currentWorkflow(), this.activeWorkflowStep()));
   protected readonly shiftHandoffActions = computed(() => buildShiftHandoffActions(this.currentWorkflow(), this.workflowSignals(), this.nextWorkflowSteps()));
-  protected readonly moduleMapGroups = computed(() => {
-    const all = [
-      ...DOCK_ITEMS,
-      ...MORE_DOCK_ITEMS
-    ];
-    const seen = new Set<string>();
-    return groupedDockItems(all.filter(item => {
-      if (seen.has(item.key)) {
-        return false;
-      }
-      seen.add(item.key);
-      return true;
-    }));
-  });
   private commandDataLoadedAt = 0;
   private commandDataLoading = false;
   private serviceHealthLoadedAt = 0;
@@ -249,7 +211,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
       filter(event => event instanceof NavigationEnd),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(event => {
-      this.moreOpen = false;
       this.createOpen = false;
       this.clearSearch();
       this.currentUrl.set((event as NavigationEnd).urlAfterRedirects);
@@ -280,7 +241,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   protected closeTransientPanels(): void {
-    this.moreOpen = false;
     this.createOpen = false;
     this.clearSearch();
   }
@@ -292,13 +252,9 @@ export class AppShellComponent implements OnInit, OnDestroy {
       return;
     }
     const insideCreateSurface = Boolean(target.closest('.create-action, .quick-create-popover'));
-    const insideModuleSurface = Boolean(target.closest('.module-panel, button[aria-label="更多模块"], .atlas-dock-more'));
     const insideSearchSurface = Boolean(target.closest('.atlas-search, .atlas-search-popover'));
     if (!insideCreateSurface) {
       this.createOpen = false;
-    }
-    if (!insideModuleSurface && !target.closest('.module-panel-backdrop')) {
-      this.moreOpen = false;
     }
     if (!insideSearchSurface) {
       this.clearSearch();
@@ -309,25 +265,12 @@ export class AppShellComponent implements OnInit, OnDestroy {
     event?.stopPropagation();
     this.createOpen = !this.createOpen;
     if (this.createOpen) {
-      this.moreOpen = false;
       this.focusAfterRender('.quick-create-popover a');
     }
   }
 
   closeQuickCreate(): void {
     this.createOpen = false;
-  }
-
-  openModuleMap(event?: Event): void {
-    event?.stopPropagation();
-    this.createOpen = false;
-    this.clearSearch();
-    this.moreOpen = true;
-    this.focusAfterRender('.module-panel button[aria-label="关闭更多模块"]');
-  }
-
-  closeModuleMap(): void {
-    this.moreOpen = false;
   }
 
   runSearch(): void {
@@ -379,16 +322,11 @@ export class AppShellComponent implements OnInit, OnDestroy {
   }
 
   protected readonly itemIsActive = (item: DockItem): boolean => {
-    return dockItemMatchesUrl(item, this.currentUrl());
+    return item.key === this.navigationState().activeItem.key;
   };
 
-  moreIsActive(): boolean {
-    const visibleKeys = new Set(this.visibleDockItems().map(item => item.key));
-    return !visibleKeys.has(this.activeDock().key);
-  }
-
   protected readonly groupIsActive = (group: DockGroup): boolean => {
-    return group.items.some(item => this.itemIsActive(item));
+    return group.key === this.navigationState().activeGroup.key;
   };
 
   private focusAfterRender(selector: string): void {
@@ -457,7 +395,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   private readonly onPointerMove = (event: PointerEvent): void => {
     const target = event.target instanceof Element
-      ? event.target.closest<HTMLElement>('[data-spotlight-surface], .atlas-panel, .context-block, .dock-item, .atlas-dock-more, .atlas-record-row, .business-data-row, .procurement-task-card, .shift-stage-card, .shift-action-queue a, .shift-event-timeline a, .module-card-link, .page-evidence-grid a, .field-evidence-grid a, .workflow-signal-list a, .shift-handoff-list a, .context-action')
+      ? event.target.closest<HTMLElement>('[data-spotlight-surface], .atlas-panel, .context-block, .dock-item, .atlas-record-row, .business-data-row, .procurement-task-card, .shift-stage-card, .shift-action-queue a, .shift-event-timeline a, .module-card-link, .page-evidence-grid a, .field-evidence-grid a, .workflow-signal-list a, .shift-handoff-list a, .context-action')
       : null;
     if (!target) {
       this.clearSpotlight();

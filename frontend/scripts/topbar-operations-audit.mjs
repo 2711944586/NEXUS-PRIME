@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { expectedAuditApiBaseUrl } from './audit-config.mjs';
+import { hasExpectedAuditApiBaseUrl } from './audit-config.mjs';
 
 const baseUrl = process.env.NEXUS_AUDIT_BASE_URL || 'http://127.0.0.1:4200';
 const outDir = path.resolve(process.cwd(), '..', 'output', 'playwright', `topbar-operations-audit-${Date.now()}`);
@@ -368,7 +368,7 @@ async function auditNavigation(page, target, viewportName) {
 }
 
 async function collectTopbarBaseline(page, viewportName) {
-  return page.evaluate(({ name, expectedApiBaseUrl }) => {
+  const baseline = await page.evaluate(name => {
     const visible = element => {
       const box = element.getBoundingClientRect();
       if (box.width <= 0 || box.height <= 0) {
@@ -413,6 +413,9 @@ async function collectTopbarBaseline(page, viewportName) {
         right: Math.round(box.right),
         width: Math.round(box.width)
       }));
+    const hasExpectedActions = name === 'desktop'
+      ? visibleActionCount >= 9
+      : visibleActionCount >= 7;
     const requiredDesktop = name === 'desktop'
       ? isVisible('.atlas-search') && isVisible('.service-health-chip') && isVisible('a[aria-label="打开经营分析台"]')
       : true;
@@ -422,11 +425,11 @@ async function collectTopbarBaseline(page, viewportName) {
       passed:
         Boolean(topbar && visible(topbar)) &&
         requiredDesktop &&
-        visibleActionCount >= (name === 'desktop' ? 9 : 6) &&
+        hasExpectedActions &&
+        !isVisible('button[aria-label="更多模块"]') &&
         document.documentElement.scrollWidth - window.innerWidth <= 3 &&
         overflowingNoWrapText.length === 0 &&
-        badRects.length === 0 &&
-        window.NEXUS_RUNTIME_CONFIG?.apiBaseUrl === expectedApiBaseUrl,
+        badRects.length === 0,
       topbarRect: topbarRect
         ? {
             x: Math.round(topbarRect.x),
@@ -455,7 +458,13 @@ async function collectTopbarBaseline(page, viewportName) {
       badRects,
       apiBaseUrl: window.NEXUS_RUNTIME_CONFIG?.apiBaseUrl ?? null
     };
-  }, { name: viewportName, expectedApiBaseUrl: expectedAuditApiBaseUrl });
+  }, viewportName);
+
+  return {
+    ...baseline,
+    passed: baseline.passed && hasExpectedAuditApiBaseUrl(baseline.apiBaseUrl),
+    apiBaseOk: hasExpectedAuditApiBaseUrl(baseline.apiBaseUrl)
+  };
 }
 
 async function collectPopoverLinks(page, selector) {
@@ -565,7 +574,13 @@ async function login(page) {
   await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
-  await page.locator('button[type="submit"]').first().click();
+  const submit = page.locator('button[type="submit"]').first();
+  await submit.waitFor({ state: 'visible', timeout: 15000 });
+  await page.waitForFunction(() => {
+    const button = document.querySelector('button[type="submit"]');
+    return button && !button.hasAttribute('disabled');
+  }, null, { timeout: 15000 });
+  await submit.click();
   await page.waitForURL('**/app/**', { timeout: 15000 });
 }
 

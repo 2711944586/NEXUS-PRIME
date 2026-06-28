@@ -2481,11 +2481,13 @@ def test_operations_exceptions_preferences_and_audit(client):
     prefs = client.put('/api/v1/me/preferences', headers=headers, json={
         'default_workspace': '供应链',
         'command_history': ['inventory.products'],
+        'theme_source': 'system',
         'theme': 'light',
         'unsafe': True
     })
     assert prefs.status_code == 200
     assert prefs.json['data']['default_workspace'] == '供应链'
+    assert prefs.json['data']['theme_source'] == 'system'
     assert 'unsafe' not in prefs.json['data']
 
     transition_source = client.post('/api/v1/sales/orders', headers=headers, json={

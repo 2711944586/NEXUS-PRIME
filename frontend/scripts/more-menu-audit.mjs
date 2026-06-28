@@ -49,8 +49,8 @@ for (const viewport of viewports) {
   await gotoApp(page, '/app/overview');
 
   const quickCreate = await safeAudit('quickCreate', () => auditQuickCreate(page, viewport, screenshots));
-  const topbarMore = await safeAudit('topbarMore', () => auditModulePanel(page, viewport, 'button[aria-label="更多模块"]', 'topbar', screenshots));
-  const dockMore = await safeAudit('dockMore', () => auditModulePanel(page, viewport, '.atlas-dock-more', 'dock', screenshots));
+  const topbarMore = await safeAudit('topbarMore', () => auditRemovedModuleEntry(page, 'button[aria-label="更多模块"]', 'topbar'));
+  const dockMore = await safeAudit('dockMore', () => auditRemovedModuleEntry(page, '.atlas-dock-more', 'dock'));
   const abortedRequests = requestFailures.filter(item => item.error.includes('ERR_ABORTED'));
   const failedRequests = requestFailures.filter(item => !item.error.includes('ERR_ABORTED'));
 
@@ -77,7 +77,7 @@ const failed = results.filter(result =>
   result.badResponses.length ||
   !result.quickCreate.passed ||
   !result.topbarMore.passed ||
-  (!result.dockMore.passed && !(result.viewport === 'mobile' && result.dockMore.skipped))
+  !result.dockMore.passed
 );
 
 const report = {
@@ -241,6 +241,40 @@ async function auditModulePanel(page, viewport, selector, source, screenshots) {
     closedByBackdropClick,
     expectedPath,
     navigatedPath
+  };
+}
+
+async function auditRemovedModuleEntry(page, selector, source) {
+  await gotoApp(page, '/app/overview');
+  const state = await page.evaluate(triggerSelector => {
+    const elements = [...document.querySelectorAll(triggerSelector)];
+    const visible = element => {
+      const box = element.getBoundingClientRect();
+      if (box.width <= 0 || box.height <= 0) {
+        return false;
+      }
+      for (let current = element; current && current !== document.documentElement; current = current.parentElement) {
+        const style = getComputedStyle(current);
+        if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) {
+          return false;
+        }
+      }
+      return true;
+    };
+    return {
+      count: elements.length,
+      visibleCount: elements.filter(visible).length
+    };
+  }, selector);
+
+  return {
+    key: source,
+    source,
+    skipped: true,
+    passed: state.visibleCount === 0,
+    reason: 'module-entry-removed-by-design',
+    triggerCount: state.count,
+    visibleTriggerCount: state.visibleCount
   };
 }
 
@@ -499,6 +533,12 @@ async function login(page) {
   await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'networkidle' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
-  await page.locator('button[type="submit"]').first().click();
+  const submit = page.locator('button[type="submit"]').first();
+  await submit.waitFor({ state: 'visible', timeout: 15000 });
+  await page.waitForFunction(() => {
+    const button = document.querySelector('button[type="submit"]');
+    return button && !button.hasAttribute('disabled');
+  }, null, { timeout: 15000 });
+  await submit.click();
   await page.waitForURL('**/app/**', { timeout: 15000 });
 }

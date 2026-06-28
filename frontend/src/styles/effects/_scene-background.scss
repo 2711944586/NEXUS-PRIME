@@ -65,6 +65,39 @@
     filter: saturate(.92) contrast(1.02) brightness(.86);
   }
 
+  .nexus-scene-background[data-scene-mode="default"] {
+    background: color-mix(in srgb, var(--bg) 88%, #020617);
+  }
+
+  .nexus-scene-background[data-scene-mode="default"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--bg) 88%, transparent), color-mix(in srgb, var(--bg) 58%, transparent) 48%, color-mix(in srgb, var(--bg) 92%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 82%, transparent), color-mix(in srgb, var(--bg) 96%, transparent) 78%),
+      radial-gradient(circle at 18% 10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 24rem);
+  }
+
+  .nexus-scene-background[data-scene-mode="default"] .nexus-scene-background__image {
+    filter: saturate(.72) contrast(1.08) brightness(.5) blur(8px);
+    transform: scale(1.055);
+  }
+
+  .nexus-scene-background[data-scene-mode="default"] .nexus-scene-background__aurora {
+    opacity: .24;
+  }
+
+  .nexus-scene-background[data-scene-mode="default"] .nexus-scene-background__grid {
+    opacity: .18;
+  }
+
+  .nexus-scene-background[data-scene-mode="default"] .nexus-scene-background__scan {
+    opacity: .1;
+  }
+
   @keyframes scene-background-drift {
     from {
       transform: scale(1.018) translate3d(-.35rem, -.25rem, 0);

@@ -53,7 +53,7 @@ def api_update_profile():
     prefs = payload.get('preferences')
     if isinstance(prefs, dict):
         current = user.preferences or {}
-        for key in ('theme', 'density', 'default_workspace'):
+        for key in ('theme', 'theme_source', 'density', 'default_workspace'):
             if key in prefs:
                 current[key] = prefs[key]
         user.preferences = current

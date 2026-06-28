@@ -138,6 +138,19 @@
     white-space: nowrap;
   }
 
+  .atlas-location > em {
+    display: block;
+    overflow: hidden;
+    max-width: 34ch;
+    color: var(--muted);
+    font-size: .68rem;
+    font-style: normal;
+    font-weight: 720;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .atlas-search {
     position: relative;
     min-width: 0;
@@ -373,6 +386,10 @@
     place-items: center;
   }
 
+  .theme-source-action {
+    flex: 0 0 38px;
+  }
+
   .service-health-chip,
   .atlas-clock {
     flex: 0 0 auto;
@@ -450,6 +467,34 @@
   .dock-grouped-island {
     flex-wrap: nowrap;
     align-items: stretch;
+  }
+
+  .dock-current-domain {
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    flex: 0 0 auto;
+    min-width: 96px;
+    min-height: 60px;
+    padding: 9px 12px;
+    border: 1px solid color-mix(in srgb, var(--dock-group-tone, var(--accent)) 24%, var(--line));
+    border-radius: var(--radius-md);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--dock-group-tone, var(--accent)) 12%, var(--surface-strong)), color-mix(in srgb, var(--surface-muted) 70%, transparent));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
+  }
+
+  .dock-current-domain span {
+    color: color-mix(in srgb, var(--dock-group-tone, var(--accent)) 72%, var(--muted-strong));
+    font-size: .64rem;
+    font-weight: 860;
+  }
+
+  .dock-current-domain strong {
+    color: var(--ink-strong);
+    font-size: .82rem;
+    line-height: 1.1;
+    white-space: nowrap;
   }
 
   .dock-capsule {
@@ -871,6 +916,52 @@
   .workflow-command-health.danger {
     border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
     background: color-mix(in srgb, var(--danger) 5%, var(--surface-muted));
+  }
+
+  .workflow-scope-rail {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .workflow-scope-rail a {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    min-height: 54px;
+    padding: 9px 10px;
+    border: 1px solid color-mix(in srgb, var(--dock-tone, var(--accent)) 14%, var(--line));
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    background: color-mix(in srgb, var(--surface-muted) 58%, transparent);
+    transition:
+      transform var(--motion-fast) var(--ease-standard),
+      border-color var(--motion-fast) var(--ease-standard),
+      background var(--motion-fast) var(--ease-standard);
+  }
+
+  .workflow-scope-rail a:hover,
+  .workflow-scope-rail a.active {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--dock-tone, var(--accent)) 36%, var(--line));
+    background: color-mix(in srgb, var(--dock-tone, var(--accent)) 10%, var(--surface-strong));
+  }
+
+  .workflow-scope-rail span {
+    color: color-mix(in srgb, var(--dock-tone, var(--accent)) 72%, var(--muted-strong));
+    font-size: .68rem;
+    font-weight: 860;
+    line-height: 1.2;
+  }
+
+  .workflow-scope-rail strong {
+    overflow: hidden;
+    color: var(--ink-strong);
+    font-size: .78rem;
+    line-height: 1.18;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .workflow-command-steps {
@@ -1447,6 +1538,15 @@
       color-mix(in srgb, var(--surface-muted) 66%, transparent);
   }
 
+  .module-card-group.active-group {
+    border-color: color-mix(in srgb, var(--dock-group-tone, var(--accent)) 34%, var(--line));
+    border-left-color: color-mix(in srgb, var(--dock-group-tone, var(--accent)) 88%, var(--line));
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--dock-group-tone, var(--accent)) 15%, transparent), transparent 56%),
+      color-mix(in srgb, var(--surface-strong) 74%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dock-group-tone, var(--accent)) 10%, transparent);
+  }
+
   .module-library-head {
     padding-inline: 2px;
   }
@@ -1771,6 +1871,11 @@
       display: none;
     }
 
+    .dock-current-domain {
+      min-width: 72px;
+      padding-inline: 9px;
+    }
+
     .atlas-context-panel {
       position: static;
     }
@@ -1788,11 +1893,16 @@
     }
 
     .workflow-command-primary,
+    .workflow-scope-rail,
     .workflow-command-bottom {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .dock-label {
+      display: none;
+    }
+
+    .dock-current-domain span {
       display: none;
     }
   }
@@ -1882,7 +1992,7 @@
     }
 
     .sync-action,
-    .atlas-actions button[aria-label="切换主题"],
+    .theme-source-action,
     .atlas-actions button[aria-label="退出登录"] {
       display: none;
     }
@@ -1910,6 +2020,17 @@
 
     .dock-capsule-label {
       display: none;
+    }
+
+    .dock-current-domain {
+      min-width: 48px;
+      min-height: 46px;
+      padding: 8px;
+      place-items: center;
+    }
+
+    .dock-current-domain strong {
+      font-size: .72rem;
     }
 
     .dock-item,
@@ -1943,6 +2064,10 @@
 
     .workflow-command-steps a {
       min-height: 54px;
+    }
+
+    .workflow-scope-rail {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .workflow-command-signals {

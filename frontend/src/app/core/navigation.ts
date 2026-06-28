@@ -1,9 +1,33 @@
 import { DockGroup, DockItem } from './models';
 
+export interface DockGroupMeta {
+  key: DockItem['dockGroup'];
+  label: string;
+  tone: string;
+  summary: string;
+}
+
+export interface NavigationBreadcrumb {
+  key: string;
+  label: string;
+  path?: string;
+}
+
+export interface NavigationState {
+  url: string;
+  activeItem: DockItem;
+  activeGroup: DockGroupMeta;
+  siblings: DockItem[];
+  breadcrumbs: NavigationBreadcrumb[];
+  inPrimaryDock: boolean;
+}
+
 export const DESKTOP_DOCK_KEYS = [
   'overview',
   'materials',
+  'flow',
   'procurement',
+  'quality-inspection',
   'fulfillment',
   'receivables',
   'reports'
@@ -12,12 +36,36 @@ export const DESKTOP_DOCK_KEYS = [
 export const COMPACT_DOCK_KEYS = [
   'overview',
   'materials',
+  'flow',
   'procurement',
+  'quality-inspection',
   'fulfillment',
+  'receivables',
   'reports'
 ] as const;
 
-export const MOBILE_DOCK_KEYS = ['overview', 'materials', 'procurement', 'fulfillment', 'reports'] as const;
+export const MOBILE_DOCK_KEYS = [
+  'overview',
+  'materials',
+  'flow',
+  'procurement',
+  'quality-inspection',
+  'fulfillment',
+  'receivables',
+  'reports'
+] as const;
+
+export const DOCK_GROUP_ORDER: DockItem['dockGroup'][] = [
+  'operations',
+  'warehouse',
+  'supply',
+  'fulfillment',
+  'finance',
+  'insight',
+  'collaboration',
+  'security',
+  'personal'
+];
 
 export const DOCK_ITEMS: DockItem[] = [
   {
@@ -487,52 +535,98 @@ export const MORE_DOCK_ITEMS: DockItem[] = [
   }
 ];
 
-export const DOCK_GROUP_LABELS: Record<DockItem['dockGroup'], { label: string; tone: string }> = {
-  operations: { label: '运营', tone: '#62d8cb' },
-  warehouse: { label: '仓配', tone: '#9aa8ff' },
-  supply: { label: '供应', tone: '#f0b76a' },
-  fulfillment: { label: '履约', tone: '#8fd3ff' },
-  finance: { label: '财务', tone: '#ff8fa3' },
-  insight: { label: '分析', tone: '#c5a8ff' },
-  security: { label: '安全', tone: '#8da2ff' },
-  collaboration: { label: '协作', tone: '#ffd166' },
-  personal: { label: '个人', tone: '#9aa8ff' }
+export const DOCK_GROUP_LABELS: Record<DockItem['dockGroup'], DockGroupMeta> = {
+  operations: { key: 'operations', label: '运营', tone: '#62d8cb', summary: '经营指标、异常任务、产能和设备状态' },
+  warehouse: { key: 'warehouse', label: '仓配', tone: '#9aa8ff', summary: '物料水位、库存流向、盘点和扫码任务' },
+  supply: { key: 'supply', label: '供应', tone: '#f0b76a', summary: '补货、采购、供应商绩效与来料质量' },
+  fulfillment: { key: 'fulfillment', label: '履约', tone: '#8fd3ff', summary: '销售订单、客户、发货调度与交付服务' },
+  finance: { key: 'finance', label: '财务', tone: '#ff8fa3', summary: '应收、信用、合同回款和预算成本' },
+  insight: { key: 'insight', label: '分析', tone: '#c5a8ff', summary: '报表、AI 分析、规则、数据质量和接口监控' },
+  collaboration: { key: 'collaboration', label: '协作', tone: '#ffd166', summary: '通知、文件、公告知识和服务工单' },
+  security: { key: 'security', label: '安全', tone: '#8da2ff', summary: '用户权限、审计追溯和系统边界' },
+  personal: { key: 'personal', label: '个人', tone: '#9aa8ff', summary: '个人工作台和全局偏好设置' }
 };
 
+export const ALL_DOCK_ITEMS: DockItem[] = [...DOCK_ITEMS, ...MORE_DOCK_ITEMS];
+
 export function groupedDockItems(items: DockItem[] = DOCK_ITEMS): DockGroup[] {
-  const groups: DockGroup[] = [];
+  const itemsByGroup = new Map<DockItem['dockGroup'], DockItem[]>();
   for (const item of items) {
-    let group = groups.find(entry => entry.key === item.dockGroup);
-    if (!group) {
-      const meta = DOCK_GROUP_LABELS[item.dockGroup];
-      group = { key: item.dockGroup, label: meta.label, tone: meta.tone, items: [] };
-      groups.push(group);
-    }
-    group.items.push(item);
+    const groupItems = itemsByGroup.get(item.dockGroup) ?? [];
+    groupItems.push(item);
+    itemsByGroup.set(item.dockGroup, groupItems);
   }
-  return groups;
+  return DOCK_GROUP_ORDER
+    .filter(key => itemsByGroup.has(key))
+    .map(key => {
+      const meta = DOCK_GROUP_LABELS[key];
+      return { key, label: meta.label, tone: meta.tone, summary: meta.summary, items: itemsByGroup.get(key) ?? [] };
+    });
 }
 
 export function dockItemsByKeys(keys: readonly string[]): DockItem[] {
   const order = new Map(keys.map((key, index) => [key, index]));
-  return DOCK_ITEMS
+  return ALL_DOCK_ITEMS
     .filter(item => order.has(item.key))
     .sort((a, b) => (order.get(a.key) ?? 0) - (order.get(b.key) ?? 0));
 }
 
 export function dockItemForUrl(url: string): DockItem {
-  const all = [...DOCK_ITEMS, ...MORE_DOCK_ITEMS];
-  const exact = all.find(item => item.path === url || url.startsWith(`${item.path}/`));
-  if (exact) {
-    return exact;
-  }
-  return [...all].sort((a, b) => longestMatchLength(b) - longestMatchLength(a)).find(item => dockItemMatchesUrl(item, url)) ?? DOCK_ITEMS[0];
+  return navigationStateForUrl(url).activeItem;
 }
 
 export function dockItemMatchesUrl(item: DockItem, url: string): boolean {
-  return [item.path, ...(item.activePaths ?? [])].some(path => url === path || url.startsWith(`${path}/`));
+  return matchingScore(item, normalizeNavigationUrl(url)) > 0;
 }
 
-function longestMatchLength(item: DockItem): number {
-  return Math.max(item.path.length, ...(item.activePaths ?? []).map(path => path.length));
+export function navigationStateForUrl(url: string): NavigationState {
+  const normalizedUrl = normalizeNavigationUrl(url);
+  const activeItem = resolveActiveItem(normalizedUrl);
+  const activeGroup = DOCK_GROUP_LABELS[activeItem.dockGroup];
+  const siblings = ALL_DOCK_ITEMS.filter(item => item.dockGroup === activeItem.dockGroup);
+  const inPrimaryDock = DOCK_ITEMS.some(item => item.key === activeItem.key);
+
+  return {
+    url: normalizedUrl,
+    activeItem,
+    activeGroup,
+    siblings,
+    inPrimaryDock,
+    breadcrumbs: [
+      { key: 'overview', label: '控制塔', path: '/app/overview' },
+      { key: `group:${activeGroup.key}`, label: activeGroup.label, path: siblings[0]?.path },
+      { key: `item:${activeItem.key}`, label: activeItem.label, path: activeItem.path }
+    ]
+  };
+}
+
+export function normalizeNavigationUrl(url: string): string {
+  const [withoutHash] = url.split('#');
+  const [withoutQuery] = withoutHash.split('?');
+  const normalized = withoutQuery.replace(/\/+$/, '');
+  return normalized || '/app/overview';
+}
+
+function resolveActiveItem(url: string): DockItem {
+  const ranked = ALL_DOCK_ITEMS
+    .map(item => ({ item, score: matchingScore(item, url) }))
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return ranked[0]?.item ?? DOCK_ITEMS[0];
+}
+
+function matchingScore(item: DockItem, url: string): number {
+  const directScore = pathMatchScore(item.path, url, 20);
+  const aliasScore = Math.max(0, ...(item.activePaths ?? []).map(path => pathMatchScore(path, url, 10)));
+  return Math.max(directScore, aliasScore);
+}
+
+function pathMatchScore(path: string, url: string, weight: number): number {
+  if (url === path) {
+    return path.length * 10 + weight + 5;
+  }
+  if (url.startsWith(`${path}/`)) {
+    return path.length * 10 + weight;
+  }
+  return 0;
 }

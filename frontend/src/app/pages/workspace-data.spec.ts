@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DOCK_GROUP_LABELS, DOCK_ITEMS, MORE_DOCK_ITEMS, dockItemForUrl, groupedDockItems } from '../core/navigation';
+import { DOCK_GROUP_LABELS, DOCK_ITEMS, MORE_DOCK_ITEMS, dockItemForUrl, groupedDockItems, navigationStateForUrl } from '../core/navigation';
 import { DETAIL_CONFIGS, PAGE_DETAIL_PATH } from './detail-data';
 import { buildBoardLanes, WORKSPACES } from './workspace-data';
 
@@ -52,6 +52,23 @@ describe('manufacturing workspace data', () => {
     expect(dockItemForUrl('/app/system/audit').key).toBe('audit');
     expect(dockItemForUrl('/app/ai').key).toBe('ai');
     expect(dockItemForUrl('/app/notifications').key).toBe('notifications');
+  });
+
+  it('resolves one canonical navigation state for dock, topbar and module map', () => {
+    const credits = navigationStateForUrl('/app/finance/credits/2?tab=limit');
+    expect(credits.activeItem.key).toBe('credits');
+    expect(credits.activeGroup.key).toBe('finance');
+    expect(credits.breadcrumbs.map(crumb => crumb.label)).toEqual(['控制塔', '财务', '信用额度中心']);
+    expect(credits.siblings.some(item => item.key === 'receivables')).toBe(true);
+
+    const audit = navigationStateForUrl('/app/system/audit');
+    expect(audit.activeItem.key).toBe('audit');
+    expect(audit.activeGroup.key).toBe('security');
+    expect(audit.breadcrumbs.map(crumb => crumb.label)).toEqual(['控制塔', '安全', '审计日志中心']);
+
+    const content = navigationStateForUrl('/app/content/articles/9');
+    expect(content.activeItem.key).toBe('content');
+    expect(content.activeGroup.key).toBe('collaboration');
   });
 
   it('defines richer visual contracts for every workspace', () => {

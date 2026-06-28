@@ -3,6 +3,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProgressBarModule } from 'primeng/progressbar';
 
+import type { NavigationState } from '../core/navigation';
 import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
 import type { ShiftHandoffAction, WorkflowSignal } from './app-shell.models';
 
@@ -14,9 +15,9 @@ import type { ShiftHandoffAction, WorkflowSignal } from './app-shell.models';
     <section class="workflow-command-strip" aria-label="当前页面业务流程指挥条">
       <div class="workflow-command-primary">
         <div class="workflow-command-copy">
-          <span>当前闭环</span>
-          <strong>{{ workflow.title }}</strong>
-          <p>{{ workflow.summary }}</p>
+          <span>{{ navigation.activeGroup.label }} / {{ navigation.activeItem.shortLabel }}</span>
+          <strong>{{ navigation.activeItem.label }}</strong>
+          <p>{{ navigation.activeGroup.summary }}</p>
         </div>
         <div class="workflow-command-health" [class.warning]="riskCount > 0" [class.danger]="riskCount > 4">
           <span>链路健康</span>
@@ -41,49 +42,43 @@ import type { ShiftHandoffAction, WorkflowSignal } from './app-shell.models';
         }
       </nav>
 
-      <div class="workflow-command-bottom">
-        <div class="workflow-command-signals" aria-label="执行信号">
-          @for (signal of signals; track signal.label) {
-            <a
-              [routerLink]="signal.path"
-              [class.warning]="signal.tone === 'warning'"
-              [class.danger]="signal.tone === 'danger'"
-              [class.success]="signal.tone === 'success'"
-              [class.info]="signal.tone === 'info'"
-            >
-              <span>{{ signal.label }}</span>
-              <strong>{{ signal.value }}</strong>
-              <em>{{ signal.caption }}</em>
-            </a>
-          }
-        </div>
-
-        <div class="workflow-command-actions" aria-label="下一步动作">
-          @for (action of handoffActions.slice(0, 2); track action.path + action.label) {
-            <a
-              [routerLink]="action.path"
-              [class.warning]="action.tone === 'warning'"
-              [class.danger]="action.tone === 'danger'"
-              [class.success]="action.tone === 'success'"
-            >
-              <span>{{ action.priority }} / {{ action.owner }}</span>
-              <strong>{{ action.label }}</strong>
-              <em>{{ action.metric }} / {{ action.due }}</em>
-            </a>
-          }
-          @for (stage of nextStages.slice(0, 1); track stage.key) {
-            <a class="workflow-next-link" [routerLink]="stage.path">
-              <span>下一节点</span>
-              <strong>{{ stage.label }}</strong>
-              <em>{{ stage.metric }}</em>
-            </a>
-          }
-        </div>
+      <div class="workflow-command-summary" aria-label="当前链路状态">
+        @for (signal of signals.slice(0, 3); track signal.label) {
+          <a
+            [routerLink]="signal.path"
+            [class.warning]="signal.tone === 'warning'"
+            [class.danger]="signal.tone === 'danger'"
+            [class.success]="signal.tone === 'success'"
+            [class.info]="signal.tone === 'info'"
+          >
+            <span>{{ signal.label }}</span>
+            <strong>{{ signal.value }}</strong>
+          </a>
+        }
+        @for (action of handoffActions.slice(0, 1); track action.path + action.label) {
+          <a
+            class="workflow-handoff-link"
+            [routerLink]="action.path"
+            [class.warning]="action.tone === 'warning'"
+            [class.danger]="action.tone === 'danger'"
+            [class.success]="action.tone === 'success'"
+          >
+            <span>{{ action.owner }} / {{ action.due }}</span>
+            <strong>{{ action.label }}</strong>
+          </a>
+        }
+        @for (stage of nextStages.slice(0, 1); track stage.key) {
+          <a class="workflow-next-link" [routerLink]="stage.path">
+            <span>下一节点</span>
+            <strong>{{ stage.label }}</strong>
+          </a>
+        }
       </div>
     </section>
   `
 })
 export class WorkflowCommandStripComponent {
+  @Input({ required: true }) navigation!: NavigationState;
   @Input({ required: true }) workflow!: WorkflowBlueprint;
   @Input({ required: true }) activeStage!: WorkflowStage;
   @Input() signals: WorkflowSignal[] = [];

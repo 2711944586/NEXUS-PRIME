@@ -10,7 +10,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
-import { AiSettings, DataRecord, DeploymentReadiness, DeploymentReadinessCheck, ThemeMode, UserPreferences } from '../core/models';
+import { AiSettings, DataRecord, DeploymentReadiness, DeploymentReadinessCheck, ThemeSource, UserPreferences } from '../core/models';
 import { ThemeService } from '../core/theme.service';
 import { COMMAND_CENTER_PHOTOS } from '../core/visual-assets';
 
@@ -127,7 +127,7 @@ interface DeploymentCommand {
         <div class="settings-status-board">
           <article>
             <span>主题</span>
-            <strong>{{ preferenceDraft.theme === 'dark-cockpit' ? '深色' : '亮色' }}</strong>
+            <strong>{{ themeSourceLabel(preferenceDraft.theme_source) }}</strong>
             <em>{{ preferenceDraft.density === 'compact' ? '紧凑密度' : '舒适密度' }}</em>
           </article>
           <article>
@@ -166,12 +166,17 @@ interface DeploymentCommand {
           </div>
 
           <div class="settings-option-grid">
-            <button type="button" [class.active]="preferenceDraft.theme === 'light-luxury'" (click)="setTheme('light-luxury')">
+            <button type="button" [class.active]="preferenceDraft.theme_source === 'system'" (click)="setThemeSource('system')">
+              <i class="pi pi-desktop"></i>
+              <strong>跟随系统</strong>
+              <span>自动匹配操作系统深浅色，值守屏和办公设备各自适配。</span>
+            </button>
+            <button type="button" [class.active]="preferenceDraft.theme_source === 'light-luxury'" (click)="setThemeSource('light-luxury')">
               <i class="pi pi-sun"></i>
               <strong>亮色系统</strong>
               <span>适合日常办公、报表复核和文件查看。</span>
             </button>
-            <button type="button" [class.active]="preferenceDraft.theme === 'dark-cockpit'" (click)="setTheme('dark-cockpit')">
+            <button type="button" [class.active]="preferenceDraft.theme_source === 'dark-cockpit'" (click)="setThemeSource('dark-cockpit')">
               <i class="pi pi-moon"></i>
               <strong>深色驾驶舱</strong>
               <span>适合值守屏、夜间监控和经营风险看板。</span>
@@ -582,6 +587,7 @@ export class SettingsPage implements OnInit {
   });
   protected preferenceDraft: UserPreferences = {
     theme: 'light-luxury',
+    theme_source: 'system',
     density: 'compact',
     default_workspace: '/app/overview',
     charts_motion: 'standard',
@@ -681,6 +687,7 @@ export class SettingsPage implements OnInit {
       const currentPreferences = this.theme.preferences();
       this.preferenceDraft = {
         theme: currentPreferences.theme ?? this.theme.mode(),
+        theme_source: currentPreferences.theme_source ?? this.theme.source(),
         density: preferences.density ?? currentPreferences.density ?? 'compact',
         default_workspace: preferences.default_workspace ?? currentPreferences.default_workspace ?? '/app/overview',
         charts_motion: preferences.charts_motion ?? currentPreferences.charts_motion ?? 'standard',
@@ -699,9 +706,17 @@ export class SettingsPage implements OnInit {
     });
   }
 
-  setTheme(mode: ThemeMode): void {
-    this.preferenceDraft.theme = mode;
+  setThemeSource(source: ThemeSource): void {
+    this.preferenceDraft.theme_source = source;
+    this.preferenceDraft.theme = source === 'system' ? this.theme.mode() : source;
     this.theme.setPreferences(this.preferenceDraft, false);
+  }
+
+  themeSourceLabel(source: ThemeSource | undefined): string {
+    if (source === 'system') {
+      return '跟随系统';
+    }
+    return source === 'dark-cockpit' ? '深色' : '亮色';
   }
 
   saveAll(): void {

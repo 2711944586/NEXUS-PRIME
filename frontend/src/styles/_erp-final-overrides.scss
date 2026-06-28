@@ -43,40 +43,41 @@
 
   html.operations-console .atlas-shell .workflow-command-strip {
     display: grid !important;
-    gap: 14px !important;
-    padding: clamp(14px, 1.2vw, 18px) !important;
+    grid-template-columns: minmax(260px, .7fr) minmax(0, 1.1fr) minmax(260px, .62fr) !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px !important;
   }
 
   html.operations-console .atlas-shell .workflow-command-primary,
-  html.operations-console .atlas-shell .workflow-command-bottom {
+  html.operations-console .atlas-shell .workflow-command-summary {
     display: grid !important;
     gap: 12px !important;
     min-width: 0 !important;
   }
 
   html.operations-console .atlas-shell .workflow-command-primary {
-    grid-template-columns: minmax(0, 1fr) minmax(170px, .22fr) !important;
-  }
-
-  html.operations-console .atlas-shell .workflow-command-bottom {
-    grid-template-columns: minmax(0, .9fr) minmax(340px, .55fr) !important;
+    grid-template-columns: minmax(0, 1fr) 104px !important;
   }
 
   html.operations-console .atlas-shell .workflow-command-steps,
-  html.operations-console .atlas-shell .workflow-command-signals,
-  html.operations-console .atlas-shell .workflow-command-actions {
+  html.operations-console .atlas-shell .workflow-command-summary {
     display: grid !important;
-    gap: 10px !important;
+    gap: 8px !important;
     min-width: 0 !important;
   }
 
   html.operations-console .atlas-shell .workflow-command-steps {
-    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important;
+    align-content: stretch !important;
   }
 
-  html.operations-console .atlas-shell .workflow-command-signals,
-  html.operations-console .atlas-shell .workflow-command-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  html.operations-console .atlas-shell .workflow-command-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a:last-child:nth-child(odd) {
+    grid-column: 1 / -1 !important;
   }
 
   html.operations-console .atlas-shell .module-workbench {
@@ -233,10 +234,10 @@
     width: 38px !important;
     padding: 0 !important;
     font-size: 0 !important;
-    color: transparent !important;
+    color: var(--clean-ink-strong) !important;
     white-space: normal !important;
     overflow: hidden !important;
-    text-indent: -999px !important;
+    text-indent: 0 !important;
   }
 
   html.operations-console .atlas-shell .atlas-pagination > button:first-of-type i,
@@ -274,9 +275,469 @@
     text-align: center !important;
   }
 
+  html.operations-console .atlas-shell :is(.atlas-kicker, .eyebrow) {
+    color: #7a4a07 !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(.atlas-kicker, .eyebrow) {
+    color: #ffd38a !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button, a[pButton], button[pButton]) {
+    color: #ffffff !important;
+    background-color: #0f766e !important;
+    border-color: #0f766e !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button span, a[pButton] span, button[pButton] span, .p-button-label) {
+    color: inherit !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button-secondary, [severity="secondary"]) {
+    color: #172033 !important;
+    background-color: #e9edf2 !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button-secondary, [severity="secondary"]) {
+    color: #fffaf0 !important;
+    background-color: #334155 !important;
+    border-color: #475569 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button-info, [severity="info"]) {
+    color: #ffffff !important;
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button-warn, [severity="warn"], .p-button-warning, [severity="warning"]) {
+    color: #111827 !important;
+    background-color: #f59e0b !important;
+    border-color: #d97706 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button-success, [severity="success"]) {
+    color: #ffffff !important;
+    background-color: #15803d !important;
+    border-color: #15803d !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host
+  ) :is(.p-button-danger, [severity="danger"]) {
+    color: #ffffff !important;
+    background-color: #b91c1c !important;
+    border-color: #b91c1c !important;
+  }
+
+  html.operations-console .atlas-shell :is(.atlas-kicker, .eyebrow, span.atlas-kicker),
+  html.operations-console .atlas-shell :is(.atlas-kicker, .eyebrow)::before {
+    color: #5f3705 !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(.atlas-kicker, .eyebrow, span.atlas-kicker),
+  html.operations-console.dark-cockpit .atlas-shell :is(.atlas-kicker, .eyebrow)::before {
+    color: #ffe0a6 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.p-button.p-component, a.p-button.p-component, button.p-button.p-component, a[pButton], button[pButton]) {
+    background-image: none !important;
+    text-shadow: none !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-component:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-component:not(.p-button-text):not(.p-button-outlined),
+    a[pButton]:not(.p-button-text):not(.p-button-outlined),
+    button[pButton]:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #ffffff !important;
+    background: #0f766e !important;
+    background-color: #0f766e !important;
+    border-color: #0f766e !important;
+    box-shadow: none !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-button-secondary:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #172033 !important;
+    background: #e2e8f0 !important;
+    background-color: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-button-secondary:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #f8fafc !important;
+    background: #334155 !important;
+    background-color: #334155 !important;
+    border-color: #475569 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.p-button.p-button-info, a.p-button-info, button.p-button-info) {
+    color: #ffffff !important;
+    background: #1d4ed8 !important;
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.p-button.p-button-warn, .p-button.p-button-warning, a.p-button-warn, button.p-button-warn) {
+    color: #111827 !important;
+    background: #f59e0b !important;
+    background-color: #f59e0b !important;
+    border-color: #d97706 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.p-button.p-button-danger, a.p-button-danger, button.p-button-danger) {
+    color: #ffffff !important;
+    background: #b91c1c !important;
+    background-color: #b91c1c !important;
+    border-color: #b91c1c !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.p-button.p-button-text, a.p-button.p-button-text, button.p-button.p-button-text) {
+    color: var(--clean-ink-strong) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.record-action-button.p-button-text.p-button-danger, .p-button.p-button-text.p-button-danger) {
+    color: #991b1b !important;
+    background: #fee2e2 !important;
+    background-color: #fee2e2 !important;
+    border-color: #fecaca !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(.record-action-button.p-button-text.p-button-danger, .p-button.p-button-text.p-button-danger) {
+    color: #fecaca !important;
+    background: #7f1d1d !important;
+    background-color: #7f1d1d !important;
+    border-color: #991b1b !important;
+  }
+
+  html.operations-console .atlas-shell :is(.p-button span, .p-button-label, a[pButton] span, button[pButton] span) {
+    color: inherit !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .metric-mode-switch,
+    .report-mode-switch,
+    .command-report-tabs,
+    .aging-wall,
+    .collection-summary-grid,
+    .receiving-summary-grid,
+    .dispatch-runway
+  ) button.active {
+    color: #ffffff !important;
+    background-color: #0f766e !important;
+    border-color: #0f766e !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(
+    .metric-mode-switch,
+    .report-mode-switch,
+    .command-report-tabs,
+    .aging-wall,
+    .collection-summary-grid,
+    .receiving-summary-grid,
+    .dispatch-runway
+  ) button.active {
+    color: #fffaf0 !important;
+    background-color: #0f766e !important;
+    border-color: #2dd4bf !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-location > em {
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+  }
+
+  html.operations-console .atlas-shell .command-hero-photo figcaption {
+    background: linear-gradient(180deg, transparent, rgba(6, 14, 22, .82)) !important;
+    background-color: rgba(6, 14, 22, .86) !important;
+  }
+
+  html.operations-console .atlas-shell .command-hero-photo figcaption :is(span, strong) {
+    color: #ffffff !important;
+    text-shadow: 0 1px 14px rgba(0, 0, 0, .66) !important;
+  }
+
+  html.operations-console .atlas-shell :is(.atlas-dock-more, .dock-capsule-more) {
+    display: none !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-scope-rail,
+  html.operations-console .atlas-shell .workflow-command-bottom {
+    display: none !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-copy,
+  html.operations-console .atlas-shell .workflow-command-health,
+  html.operations-console .atlas-shell .workflow-command-steps a,
+  html.operations-console .atlas-shell .workflow-command-summary a {
+    min-width: 0 !important;
+    border: 1px solid color-mix(in srgb, var(--clean-line) 72%, transparent) !important;
+    border-radius: 12px !important;
+    color: var(--clean-ink) !important;
+    background: color-mix(in srgb, var(--clean-surface) 72%, transparent) !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-copy {
+    padding: 12px !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-health {
+    padding: 12px !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-health strong {
+    font-size: clamp(1.35rem, 1.65vw, 2rem) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-steps a {
+    min-height: 64px !important;
+    padding: 10px 10px 10px 13px !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a {
+    position: relative !important;
+    display: grid !important;
+    align-content: center !important;
+    gap: 2px !important;
+    min-height: 46px !important;
+    padding: 8px 10px 8px 13px !important;
+    overflow: hidden !important;
+    transition: border-color .18s ease, background .18s ease, transform .18s ease !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 8px auto 8px 0 !important;
+    width: 3px !important;
+    border-radius: 999px !important;
+    background: var(--clean-accent) !important;
+    opacity: .76 !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a.warning::before {
+    background: var(--clean-warm) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a.danger::before {
+    background: var(--clean-danger) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a.success::before {
+    background: var(--clean-success, var(--success)) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary a:hover {
+    border-color: color-mix(in srgb, var(--clean-accent) 32%, var(--clean-line)) !important;
+    background: color-mix(in srgb, var(--clean-surface) 72%, var(--clean-accent) 8%) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary span {
+    color: var(--clean-muted) !important;
+    font-family: var(--erp-font-control) !important;
+    font-size: .7rem !important;
+    font-weight: 850 !important;
+    line-height: 1.12 !important;
+    white-space: nowrap !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-summary strong {
+    overflow: hidden !important;
+    color: var(--clean-ink-strong) !important;
+    font-family: var(--erp-font-display) !important;
+    font-size: .84rem !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html.operations-console .atlas-shell .ops-atlas-page > header[class*="hero"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, .78fr) minmax(320px, .44fr) !important;
+    align-items: end !important;
+    gap: clamp(18px, 2vw, 28px) !important;
+    min-height: clamp(300px, 34vw, 470px) !important;
+    padding: clamp(22px, 3vw, 42px) !important;
+  }
+
+  html.operations-console .atlas-shell .ops-atlas-page > header[class*="hero"] > :not(.hero-narrative):not(.command-hero-photo):not(.material-shelf-map):not(.report-preview-card):not(.procurement-lane-map) {
+    max-width: 100% !important;
+  }
+
+  html.operations-console .atlas-shell .hero-narrative {
+    max-width: min(100%, 720px) !important;
+  }
+
+  html.operations-console .atlas-shell .hero-narrative h1 {
+    max-width: 12ch !important;
+    font-size: clamp(2.35rem, 5vw, 5rem) !important;
+    letter-spacing: 0 !important;
+    line-height: .98 !important;
+    text-wrap: balance !important;
+  }
+
+  html.operations-console .atlas-shell .hero-narrative p {
+    max-width: 58ch !important;
+    font-size: clamp(.95rem, 1.1vw, 1.08rem) !important;
+    line-height: 1.58 !important;
+  }
+
+  html.operations-console .atlas-shell :is(.atlas-panel, .module-workbench, .resource-workbench-host, .business-data-row, .atlas-record-row) {
+    border-color: color-mix(in srgb, var(--clean-line) 68%, transparent) !important;
+    box-shadow: none !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-panel {
+    border-radius: 16px !important;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--clean-surface) 88%, transparent), color-mix(in srgb, var(--clean-inset) 72%, transparent)) !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-panel:hover {
+    transform: none !important;
+    box-shadow: 0 12px 36px color-mix(in srgb, #0f172a 6%, transparent) !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-actions-row,
+  html.operations-console .atlas-shell .command-hero-actions,
+  html.operations-console .atlas-shell .hero-actions-compact {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-actions-row :is(.p-button, button, a),
+  html.operations-console .atlas-shell .command-hero-actions :is(.p-button, button, a),
+  html.operations-console .atlas-shell .hero-actions-compact :is(.p-button, button, a) {
+    min-height: 38px !important;
+    border-radius: 10px !important;
+  }
+
   @media (max-width: 1280px) {
     html.operations-console .atlas-shell .workflow-command-primary,
-    html.operations-console .atlas-shell .workflow-command-bottom,
+    html.operations-console .atlas-shell .workflow-command-strip,
+    html.operations-console .atlas-shell .workflow-command-summary,
     html.operations-console .atlas-shell .workbench-head,
     html.operations-console .atlas-shell .module-workbench {
       grid-template-columns: minmax(0, 1fr) !important;
@@ -290,10 +751,17 @@
         "inspector" !important;
     }
 
-    html.operations-console .atlas-shell .workbench-capability-strip,
-    html.operations-console .atlas-shell .workflow-command-signals,
-    html.operations-console .atlas-shell .workflow-command-actions {
+    html.operations-console .atlas-shell .workbench-capability-strip {
       grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .atlas-shell .workflow-command-summary {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
+    html.operations-console .atlas-shell .ops-atlas-page > header[class*="hero"] {
+      grid-template-columns: minmax(0, 1fr) !important;
+      min-height: auto !important;
     }
   }
 
@@ -306,6 +774,18 @@
 
     html.operations-console .atlas-shell .workflow-command-steps {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html.operations-console .atlas-shell .workflow-command-summary {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .atlas-shell .workflow-command-primary {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .atlas-shell .ops-atlas-page > header[class*="hero"] {
+      padding: 18px !important;
     }
 
     html.operations-console .atlas-shell .workbench-capability-strip {
@@ -325,5 +805,219 @@
     html.operations-console .atlas-shell .workbench-record-actions {
       justify-content: flex-start !important;
     }
+  }
+}
+
+@layer app {
+  html.operations-console .atlas-shell {
+    --clean-warm-readable: #5f3705;
+    --clean-primary-action: #0f766e;
+    --clean-info-action: #1d4ed8;
+    --clean-warn-action: #f59e0b;
+    --clean-danger-action: #b91c1c;
+    --clean-secondary-action-bg: #e2e8f0;
+    --clean-secondary-action-ink: #172033;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell {
+    --clean-warm-readable: #ffe0a6;
+    --clean-secondary-action-bg: #334155;
+    --clean-secondary-action-ink: #f8fafc;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .atlas-kicker,
+    .eyebrow,
+    .hero-narrative > .atlas-kicker,
+    .command-hero-copy > .atlas-kicker,
+    .atlas-panel-head > div > .atlas-kicker,
+    .command-section-head .atlas-kicker
+  ),
+  html.operations-console .atlas-shell :is(.atlas-kicker, .eyebrow)::before {
+    color: var(--clean-warm-readable) !important;
+    border-color: currentColor !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-stage .ops-atlas-page > header[class*="hero"] :is(.atlas-kicker, .eyebrow),
+  html.operations-console .atlas-shell .atlas-stage .ops-atlas-page > header[class*="hero"] .hero-narrative > .atlas-kicker,
+  html.operations-console .atlas-shell .atlas-panel-head > div > .atlas-kicker,
+  html.operations-console .atlas-shell .command-section-head .atlas-kicker {
+    color: var(--clean-warm-readable) !important;
+    border-color: currentColor !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-component:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-component:not(.p-button-text):not(.p-button-outlined),
+    a[pButton]:not(.p-button-text):not(.p-button-outlined),
+    button[pButton]:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #ffffff !important;
+    background: var(--clean-primary-action) !important;
+    background-color: var(--clean-primary-action) !important;
+    background-image: none !important;
+    border-color: var(--clean-primary-action) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-component.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-component.p-button-secondary:not(.p-button-text):not(.p-button-outlined),
+    .p-button.p-component[severity="secondary"]:not(.p-button-text):not(.p-button-outlined),
+    a[severity="secondary"]:not(.p-button-text):not(.p-button-outlined),
+    button[severity="secondary"]:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: var(--clean-secondary-action-ink) !important;
+    background: var(--clean-secondary-action-bg) !important;
+    background-color: var(--clean-secondary-action-bg) !important;
+    background-image: none !important;
+    border-color: color-mix(in srgb, var(--clean-secondary-action-bg) 78%, #64748b) !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component.p-button-info:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-component.p-button-info:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-component.p-button-info:not(.p-button-text):not(.p-button-outlined),
+    .p-button.p-component[severity="info"]:not(.p-button-text):not(.p-button-outlined),
+    a[severity="info"]:not(.p-button-text):not(.p-button-outlined),
+    button[severity="info"]:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #ffffff !important;
+    background: var(--clean-info-action) !important;
+    background-color: var(--clean-info-action) !important;
+    background-image: none !important;
+    border-color: var(--clean-info-action) !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component.p-button-warn:not(.p-button-text):not(.p-button-outlined),
+    .p-button.p-component.p-button-warning:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-component.p-button-warn:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-component.p-button-warn:not(.p-button-text):not(.p-button-outlined),
+    .p-button.p-component[severity="warn"]:not(.p-button-text):not(.p-button-outlined),
+    .p-button.p-component[severity="warning"]:not(.p-button-text):not(.p-button-outlined),
+    a[severity="warn"]:not(.p-button-text):not(.p-button-outlined),
+    button[severity="warn"]:not(.p-button-text):not(.p-button-outlined),
+    a[severity="warning"]:not(.p-button-text):not(.p-button-outlined),
+    button[severity="warning"]:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #111827 !important;
+    background: var(--clean-warn-action) !important;
+    background-color: var(--clean-warn-action) !important;
+    background-image: none !important;
+    border-color: #d97706 !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .ops-atlas-page,
+    .detail-page,
+    .module-workbench,
+    .resource-workbench-host,
+    .atlas-panel
+  ) :is(
+    .p-button.p-component.p-button-danger:not(.p-button-text):not(.p-button-outlined),
+    a.p-button.p-component.p-button-danger:not(.p-button-text):not(.p-button-outlined),
+    button.p-button.p-component.p-button-danger:not(.p-button-text):not(.p-button-outlined),
+    .p-button.p-component[severity="danger"]:not(.p-button-text):not(.p-button-outlined),
+    a[severity="danger"]:not(.p-button-text):not(.p-button-outlined),
+    button[severity="danger"]:not(.p-button-text):not(.p-button-outlined)
+  ) {
+    color: #ffffff !important;
+    background: var(--clean-danger-action) !important;
+    background-color: var(--clean-danger-action) !important;
+    background-image: none !important;
+    border-color: var(--clean-danger-action) !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .p-button span,
+    .p-button-label,
+    a[pButton] span,
+    button[pButton] span,
+    .atlas-actions-row .p-button span,
+    .command-hero-actions .p-button span,
+    .hero-actions-compact .p-button span
+  ) {
+    color: inherit !important;
+  }
+
+  html.operations-console .atlas-shell :is(
+    .chart-tabs,
+    .flow-chart-tabs,
+    .command-chart-tabs,
+    .command-report-tabs,
+    .report-mode-switch,
+    .metric-mode-switch,
+    .mode-switch,
+    .settings-mode-switch,
+    .shift-lens-switch,
+    .quality-inspection-chart-tabs,
+    .maintenance-chart-tabs,
+    .mobile-chart-tabs,
+    .aging-wall,
+    .collection-summary-grid,
+    .receiving-summary-grid,
+    .dispatch-runway
+  ) button.active,
+  html.operations-console .atlas-shell .atlas-panel-head > button.active {
+    color: #ffffff !important;
+    background: var(--clean-primary-action) !important;
+    background-color: var(--clean-primary-action) !important;
+    background-image: none !important;
+    border-color: var(--clean-primary-action) !important;
+    box-shadow: none !important;
+  }
+
+  html.operations-console.dark-cockpit .atlas-shell :is(
+    .chart-tabs,
+    .flow-chart-tabs,
+    .command-chart-tabs,
+    .command-report-tabs,
+    .report-mode-switch,
+    .metric-mode-switch,
+    .mode-switch,
+    .settings-mode-switch,
+    .shift-lens-switch,
+    .quality-inspection-chart-tabs,
+    .maintenance-chart-tabs,
+    .mobile-chart-tabs,
+    .aging-wall,
+    .collection-summary-grid,
+    .receiving-summary-grid,
+    .dispatch-runway
+  ) button.active,
+  html.operations-console.dark-cockpit .atlas-shell .atlas-panel-head > button.active {
+    color: #fffaf0 !important;
+    background: var(--clean-primary-action) !important;
+    background-color: var(--clean-primary-action) !important;
+    background-image: none !important;
+    border-color: #2dd4bf !important;
   }
 }

@@ -77,6 +77,37 @@ html {
   --ease-decelerate: cubic-bezier(0, 0, .2, 1);
   --ease-accelerate: cubic-bezier(.3, 0, 1, 1);
   --topbar-height: 72px;
+
+  --rb-font-ui: var(--font-sans);
+  --rb-font-code: var(--font-mono);
+  --rb-canvas: var(--bg);
+  --rb-canvas-2: var(--bg-alt);
+  --rb-canvas-3: var(--surface-inset);
+  --rb-surface: var(--surface);
+  --rb-surface-strong: var(--surface-strong);
+  --rb-surface-soft: var(--surface-muted);
+  --rb-ink: var(--ink);
+  --rb-ink-strong: var(--ink-strong);
+  --rb-muted: var(--muted);
+  --rb-faint: color-mix(in srgb, var(--muted) 70%, transparent);
+  --rb-line: var(--line);
+  --rb-line-strong: var(--line-strong);
+  --rb-accent: var(--accent);
+  --rb-accent-2: var(--accent-2);
+  --rb-violet: var(--accent-2);
+  --rb-warm: var(--accent-warm);
+  --rb-shadow: var(--shadow-md);
+  --rb-shadow-strong: var(--shadow-lg);
+  --rb-glow: var(--shadow-colored);
+  --rb-radius-xs: var(--radius-xs);
+  --rb-radius-sm: var(--radius-sm);
+  --rb-radius-md: var(--radius-md);
+  --rb-radius-lg: var(--radius-lg);
+  --rb-radius-xl: var(--radius-xl);
+  --rb-fast: var(--motion-fast);
+  --rb-med: var(--motion-med);
+  --rb-slow: var(--motion-slow);
+  --rb-ease: var(--ease-standard);
 }
 
 html.dark-cockpit,

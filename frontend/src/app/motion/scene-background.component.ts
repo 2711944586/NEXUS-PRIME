@@ -9,6 +9,7 @@ type SceneMode = 'default' | 'login' | 'register';
     <div
       class="nexus-scene-background"
       [class.nexus-scene-background--register]="mode === 'register'"
+      [attr.data-scene-mode]="mode"
       [style.--nexus-scene-image]="cssImage"
       aria-hidden="true"
     >

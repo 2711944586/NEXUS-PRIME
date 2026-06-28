@@ -52,16 +52,7 @@ for (const viewport of viewports) {
   const overviewScreenshot = `${viewport.name}-01-overview.png`;
   await page.screenshot({ path: path.join(outDir, overviewScreenshot), fullPage: false });
 
-  const topbarResult = await openModulePanel(page, `button[aria-label="更多模块"]`, `${viewport.name}-02-topbar-panel.png`, 'topbar');
-  const dockResult = await openModulePanel(page, `.atlas-dock-more`, `${viewport.name}-03-dock-panel.png`, 'dock');
-
-  const navigationTrigger = await visibleTriggerSelector(page, ['.atlas-dock-more', 'button[aria-label="更多模块"]']);
-  await page.locator(navigationTrigger).first().click();
-  await page.waitForSelector('.module-panel', { state: 'visible', timeout: 10000 });
-  await page.locator('.module-panel .module-card-link[href="/app/metrics"], .module-panel .module-card-link[href$="/app/metrics"]').first().click();
-  await page.waitForURL('**/app/metrics', { timeout: 15000 });
-  await page.waitForFunction(() => !document.querySelector('.module-panel-backdrop'), { timeout: 8000 });
-  const navigatedByModuleLink = page.url().includes('/app/metrics');
+  const dockWorkflow = await auditDockWorkflow(page, `${viewport.name}-02-dock-workflow.png`);
 
   const abortedRequests = requestFailures.filter(item => item.error.includes('ERR_ABORTED'));
   const failedRequests = requestFailures.filter(item => !item.error.includes('ERR_ABORTED'));
@@ -69,16 +60,14 @@ for (const viewport of viewports) {
     viewport: viewport.name,
     screenshots: [
       overviewScreenshot,
-      topbarResult.screenshot,
-      dockResult.screenshot
+      dockWorkflow.screenshot
     ].filter(Boolean),
     consoleErrors,
     failedRequests,
     abortedRequests,
     badResponses,
-    navigatedByModuleLink,
     spotlight: spotlightAudit,
-    panels: [topbarResult, dockResult]
+    dockWorkflow
   });
 
   await context.close();
@@ -90,24 +79,9 @@ const failed = results.filter(result =>
   result.consoleErrors.length ||
   result.failedRequests.length ||
   result.badResponses.length ||
-  !result.navigatedByModuleLink ||
   !result.spotlight.hasActiveSurface ||
   !result.spotlight.hasCoordinates ||
-  result.panels.some(panel => {
-    const allowedResponsiveSkip = result.viewport === 'mobile' && panel.source === 'dock';
-    if (panel.skipped) {
-      return !allowedResponsiveSkip;
-    }
-    return !panel.visible ||
-      !panel.inViewport ||
-      !panel.closedByEscape ||
-      panel.moduleLinkCount < 20 ||
-      panel.commandCardCount < 3 ||
-      panel.groupCount < 6 ||
-      panel.bodyOverflowX > 3 ||
-      panel.overflowingNoWrapText.length ||
-      panel.badRects.length;
-  })
+  !result.dockWorkflow.passed
 );
 
 const report = {
@@ -126,22 +100,18 @@ const summary = results.map(result => ({
     consoleErrors: result.consoleErrors.length,
     failedRequests: result.failedRequests.length,
     badResponses: result.badResponses.length,
-    navigatedByModuleLink: result.navigatedByModuleLink,
     spotlight: result.spotlight,
-    panels: result.panels.map(panel => ({
-    source: panel.source,
-      visible: panel.visible,
-      skipped: panel.skipped,
-      inViewport: panel.inViewport,
-    closedByEscape: panel.closedByEscape,
-    moduleLinkCount: panel.moduleLinkCount,
-    photoCount: panel.photoCount,
-    commandCardCount: panel.commandCardCount,
-    groupCount: panel.groupCount,
-    bodyOverflowX: panel.bodyOverflowX,
-    overflowingNoWrapText: panel.overflowingNoWrapText.length,
-    badRects: panel.badRects.length
-  }))
+    dockWorkflow: {
+      passed: result.dockWorkflow.passed,
+      dockItems: result.dockWorkflow.dockItems,
+      dockGroups: result.dockWorkflow.dockGroups,
+      visibleGroupLabels: result.dockWorkflow.visibleGroupLabels,
+      currentPath: result.dockWorkflow.currentPath,
+      hiddenMoreTriggers: result.dockWorkflow.hiddenMoreTriggers,
+      bodyOverflowX: result.dockWorkflow.bodyOverflowX,
+      overflowingNoWrapText: result.dockWorkflow.overflowingNoWrapText.length,
+      badRects: result.dockWorkflow.badRects.length
+    }
 }));
 
 console.log(JSON.stringify({ outDir, passed: failed.length === 0, summary }, null, 2));
@@ -313,6 +283,110 @@ async function openModulePanel(page, selector, screenshotName, source) {
   };
 }
 
+async function auditDockWorkflow(page, screenshotName) {
+  await page.waitForSelector('.atlas-dock .dock-item', { state: 'visible', timeout: 10000 });
+  const target = page.locator('.atlas-dock .dock-item[href="/app/reports"], .atlas-dock .dock-item[href$="/app/reports"]').first();
+  await target.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(outDir, screenshotName), fullPage: false });
+
+  const before = await collectDockWorkflowState(page);
+  await target.click();
+  await page.waitForURL('**/app/reports', { timeout: 15000 });
+  await page.waitForSelector('.atlas-shell', { state: 'visible', timeout: 15000 });
+  const after = await collectDockWorkflowState(page);
+
+  const requiredPaths = [
+    '/app/overview',
+    '/app/inventory/products',
+    '/app/inventory/stock',
+    '/app/procurement/orders',
+    '/app/quality',
+    '/app/sales/orders',
+    '/app/finance/receivables',
+    '/app/reports'
+  ];
+  const missingPaths = requiredPaths.filter(route => !before.paths.includes(route));
+  const requiredGroupCount = before.isCompactDock ? 0 : 6;
+
+  return {
+    ...before,
+    screenshot: screenshotName,
+    currentPath: new URL(page.url()).pathname,
+    activeAfterNavigation: after.activePath,
+    missingPaths,
+    passed:
+      before.visible &&
+      before.dockItems >= requiredPaths.length &&
+      before.dockGroups >= requiredGroupCount &&
+      missingPaths.length === 0 &&
+      before.hiddenMoreTriggers &&
+      before.bodyOverflowX <= 3 &&
+      before.overflowingNoWrapText.length === 0 &&
+      before.badRects.length === 0 &&
+      new URL(page.url()).pathname === '/app/reports' &&
+      after.activePath === '/app/reports'
+  };
+}
+
+async function collectDockWorkflowState(page) {
+  return page.evaluate(() => {
+    const visible = element => {
+      const box = element.getBoundingClientRect();
+      if (box.width <= 0 || box.height <= 0) {
+        return false;
+      }
+      for (let current = element; current && current !== document.documentElement; current = current.parentElement) {
+        const style = getComputedStyle(current);
+        if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) {
+          return false;
+        }
+      }
+      return true;
+    };
+    const dock = document.querySelector('.atlas-dock');
+    const dockItems = [...document.querySelectorAll('.atlas-dock .dock-item')].filter(visible);
+    const moreTriggers = [...document.querySelectorAll('.atlas-dock-more, button[aria-label="更多模块"]')].filter(visible);
+    const overflowingNoWrapText = [...document.querySelectorAll('.atlas-dock, .atlas-dock .dock-item, .atlas-dock .dock-label, .atlas-dock .dock-capsule-label, .atlas-location em')]
+      .filter(visible)
+      .filter(element => element.scrollWidth > element.clientWidth + 2 && getComputedStyle(element).whiteSpace === 'nowrap')
+      .slice(0, 12)
+      .map(element => ({
+        tag: element.tagName.toLowerCase(),
+        className: [...element.classList].slice(0, 4).join('.'),
+        text: element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 90),
+        width: Math.round(element.clientWidth),
+        scroll: Math.round(element.scrollWidth)
+      }));
+    const badRects = [...document.querySelectorAll('.atlas-dock, .atlas-dock .dock-item, .atlas-topbar, .workflow-command-strip')]
+      .filter(visible)
+      .map(element => ({ element, box: element.getBoundingClientRect() }))
+      .filter(({ box }) => box.right > window.innerWidth + 2 || box.left < -2)
+      .slice(0, 12)
+      .map(({ element, box }) => ({
+        tag: element.tagName.toLowerCase(),
+        className: [...element.classList].slice(0, 4).join('.'),
+        text: element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80),
+        left: Math.round(box.left),
+        right: Math.round(box.right),
+        width: Math.round(box.width)
+      }));
+    return {
+      visible: Boolean(dock && visible(dock)),
+      dockItems: dockItems.length,
+      dockGroups: [...document.querySelectorAll('.atlas-dock .dock-capsule')].filter(visible).length,
+      visibleGroupLabels: [...document.querySelectorAll('.atlas-dock .dock-capsule-label')].filter(visible).length,
+      isCompactDock: window.innerWidth <= 1280,
+      paths: dockItems.map(item => item.getAttribute('href') || ''),
+      activePath: document.querySelector('.atlas-dock .dock-item.active')?.getAttribute('href') || null,
+      currentDomain: document.querySelector('.dock-current-domain strong')?.textContent?.trim() || '',
+      hiddenMoreTriggers: moreTriggers.length === 0,
+      bodyOverflowX: document.documentElement.scrollWidth - window.innerWidth,
+      overflowingNoWrapText,
+      badRects
+    };
+  });
+}
+
 async function visibleTriggerSelector(page, selectors) {
   for (const selector of selectors) {
     const trigger = page.locator(selector).first();
@@ -327,6 +401,12 @@ async function login(page) {
   await page.goto(`${baseUrl}/auth/login`, { waitUntil: 'domcontentloaded' });
   await page.locator('input[type="email"], input[name="email"]').first().fill(credentials.email);
   await page.locator('input[type="password"], input[name="password"]').first().fill(credentials.password);
-  await page.locator('button[type="submit"]').first().click();
+  const submit = page.locator('button[type="submit"]').first();
+  await submit.waitFor({ state: 'visible', timeout: 15000 });
+  await page.waitForFunction(() => {
+    const button = document.querySelector('button[type="submit"]');
+    return button && !button.hasAttribute('disabled');
+  }, null, { timeout: 15000 });
+  await submit.click();
   await page.waitForURL('**/app/**', { timeout: 15000 });
 }

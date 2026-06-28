@@ -940,6 +940,7 @@ def update_preferences():
         'default_workspace',
         'command_history',
         'theme',
+        'theme_source',
         'charts_motion',
         'dock_labels',
         'context_panel',
@@ -948,6 +949,8 @@ def update_preferences():
     for key, value in payload.items():
         if key in allowed_keys:
             if key == 'theme' and value not in ('dark-cockpit', 'light-luxury'):
+                continue
+            if key == 'theme_source' and value not in ('system', 'dark-cockpit', 'light-luxury'):
                 continue
             if key == 'density' and value not in ('compact', 'comfortable'):
                 continue
