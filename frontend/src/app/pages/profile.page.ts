@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { EChartsCoreOption } from 'echarts/core';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { MessageService } from 'primeng/api';
@@ -67,7 +67,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
                 }
               </div>
               <div class="avatar-control-row">
-                <input #avatarInput class="avatar-file-input" type="file" accept="image/png,image/jpeg,image/gif" (change)="uploadAvatar($event)" />
+                <input #avatarInput class="avatar-file-input" type="file" accept="image/png,image/jpeg,image/gif" (change)="uploadAvatar($event)" tabindex="-1" aria-hidden="true" />
                 <button pButton type="button" size="small" [disabled]="avatarUploading() || avatarDeleting()" (click)="avatarInput.click()">
                   <i class="pi pi-upload"></i>
                   更换头像
@@ -227,6 +227,12 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
             <div><span>角色</span><strong>{{ user()?.role_name || 'User' }}</strong></div>
             <div><span>最近登录</span><strong>{{ user()?.is_admin_effective ? '管理会话' : '业务会话' }}</strong></div>
           </div>
+          <div class="profile-session-actions">
+            <button pButton type="button" severity="secondary" [outlined]="true" (click)="logout()" aria-label="退出登录">
+              <i class="pi pi-sign-out"></i>
+              退出登录
+            </button>
+          </div>
         </aside>
       </section>
 
@@ -265,6 +271,7 @@ export class ProfilePage implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly api = inject(ApiService);
   private readonly messages = inject(MessageService);
+  private readonly router = inject(Router);
   private subscription?: Subscription;
 
   protected readonly user = signal<User | null>(null);
@@ -515,6 +522,11 @@ export class ProfilePage implements OnInit, OnDestroy {
         this.messages.add({ severity: 'success', summary: '头像已恢复', detail: user.full_name || user.username });
       }
     });
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigateByUrl('/auth/login');
   }
 
   private setAvatarPreview(file: File): void {

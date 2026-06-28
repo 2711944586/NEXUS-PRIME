@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   LucideBarChart3,
   LucideBell,
@@ -115,112 +115,130 @@ const ICONS = [
         }
       </div>
 
-      <div class="atlas-actions">
-        <a
-          class="service-health-chip"
-          routerLink="/app/integrations"
-          [class.degraded]="serviceHealth.status === 'degraded'"
-          [class.down]="serviceHealth.status === 'down'"
-          [attr.aria-label]="'服务状态：' + serviceHealthLabel"
-          [pTooltip]="serviceHealthTooltip"
-        >
-          <span class="health-dot"></span>
-          <strong>{{ serviceHealthLabel }}</strong>
-          <em>{{ serviceHealthLatencyLabel }}</em>
-        </a>
-        <a pButton class="ai-topbar-action" routerLink="/app/ai" aria-label="打开经营分析台" pTooltip="经营分析台">
-          <span class="toolbar-icon"><svg lucideSparkles size="17" strokeWidth="2.35"></svg></span>
-          <span class="topbar-action-label">经营分析</span>
-        </a>
-        <a pButton class="icon-action" [text]="true" [rounded]="true" routerLink="/app/settings" aria-label="全局设置" pTooltip="全局设置">
-          <span class="toolbar-icon"><svg lucideSettings2 size="18" strokeWidth="2.2"></svg></span>
-        </a>
-        <button
-          pButton
-          type="button"
-          class="create-action"
-          (click)="quickCreateToggle.emit($event)"
-          aria-label="打开快捷创建"
-          aria-haspopup="menu"
-          aria-controls="quick-create-popover"
-          [attr.aria-expanded]="createOpen"
-        >
-          <span class="toolbar-icon"><svg lucidePlus size="17" strokeWidth="2.4"></svg></span>
-          <span class="topbar-action-label">创建</span>
-        </button>
-        @if (createOpen) {
-          <div id="quick-create-popover" class="quick-create-popover" role="menu" aria-label="快捷创建">
-            <div class="quick-create-head">
-              <span>快捷创建</span>
-              <strong>选择要推进的业务动作</strong>
+      <div class="atlas-actions" aria-label="全局操作">
+        <div class="atlas-action-group atlas-health-group">
+          <a
+            class="service-health-chip"
+            routerLink="/app/integrations"
+            [class.degraded]="serviceHealth.status === 'degraded'"
+            [class.down]="serviceHealth.status === 'down'"
+            [attr.aria-label]="'服务状态：' + serviceHealthLabel"
+            [pTooltip]="serviceHealthTooltip"
+          >
+            <span class="health-dot"></span>
+            <strong>{{ serviceHealthLabel }}</strong>
+            <em>{{ serviceHealthLatencyLabel }}</em>
+          </a>
+          <button pButton type="button" class="sync-action icon-action" severity="secondary" (click)="refresh.emit()" aria-label="同步运营数据" pTooltip="同步运营数据">
+            <span class="toolbar-icon"><svg lucideRefreshCw size="16" strokeWidth="2.25"></svg></span>
+          </button>
+          <span class="atlas-clock"><i></i>{{ todayText }}</span>
+        </div>
+
+        <div class="atlas-action-group atlas-primary-actions">
+          <a pButton class="ai-topbar-action" routerLink="/app/ai" aria-label="打开经营分析台" pTooltip="经营分析台">
+            <span class="toolbar-icon"><svg lucideSparkles size="17" strokeWidth="2.35"></svg></span>
+            <span class="topbar-action-label">经营分析</span>
+          </a>
+          <button
+            pButton
+            type="button"
+            class="create-action"
+            (click)="quickCreateToggle.emit($event)"
+            aria-label="打开快捷创建"
+            aria-haspopup="menu"
+            aria-controls="quick-create-popover"
+            [attr.aria-expanded]="createOpen"
+          >
+            <span class="toolbar-icon"><svg lucidePlus size="17" strokeWidth="2.4"></svg></span>
+            <span class="topbar-action-label">创建</span>
+          </button>
+          @if (createOpen) {
+            <div id="quick-create-popover" class="quick-create-popover" role="menu" aria-label="快捷创建">
+              <div class="quick-create-head">
+                <span>快捷创建</span>
+                <strong>选择要推进的业务动作</strong>
+              </div>
+              @for (action of quickCreateActions; track action.path) {
+                <a role="menuitem" [routerLink]="action.path" (click)="quickCreateClose.emit()" [style.--quick-tone]="action.accent">
+                  <i>
+                    @switch (action.icon) {
+                      @case ('warehouse') { <svg lucideWarehouse size="17" strokeWidth="2.25"></svg> }
+                      @case ('shopping-cart') { <svg lucideShoppingCart size="17" strokeWidth="2.25"></svg> }
+                      @case ('send') { <svg lucideSend size="17" strokeWidth="2.25"></svg> }
+                      @case ('money') { <svg lucideCircleDollarSign size="17" strokeWidth="2.25"></svg> }
+                      @case ('chart') { <svg lucideBarChart3 size="17" strokeWidth="2.25"></svg> }
+                    }
+                  </i>
+                  <span>
+                    <strong>{{ action.label }}</strong>
+                    <em>{{ action.description }}</em>
+                  </span>
+                </a>
+              }
             </div>
-            @for (action of quickCreateActions; track action.path) {
-              <a role="menuitem" [routerLink]="action.path" (click)="quickCreateClose.emit()" [style.--quick-tone]="action.accent">
-                <i>
-                  @switch (action.icon) {
-                    @case ('warehouse') { <svg lucideWarehouse size="17" strokeWidth="2.25"></svg> }
-                    @case ('shopping-cart') { <svg lucideShoppingCart size="17" strokeWidth="2.25"></svg> }
-                    @case ('send') { <svg lucideSend size="17" strokeWidth="2.25"></svg> }
-                    @case ('money') { <svg lucideCircleDollarSign size="17" strokeWidth="2.25"></svg> }
-                    @case ('chart') { <svg lucideBarChart3 size="17" strokeWidth="2.25"></svg> }
-                  }
-                </i>
-                <span>
-                  <strong>{{ action.label }}</strong>
-                  <em>{{ action.description }}</em>
-                </span>
-              </a>
-            }
-          </div>
-        }
-        <button pButton type="button" class="sync-action icon-action" severity="secondary" (click)="refresh.emit()" aria-label="同步运营数据" pTooltip="同步运营数据">
-          <span class="toolbar-icon"><svg lucideRefreshCw size="16" strokeWidth="2.25"></svg></span>
-        </button>
-        <span class="atlas-clock"><i></i>{{ todayText }}</span>
-        <button pButton type="button" class="icon-action" [text]="true" [rounded]="true" (click)="theme.toggle()" aria-label="切换主题" pTooltip="切换主题">
-          @if (theme.mode() === 'dark-cockpit') {
-            <span class="toolbar-icon"><svg lucideMoon size="18" strokeWidth="2.2"></svg></span>
-          } @else {
-            <span class="toolbar-icon"><svg lucideSun size="18" strokeWidth="2.2"></svg></span>
           }
-        </button>
-        <a pButton class="icon-action" [text]="true" [rounded]="true" routerLink="/app/notifications" aria-label="通知中心" pTooltip="通知中心">
-          <span class="toolbar-icon toolbar-icon-badge">
-            <svg lucideBell size="18" strokeWidth="2.2"></svg>
-            @if (notificationCount > 0) {
-              <span class="toolbar-badge" aria-label="{{ notificationCount }} 条未读通知">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
-            }
-          </span>
-        </a>
-        <a pButton [text]="true" [rounded]="true" routerLink="/app/profile" class="profile-avatar-button icon-action" aria-label="个人工作台" pTooltip="个人工作台">
-          @if (auth.currentUser$ | async; as user) {
-            @if (user.avatar && brokenAvatarUrl !== user.avatar) {
-              <img [src]="user.avatar" [alt]="user.full_name || user.username" (error)="avatarBroken.emit(user.avatar)" />
+        </div>
+
+        <div class="atlas-action-group atlas-utility-actions">
+          <a pButton class="icon-action" [text]="true" [rounded]="true" routerLink="/app/settings" aria-label="全局设置" pTooltip="全局设置">
+            <span class="toolbar-icon"><svg lucideSettings2 size="18" strokeWidth="2.2"></svg></span>
+          </a>
+          <button pButton type="button" class="icon-action" [text]="true" [rounded]="true" (click)="theme.toggle()" aria-label="切换主题" pTooltip="切换主题">
+            @if (theme.mode() === 'dark-cockpit') {
+              <span class="toolbar-icon"><svg lucideMoon size="18" strokeWidth="2.2"></svg></span>
             } @else {
-              <span class="avatar-initials">{{ initials(user) }}</span>
+              <span class="toolbar-icon"><svg lucideSun size="18" strokeWidth="2.2"></svg></span>
             }
-          } @else {
-            <span class="toolbar-icon"><svg lucideUserRound size="18" strokeWidth="2.2"></svg></span>
-          }
-        </a>
-        <button
-          pButton
-          type="button"
-          class="icon-action"
-          [text]="true"
-          [rounded]="true"
-          (click)="moduleMapOpen.emit($event)"
-          aria-label="更多模块"
-          aria-haspopup="dialog"
-          aria-controls="module-map-panel"
-          [attr.aria-expanded]="moreOpen"
-          pTooltip="更多模块"
-        >
-          <span class="toolbar-icon"><svg lucideMoreHorizontal size="19" strokeWidth="2.3"></svg></span>
-        </button>
-        <button pButton type="button" class="icon-action" [text]="true" [rounded]="true" (click)="logout.emit()" aria-label="退出登录" pTooltip="退出登录">
-          <span class="toolbar-icon"><svg lucideLogOut size="18" strokeWidth="2.2"></svg></span>
-        </button>
+          </button>
+          <a pButton class="icon-action" [text]="true" [rounded]="true" routerLink="/app/notifications" aria-label="通知中心" pTooltip="通知中心">
+            <span class="toolbar-icon toolbar-icon-badge">
+              <svg lucideBell size="18" strokeWidth="2.2"></svg>
+              @if (notificationCount > 0) {
+                <span class="toolbar-badge" aria-label="{{ notificationCount }} 条未读通知">{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
+              }
+            </span>
+          </a>
+        </div>
+
+        <div class="atlas-action-group atlas-account-actions">
+          <a pButton [text]="true" [rounded]="true" routerLink="/app/profile" class="profile-avatar-button icon-action" aria-label="个人工作台" pTooltip="个人工作台">
+            @if (auth.currentUser$ | async; as user) {
+              @if (user.avatar && brokenAvatarUrl !== user.avatar) {
+                <img [src]="user.avatar" [alt]="user.full_name || user.username" (error)="avatarBroken.emit(user.avatar)" />
+              } @else {
+                <span class="avatar-initials">{{ initials(user) }}</span>
+              }
+            } @else {
+              <span class="toolbar-icon"><svg lucideUserRound size="18" strokeWidth="2.2"></svg></span>
+            }
+          </a>
+          <button
+            pButton
+            type="button"
+            class="logout-action"
+            (click)="logout()"
+            aria-label="退出登录"
+            pTooltip="退出登录"
+          >
+            <span class="toolbar-icon"><svg lucideLogOut size="17" strokeWidth="2.35"></svg></span>
+          </button>
+          <button
+            pButton
+            type="button"
+            class="icon-action"
+            [text]="true"
+            [rounded]="true"
+            (click)="moduleMapOpen.emit($event)"
+            aria-label="更多模块"
+            aria-haspopup="dialog"
+            aria-controls="module-map-panel"
+            [attr.aria-expanded]="moreOpen"
+            pTooltip="更多模块"
+          >
+            <span class="toolbar-icon"><svg lucideMoreHorizontal size="19" strokeWidth="2.3"></svg></span>
+          </button>
+        </div>
       </div>
     </header>
   `
@@ -228,6 +246,7 @@ const ICONS = [
 export class AppTopbarComponent {
   protected readonly theme = inject(ThemeService);
   protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   @Input({ required: true }) activeDock!: DockItem;
   @Input() searchQuery = '';
@@ -254,5 +273,9 @@ export class AppTopbarComponent {
   @Output() refresh = new EventEmitter<void>();
   @Output() avatarBroken = new EventEmitter<string | null | undefined>();
   @Output() moduleMapOpen = new EventEmitter<Event>();
-  @Output() logout = new EventEmitter<void>();
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigateByUrl('/auth/login');
+  }
 }

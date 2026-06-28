@@ -1,0 +1,329 @@
+@layer nexus {
+  html.operations-console {
+    --erp-page-max: 1540px;
+    --erp-page-gutter: clamp(16px, 2.4vw, 36px);
+  }
+
+  html.operations-console .atlas-workbench,
+  html.operations-console .atlas-shell.route-overview .atlas-workbench {
+    width: min(var(--erp-page-max), calc(100vw - var(--erp-page-gutter))) !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-stage {
+    width: 100% !important;
+    min-width: 0 !important;
+    align-content: start !important;
+    gap: clamp(18px, 1.6vw, 26px) !important;
+    padding-bottom: clamp(28px, 4vw, 56px) !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-stage > app-workflow-command-strip,
+  html.operations-console .atlas-shell .atlas-stage > app-resource-workbench,
+  html.operations-console .atlas-shell .atlas-stage > .ops-atlas-page,
+  html.operations-console .atlas-shell .atlas-stage > main {
+    width: min(100%, var(--erp-page-max)) !important;
+    max-width: var(--erp-page-max) !important;
+    margin-inline: auto !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-strip,
+  html.operations-console .atlas-shell .module-workbench {
+    width: 100% !important;
+    min-width: 0 !important;
+    border: 1px solid var(--clean-line) !important;
+    border-radius: 20px !important;
+    color: var(--clean-ink) !important;
+    background:
+      linear-gradient(140deg, color-mix(in srgb, var(--clean-surface) 94%, transparent), color-mix(in srgb, var(--clean-inset) 76%, transparent)),
+      linear-gradient(95deg, color-mix(in srgb, var(--clean-accent) 6%, transparent), transparent 52%, color-mix(in srgb, var(--clean-warm) 5%, transparent)) !important;
+    box-shadow: var(--clean-shadow), inset 0 1px 0 rgba(255, 255, 255, .62) !important;
+    overflow: hidden !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-strip {
+    display: grid !important;
+    gap: 14px !important;
+    padding: clamp(14px, 1.2vw, 18px) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-primary,
+  html.operations-console .atlas-shell .workflow-command-bottom {
+    display: grid !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-primary {
+    grid-template-columns: minmax(0, 1fr) minmax(170px, .22fr) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-bottom {
+    grid-template-columns: minmax(0, .9fr) minmax(340px, .55fr) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-steps,
+  html.operations-console .atlas-shell .workflow-command-signals,
+  html.operations-console .atlas-shell .workflow-command-actions {
+    display: grid !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-steps {
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)) !important;
+  }
+
+  html.operations-console .atlas-shell .workflow-command-signals,
+  html.operations-console .atlas-shell .workflow-command-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html.operations-console .atlas-shell .module-workbench {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, .42fr) !important;
+    grid-template-areas:
+      "head head"
+      "caps caps"
+      "records inspector" !important;
+    gap: clamp(14px, 1.25vw, 20px) !important;
+    padding: clamp(16px, 1.4vw, 22px) !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-head {
+    grid-area: head !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(420px, auto) !important;
+    align-items: center !important;
+    gap: 14px !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-capability-strip {
+    grid-area: caps !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell app-resource-workbench-records {
+    grid-area: records !important;
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell app-resource-workbench-inspector {
+    grid-area: inspector !important;
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-search {
+    display: inline-grid !important;
+    grid-template-columns: 18px minmax(160px, 1fr) !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: min(100%, 260px) !important;
+    padding: 0 12px !important;
+    border: 1px solid var(--clean-line) !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--clean-inset) 78%, transparent) !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-search input {
+    width: 100% !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    color: var(--clean-ink) !important;
+    background: transparent !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-table-head,
+  html.operations-console .atlas-shell .workbench-record {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    align-items: center !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-column-labels,
+  html.operations-console .atlas-shell .record-main {
+    display: grid !important;
+    grid-template-columns: minmax(120px, .55fr) minmax(170px, 1fr) minmax(120px, .55fr) minmax(110px, .42fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .record-main {
+    width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    color: var(--clean-ink) !important;
+    background: transparent !important;
+    text-align: left !important;
+  }
+
+  html.operations-console .atlas-shell .workbench-record-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    justify-content: flex-end !important;
+  }
+
+  html.operations-console .atlas-shell .record-action-button {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  html.operations-console .atlas-shell .record-action-label {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination button,
+  html.operations-console .atlas-shell .atlas-pagination label,
+  html.operations-console .atlas-shell .atlas-pagination > span {
+    min-height: 36px !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: auto !important;
+    min-width: 72px !important;
+    padding: 0 12px !important;
+    color: var(--clean-ink-strong) !important;
+    font-family: var(--erp-font-control) !important;
+    font-size: .86rem !important;
+    font-weight: 850 !important;
+    text-indent: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination button[aria-label="上一页"],
+  html.operations-console .atlas-shell .atlas-pagination button[aria-label="下一页"],
+  html.operations-console .atlas-shell .atlas-pagination > button:first-of-type,
+  html.operations-console .atlas-shell .atlas-pagination > button:last-of-type,
+  html.operations-console .atlas-shell .atlas-pagination.compact button {
+    min-width: 38px !important;
+    width: 38px !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    color: transparent !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    text-indent: -999px !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination > button:first-of-type i,
+  html.operations-console .atlas-shell .atlas-pagination > button:last-of-type i,
+  html.operations-console .atlas-shell .atlas-pagination button[aria-label="上一页"] i,
+  html.operations-console .atlas-shell .atlas-pagination button[aria-label="下一页"] i,
+  html.operations-console .atlas-shell .atlas-pagination.compact button i {
+    margin: 0 !important;
+    color: var(--clean-ink-strong) !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    text-indent: 0 !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination > button:not(:first-of-type):not(:last-of-type) {
+    min-width: 58px !important;
+    max-width: 94px !important;
+    white-space: normal !important;
+    line-height: 1.1 !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination label {
+    display: inline-grid !important;
+    grid-template-columns: auto minmax(54px, 72px) !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 126px !important;
+    padding: 0 10px !important;
+  }
+
+  html.operations-console .atlas-shell .atlas-pagination input {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: 28px !important;
+    text-align: center !important;
+  }
+
+  @media (max-width: 1280px) {
+    html.operations-console .atlas-shell .workflow-command-primary,
+    html.operations-console .atlas-shell .workflow-command-bottom,
+    html.operations-console .atlas-shell .workbench-head,
+    html.operations-console .atlas-shell .module-workbench {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .atlas-shell .module-workbench {
+      grid-template-areas:
+        "head"
+        "caps"
+        "records"
+        "inspector" !important;
+    }
+
+    html.operations-console .atlas-shell .workbench-capability-strip,
+    html.operations-console .atlas-shell .workflow-command-signals,
+    html.operations-console .atlas-shell .workflow-command-actions {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+
+  @media (max-width: 760px) {
+    html.operations-console .atlas-shell .workflow-command-strip,
+    html.operations-console .atlas-shell .module-workbench {
+      border-radius: 14px !important;
+      padding: 12px !important;
+    }
+
+    html.operations-console .atlas-shell .workflow-command-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    html.operations-console .atlas-shell .workbench-capability-strip {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .atlas-shell .workbench-table-head {
+      display: none !important;
+    }
+
+    html.operations-console .atlas-shell .workbench-record,
+    html.operations-console .atlas-shell .record-main,
+    html.operations-console .atlas-shell .workbench-column-labels {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html.operations-console .atlas-shell .workbench-record-actions {
+      justify-content: flex-start !important;
+    }
+  }
+}

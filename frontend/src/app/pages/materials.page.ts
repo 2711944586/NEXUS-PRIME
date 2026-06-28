@@ -454,9 +454,12 @@ export class MaterialsPage {
     const data = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value }));
     return {
       tooltip: { trigger: 'item' },
-      legend: chartLegend('bottom'),
+      legend: { show: false },
       series: [
-        compactPieSeries(data.length ? data : [{ name: '未维护供应商', value: 1 }])
+        compactPieSeries(data.length ? data : [{ name: '未维护供应商', value: 1 }], {
+          center: ['50%', '50%'],
+          radius: ['42%', '68%']
+        })
       ]
     };
   });

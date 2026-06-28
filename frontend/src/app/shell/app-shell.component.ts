@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, HostListener, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +7,6 @@ import { MessageService } from 'primeng/api';
 import { catchError, debounceTime, distinctUntilChanged, filter, interval, of, startWith, Subject, switchMap } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
-import { AuthService } from '../core/auth.service';
 import { DockGroup, DockItem, ManufacturingCommandCenter, ServiceHealth } from '../core/models';
 import {
   COMPACT_DOCK_KEYS,
@@ -26,10 +25,16 @@ import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprin
 import { AppDockComponent } from './app-dock.component';
 import { AppModuleMapComponent } from './app-module-map.component';
 import { AppTopbarComponent, QuickCreateAction } from './app-topbar.component';
+import { ResourceWorkbenchComponent } from './resource-workbench.component';
+import { SceneBackgroundComponent } from '../motion';
+import { WorkflowCommandStripComponent } from './workflow-command-strip.component';
 import {
   EMPTY_COMMAND_CENTER,
   EMPTY_SERVICE_HEALTH,
+  buildShiftHandoffActions,
+  buildWorkflowSignals,
   calculateShellHealth,
+  nextWorkflowSteps as buildNextWorkflowSteps,
   normalizeServiceHealth,
   serviceHealthLabel,
   serviceHealthLatencyLabel,
@@ -56,9 +61,20 @@ const COMMAND_SUGGESTIONS = [
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, AppDockComponent, AppModuleMapComponent, AppTopbarComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterOutlet,
+    AppDockComponent,
+    AppModuleMapComponent,
+    AppTopbarComponent,
+    ResourceWorkbenchComponent,
+    SceneBackgroundComponent,
+    WorkflowCommandStripComponent
+  ],
   template: `
     <div class="atlas-shell" [class.drawer-open]="moreOpen" [class.route-overview]="isOverviewRoute()">
+      <nexus-scene-background image="/images/automated-production-line-wide.jpg"></nexus-scene-background>
       <a class="skip-main-link" href="#main-content">跳到主内容</a>
       @if (routeLoading()) {
         <div class="route-loading-bar" aria-hidden="true"></div>
@@ -87,7 +103,6 @@ const COMMAND_SUGGESTIONS = [
         (refresh)="refreshShell()"
         (avatarBroken)="markAvatarBroken($event)"
         (moduleMapOpen)="openModuleMap($event)"
-        (logout)="logout()"
       />
 
       <div class="atlas-workbench">
@@ -101,7 +116,21 @@ const COMMAND_SUGGESTIONS = [
         />
 
         <main class="content-stage atlas-stage" id="main-content">
+          @if (!isOverviewRoute()) {
+            <app-workflow-command-strip
+              [workflow]="currentWorkflow()"
+              [activeStage]="activeWorkflowStep()"
+              [signals]="workflowSignals()"
+              [nextStages]="nextWorkflowSteps()"
+              [handoffActions]="shiftHandoffActions()"
+              [shellHealth]="shellHealth()"
+              [riskCount]="commandData().risks.length"
+            />
+          }
           <router-outlet />
+          @if (!isOverviewRoute()) {
+            <app-resource-workbench />
+          }
         </main>
       </div>
 
@@ -124,7 +153,7 @@ const COMMAND_SUGGESTIONS = [
 export class AppShellComponent implements OnInit, OnDestroy {
   protected readonly theme = inject(ThemeService);
   private readonly api = inject(ApiService);
-  private readonly auth = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly messages = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
@@ -161,6 +190,9 @@ export class AppShellComponent implements OnInit, OnDestroy {
   protected readonly visibleDockGroups = computed<DockGroup[]>(() => groupedDockItems(this.visibleDockItems()));
   protected readonly currentWorkflow = computed<WorkflowBlueprint>(() => workflowForUrl(this.currentUrl()));
   protected readonly activeWorkflowStep = computed<WorkflowStage>(() => activeWorkflowStage(this.currentWorkflow(), this.currentUrl()));
+  protected readonly workflowSignals = computed(() => buildWorkflowSignals(this.commandData(), this.currentWorkflow()));
+  protected readonly nextWorkflowSteps = computed(() => buildNextWorkflowSteps(this.currentWorkflow(), this.activeWorkflowStep()));
+  protected readonly shiftHandoffActions = computed(() => buildShiftHandoffActions(this.currentWorkflow(), this.workflowSignals(), this.nextWorkflowSteps()));
   protected readonly moduleMapGroups = computed(() => {
     const all = [
       ...DOCK_ITEMS,
@@ -194,6 +226,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
   }).format(new Date());
 
   ngOnInit(): void {
+    this.document.documentElement.classList.add('nexus-app-shell-active');
     this.theme.hydrateFromServer();
     this.loadCommandData();
     this.loadServiceHealth();
@@ -232,6 +265,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.document.documentElement.classList.remove('nexus-app-shell-active');
     if (typeof window !== 'undefined') {
       window.removeEventListener('resize', this.onResize);
       window.removeEventListener('pointermove', this.onPointerMove);
@@ -242,11 +276,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
       }
     }
     this.clearSpotlight();
-  }
-
-  logout(): void {
-    this.auth.logout();
-    this.router.navigateByUrl('/auth/login');
   }
 
   @HostListener('document:keydown.escape')

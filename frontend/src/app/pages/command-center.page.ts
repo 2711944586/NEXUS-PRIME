@@ -12,6 +12,7 @@ import { ErpControlTower, ManufacturingCommandCenter, OperationsWorkflowBoard } 
 import { COMMAND_CENTER_PHOTOS, VisualAsset } from '../core/visual-assets';
 import { NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent } from '../motion';
 import { chartLegend } from './page-utils';
+import { ThemeService } from '../core/theme.service';
 
 const EMPTY_COMMAND_CENTER: ManufacturingCommandCenter = {
   kpis: {
@@ -85,6 +86,7 @@ const EMPTY_ERP_CONTROL_TOWER: ErpControlTower = {
 };
 
 type Tone = 'default' | 'success' | 'warning' | 'danger' | 'info';
+type ReportMode = 'flow' | 'risk' | 'cash';
 
 interface HeroMetric {
   label: string;
@@ -191,12 +193,28 @@ interface WorkflowStep {
         <article class="atlas-panel command-chart-panel" nexusReveal [nexusRevealDelay]="160">
           <div class="atlas-panel-head">
             <div>
-              <span class="atlas-kicker">经营趋势</span>
-              <h2>库存、采购、履约与现金风险</h2>
+              <span class="atlas-kicker">交互报表</span>
+              <h2>{{ activeReportTitle() }}</h2>
+              <p>{{ activeReportNote() }}</p>
             </div>
-            <span>{{ workflowBoard().summary.shift_window || '当班窗口' }}</span>
+            <div class="command-report-tabs" role="tablist" aria-label="经营报表视图">
+              @for (tab of reportTabs; track tab.mode) {
+                <button type="button" [class.active]="reportMode() === tab.mode" (click)="reportMode.set(tab.mode)">
+                  {{ tab.label }}
+                </button>
+              }
+            </div>
           </div>
           <div class="command-lean-chart" echarts [options]="operationsChart()"></div>
+          <div class="command-report-summary" aria-label="报表摘要">
+            @for (card of activeReportCards(); track card.label) {
+              <a [routerLink]="card.path" [class.warning]="card.tone === 'warning'" [class.danger]="card.tone === 'danger'" [class.success]="card.tone === 'success'">
+                <span>{{ card.label }}</span>
+                <strong>{{ card.value }}</strong>
+                <em>{{ card.note }}</em>
+              </a>
+            }
+          </div>
         </article>
 
         <aside class="atlas-panel command-action-panel" nexusReveal [nexusRevealDelay]="200">
@@ -263,11 +281,18 @@ interface WorkflowStep {
 })
 export class CommandCenterPage implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly theme = inject(ThemeService);
 
   protected readonly loading = signal(false);
   protected readonly data = signal<ManufacturingCommandCenter>(EMPTY_COMMAND_CENTER);
   protected readonly workflowBoard = signal<OperationsWorkflowBoard>(EMPTY_WORKFLOW_BOARD);
   protected readonly controlTower = signal<ErpControlTower>(EMPTY_ERP_CONTROL_TOWER);
+  protected readonly reportMode = signal<ReportMode>('flow');
+  protected readonly reportTabs: Array<{ mode: ReportMode; label: string }> = [
+    { mode: 'flow', label: '业务流' },
+    { mode: 'risk', label: '风险' },
+    { mode: 'cash', label: '现金' }
+  ];
 
   protected readonly heroPhoto = computed<VisualAsset>(() => COMMAND_CENTER_PHOTOS[28] ?? COMMAND_CENTER_PHOTOS[0]);
   protected readonly controlScore = computed(() => {
@@ -394,24 +419,268 @@ export class CommandCenterPage implements OnInit {
     COMMAND_CENTER_PHOTOS[16]
   ].filter(Boolean) as VisualAsset[]);
 
+  protected readonly activeReportTitle = computed(() => {
+    switch (this.reportMode()) {
+      case 'risk':
+        return '风险分布与处理优先级';
+      case 'cash':
+        return '现金压力与回款节奏';
+      default:
+        return '库存、采购、履约业务流';
+    }
+  });
+
+  protected readonly activeReportNote = computed(() => {
+    switch (this.reportMode()) {
+      case 'risk':
+        return '切换查看低库存、采购阻塞和逾期应收的优先级。';
+      case 'cash':
+        return '把订单金额、逾期应收和控制分放在同一视图里判断现金压力。';
+      default:
+        return '按当班主线查看库存、采购、履约、应收和归档的流转强度。';
+    }
+  });
+
+  protected readonly activeReportCards = computed<HeroMetric[]>(() => {
+    const kpis = this.data().kpis;
+    if (this.reportMode() === 'risk') {
+      return [
+        { label: '低库存', value: `${kpis.low_stock_products || 0} 项`, note: '优先补货', path: '/app/inventory/replenishment', tone: kpis.low_stock_products ? 'warning' : 'success' },
+        { label: '采购阻塞', value: `${kpis.pending_purchase || 0} 单`, note: '待审批', path: '/app/procurement/orders', tone: kpis.pending_purchase ? 'warning' : 'success' },
+        { label: '风险事项', value: `${this.data().risks.length || 0} 条`, note: '需复核', path: '/app/tasks', tone: this.data().risks.length ? 'danger' : 'success' }
+      ];
+    }
+    if (this.reportMode() === 'cash') {
+      return [
+        { label: '订单金额', value: this.compactMoney(kpis.order_amount), note: '履约口径', path: '/app/sales/orders', tone: 'success' },
+        { label: '逾期应收', value: this.compactMoney(kpis.overdue_amount), note: '回款压力', path: '/app/finance/receivables', tone: kpis.overdue_amount ? 'danger' : 'success' },
+        { label: '控制分', value: `${this.controlScore()}%`, note: '经营健康', path: '/app/metrics', tone: this.controlScore() < 80 ? 'warning' : 'success' }
+      ];
+    }
+    return this.heroMetrics().slice(0, 3);
+  });
+
   protected readonly operationsChart = computed<EChartsCoreOption>(() => {
     const kpis = this.data().kpis;
-    const labels = ['库存', '采购', '履约', '应收', '报表'];
-    return {
+    const isDark = this.theme.mode() === 'dark-cockpit';
+    const text = isDark ? '#f7f7f2' : '#151515';
+    const muted = isDark ? '#c8c5bf' : '#66615b';
+    const line = isDark ? 'rgba(255,255,255,.15)' : 'rgba(17,17,17,.12)';
+    const tooltipBg = isDark ? 'rgba(15,15,14,.96)' : 'rgba(255,255,255,.98)';
+    const zoomFill = isDark ? 'rgba(47,201,130,.22)' : 'rgba(15,143,98,.16)';
+    const base = {
       backgroundColor: 'transparent',
-      color: ['#1f5f7a', '#2ca58d', '#d99135'],
-      tooltip: { trigger: 'axis' },
-      legend: chartLegend('top', '#64748b'),
-      grid: { left: 20, right: 20, top: 46, bottom: 24, containLabel: true },
+      color: ['#15a46f', '#c98b1f', '#d64b46', '#111111'],
+      animationDuration: 720,
+      animationEasing: 'cubicOut' as const,
+      tooltip: {
+        trigger: 'axis',
+        confine: true,
+        backgroundColor: tooltipBg,
+        borderColor: line,
+        textStyle: { color: text, fontSize: 13, fontWeight: 650 }
+      },
+      axisPointer: {
+        link: [{ xAxisIndex: 'all' }],
+        label: {
+          color: text,
+          backgroundColor: isDark ? 'rgba(18,18,16,.96)' : 'rgba(255,255,255,.98)',
+          borderColor: line,
+          borderWidth: 1
+        }
+      },
+      toolbox: {
+        show: true,
+        right: 8,
+        top: 2,
+        itemSize: 16,
+        itemGap: 10,
+        feature: {
+          restore: {},
+          saveAsImage: {
+            pixelRatio: 2,
+            backgroundColor: isDark ? '#080807' : '#ffffff'
+          }
+        },
+        iconStyle: {
+          borderColor: muted,
+          borderWidth: 1.6
+        },
+        emphasis: {
+          iconStyle: {
+            borderColor: isDark ? '#2fc982' : '#0f8f62'
+          }
+        }
+      },
+      legend: chartLegend('top', muted),
+      grid: { left: 20, right: 22, top: 54, bottom: 62, containLabel: true }
+    };
+
+    const axisZoom = [
+      {
+        type: 'inside',
+        throttle: 60,
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true
+      },
+      {
+        type: 'slider',
+        height: 18,
+        bottom: 18,
+        borderColor: line,
+        fillerColor: zoomFill,
+        handleStyle: {
+          color: isDark ? '#2fc982' : '#0f8f62',
+          borderColor: isDark ? '#2fc982' : '#0f8f62'
+        },
+        moveHandleStyle: {
+          color: isDark ? 'rgba(255,250,240,.2)' : 'rgba(15,143,98,.12)'
+        },
+        textStyle: { color: muted, fontSize: 11 }
+      }
+    ];
+
+    if (this.reportMode() === 'risk') {
+      return {
+        ...base,
+        tooltip: {
+          ...(base.tooltip as object),
+          trigger: 'item'
+        },
+        toolbox: {
+          ...base.toolbox,
+          feature: {
+            restore: {},
+            saveAsImage: {
+              pixelRatio: 2,
+              backgroundColor: isDark ? '#080807' : '#ffffff'
+            }
+          }
+        },
+        radar: {
+          radius: '62%',
+          splitNumber: 4,
+          axisName: { color: muted, fontSize: 13, fontWeight: 700 },
+          axisLine: { lineStyle: { color: line } },
+          splitLine: { lineStyle: { color: line } },
+          splitArea: { areaStyle: { color: ['transparent', isDark ? 'rgba(255,255,255,.035)' : 'rgba(17,17,17,.025)'] } },
+          indicator: [
+            { name: '低库存', max: Math.max(10, kpis.low_stock_products + 4) },
+            { name: '采购', max: Math.max(10, kpis.pending_purchase + 4) },
+            { name: '逾期', max: Math.max(10, Math.round(kpis.overdue_amount / 10000) + 4) },
+            { name: '待办', max: Math.max(10, this.actionQueue().length + 4) },
+            { name: '风险', max: Math.max(10, this.data().risks.length + 4) }
+          ]
+        },
+        series: [{
+          name: '风险雷达',
+          type: 'radar',
+          symbol: 'circle',
+          symbolSize: 7,
+          emphasis: {
+            focus: 'self',
+            lineStyle: { width: 4 }
+          },
+          data: [{
+            value: [
+              kpis.low_stock_products,
+              kpis.pending_purchase,
+              Math.round(kpis.overdue_amount / 10000),
+              this.actionQueue().length,
+              this.data().risks.length
+            ],
+            name: '当前风险',
+            areaStyle: { opacity: .24 }
+          }]
+        }]
+      };
+    }
+
+    if (this.reportMode() === 'cash') {
+      const labels = ['订单', '逾期', '库存', '控制分'];
+      return {
+        ...base,
+        dataZoom: axisZoom,
+        toolbox: {
+          ...base.toolbox,
+          feature: {
+            dataZoom: { yAxisIndex: 'none' },
+            magicType: { type: ['line', 'bar'] },
+            restore: {},
+            saveAsImage: {
+              pixelRatio: 2,
+              backgroundColor: isDark ? '#080807' : '#ffffff'
+            }
+          }
+        },
+        xAxis: {
+          type: 'category',
+          data: labels,
+          axisLabel: { color: muted, fontSize: 13, fontWeight: 700 },
+          axisLine: { show: false },
+          axisTick: { show: false }
+        },
+        yAxis: [
+          {
+            type: 'value',
+            axisLabel: { color: muted, fontSize: 12 },
+            splitLine: { lineStyle: { color: line, type: 'dashed' } }
+          }
+        ],
+        series: [
+          {
+            name: '金额/数量',
+            type: 'bar',
+            barWidth: 30,
+            data: [
+              Math.max(1, Math.round(kpis.order_amount / 10000)),
+              Math.max(1, Math.round(kpis.overdue_amount / 10000)),
+              Math.max(1, Math.round(kpis.stock_quantity / 100)),
+              this.controlScore()
+            ],
+            itemStyle: { borderRadius: [10, 10, 3, 3] },
+            emphasis: { focus: 'series' }
+          },
+          {
+            name: '控制线',
+            type: 'line',
+            smooth: true,
+            symbolSize: 8,
+            data: [82, kpis.overdue_amount > 0 ? 58 : 88, 76, this.controlScore()],
+            lineStyle: { width: 3 },
+            emphasis: { focus: 'series' }
+          }
+        ]
+      };
+    }
+
+    const labels = ['库存', '采购', '履约', '应收', '归档'];
+    return {
+      ...base,
+      dataZoom: axisZoom,
+      toolbox: {
+        ...base.toolbox,
+        feature: {
+          dataZoom: { yAxisIndex: 'none' },
+          magicType: { type: ['line', 'bar'] },
+          restore: {},
+          saveAsImage: {
+            pixelRatio: 2,
+            backgroundColor: isDark ? '#080807' : '#ffffff'
+          }
+        }
+      },
       xAxis: {
         type: 'category',
         data: labels,
+        axisLabel: { color: muted, fontSize: 13, fontWeight: 700 },
         axisLine: { show: false },
         axisTick: { show: false }
       },
       yAxis: {
         type: 'value',
-        splitLine: { lineStyle: { color: 'rgba(100,116,139,.16)', type: 'dashed' } }
+        axisLabel: { color: muted, fontSize: 12 },
+        splitLine: { lineStyle: { color: line, type: 'dashed' } }
       },
       series: [
         {
@@ -425,7 +694,8 @@ export class CommandCenterPage implements OnInit {
             Math.max(1, Math.round(kpis.overdue_amount / 10000)),
             this.controlTower().summary.evidence_count || 8
           ],
-          itemStyle: { borderRadius: [10, 10, 3, 3] }
+          itemStyle: { borderRadius: [10, 10, 3, 3] },
+          emphasis: { focus: 'series' }
         },
         {
           name: '健康度',
@@ -433,7 +703,8 @@ export class CommandCenterPage implements OnInit {
           smooth: true,
           symbolSize: 8,
           data: [86, 78, 82, this.data().kpis.overdue_amount > 0 ? 62 : 88, this.controlScore()],
-          lineStyle: { width: 3 }
+          lineStyle: { width: 3 },
+          emphasis: { focus: 'series' }
         }
       ]
     };
