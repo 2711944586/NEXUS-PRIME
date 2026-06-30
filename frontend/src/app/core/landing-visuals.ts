@@ -14,7 +14,7 @@ interface AuthVisualSet {
   image: string;
 }
 
-export const LANDING_POSTER = '/images/automated-production-line-wide.jpg';
+export const LANDING_POSTER = runtimeAssetUrl('images/automated-production-line-wide.jpg');
 
 export const LANDING_VIDEOS = {
   dataCenterCorridor: 'https://assets.mixkit.co/videos/23282/23282-720.mp4',
@@ -90,6 +90,23 @@ export function policyPanelVideoSource(theme: ThemeMode): string {
 
 export function policyFallbackImage(): string {
   return OPERATIONS_VISUALS.contractsDesk;
+}
+
+export function runtimeAssetUrl(path: string): string {
+  if (/^https?:\/\//.test(path)) {
+    return path;
+  }
+  const normalized = path.replace(/^\/+/, '');
+  const base = typeof document === 'undefined'
+    ? '/'
+    : (document.querySelector('base')?.getAttribute('href') || '/');
+  const basePath = new URL(base, typeof location === 'undefined' ? 'http://localhost/' : location.href).pathname;
+  const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
+  const baseWithoutSlash = normalizedBase.replace(/^\/+/, '');
+  if (normalized.startsWith(baseWithoutSlash)) {
+    return `/${normalized}`;
+  }
+  return `${normalizedBase}${normalized}`;
 }
 
 function selectThemeVideo(pair: ThemeVideoPair, theme: ThemeMode): string {

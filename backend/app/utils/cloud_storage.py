@@ -62,6 +62,15 @@ def uploads_require_cloud_storage():
         return True
 
     upload_folder = os.path.abspath(current_app.config.get('UPLOAD_FOLDER', ''))
+    runtime_dir = os.environ.get('NEXUS_RUNTIME_DIR')
+    if runtime_dir:
+        runtime_root = os.path.abspath(runtime_dir)
+        try:
+            if upload_folder == runtime_root or upload_folder.startswith(runtime_root + os.sep):
+                return False
+        except ValueError:
+            pass
+
     temp_root = os.path.abspath(tempfile.gettempdir())
     return (
         os.environ.get('VERCEL') == '1'

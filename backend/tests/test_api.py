@@ -698,6 +698,22 @@ def test_uploads_require_persistent_storage_when_configured(app, client):
     assert uploaded.json['error'] == 'persistent_storage_required'
 
 
+def test_uploads_allow_configured_runtime_dir_without_cloudinary(app, client, monkeypatch):
+    headers = login(client)
+    runtime_root = os.path.dirname(app.config['UPLOAD_FOLDER'])
+    monkeypatch.setenv('NEXUS_RUNTIME_DIR', runtime_root)
+    app.config['REQUIRE_CLOUD_STORAGE_FOR_UPLOADS'] = 'auto'
+
+    avatar = client.post(
+        '/api/v1/me/avatar',
+        headers=headers,
+        data={'file': (BytesIO(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR'), 'avatar.png', 'application/octet-stream')},
+        content_type='multipart/form-data'
+    )
+    assert avatar.status_code == 200
+    assert avatar.json['data']['avatar'].endswith('.png')
+
+
 def test_attachment_download_supports_dedicated_and_legacy_storage(app, client):
     headers = login(client)
     admin = User.query.filter_by(email='admin@nexus.com').first()

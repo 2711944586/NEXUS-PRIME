@@ -1894,7 +1894,10 @@
     inset: 0;
     z-index: -4;
     overflow: hidden;
-    background-color: #050506;
+    background:
+      linear-gradient(90deg, rgba(5, 5, 6, .76), rgba(5, 5, 6, .2) 45%, rgba(5, 5, 6, .72)),
+      var(--entry-poster, url("/images/automated-production-line-wide.jpg")) center / cover no-repeat,
+      #050506;
     pointer-events: none;
   }
 

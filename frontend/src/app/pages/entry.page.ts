@@ -3,7 +3,7 @@ import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } fr
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
-import { entryVideoSource, LANDING_POSTER } from '../core/landing-visuals';
+import { entryVideoSource, LANDING_POSTER, runtimeAssetUrl } from '../core/landing-visuals';
 import { ThemeService } from '../core/theme.service';
 import { NexusRevealDirective, NexusSpotlightDirective } from '../motion';
 
@@ -12,7 +12,7 @@ import { NexusRevealDirective, NexusSpotlightDirective } from '../motion';
   imports: [CommonModule, RouterLink, ButtonModule, NexusRevealDirective, NexusSpotlightDirective],
   template: `
     <main id="main-content" class="entry-screen nexus-motion-entry">
-      <div class="motion-video-stage" aria-hidden="true">
+      <div class="motion-video-stage" [style.--entry-poster]="posterCssUrl" aria-hidden="true">
         <video
           #entryVideo
           class="motion-video-bg"
@@ -197,6 +197,7 @@ export class EntryPage implements AfterViewInit, OnDestroy {
   };
   protected readonly theme = inject(ThemeService);
   protected readonly poster = LANDING_POSTER;
+  protected readonly posterCssUrl = `url("${LANDING_POSTER}")`;
 
   protected readonly flowSteps = [
     { title: '经营总览', body: '指标、任务与风险进入同一屏', icon: 'pi pi-chart-line' },
@@ -222,28 +223,28 @@ export class EntryPage implements AfterViewInit, OnDestroy {
   ];
   protected readonly photos = [
     {
-      src: '/images/automated-production-line-wide.jpg',
+      src: runtimeAssetUrl('images/automated-production-line-wide.jpg'),
       alt: '制造车间产线现场',
       kicker: 'Plant floor',
       title: '现场任务进入经营链路',
       featured: true
     },
     {
-      src: '/images/warehouse-operator-aisle-wide.jpg',
+      src: runtimeAssetUrl('images/warehouse-operator-aisle-wide.jpg'),
       alt: '仓库团队在货架区协同作业',
       kicker: 'Warehouse',
       title: '仓储与移动扫码协同',
       featured: false
     },
     {
-      src: '/images/control-panel-wide.jpg',
+      src: runtimeAssetUrl('images/control-panel-wide.jpg'),
       alt: '控制台屏幕展示经营指标',
       kicker: 'Control room',
       title: '管理层查看实时指标',
       featured: false
     },
     {
-      src: '/images/factory-quality-control-wide.jpg',
+      src: runtimeAssetUrl('images/factory-quality-control-wide.jpg'),
       alt: '质检人员检查制造物料',
       kicker: 'Quality',
       title: '质检、文件和审计留痕',

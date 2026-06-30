@@ -243,7 +243,7 @@ function Update-FrontendStaticAssetPaths([string]$Directory, [string]$BaseHref) 
     Get-ChildItem -LiteralPath $Directory -Recurse -File -Filter $extension | ForEach-Object {
       $content = Get-Content -LiteralPath $_.FullName -Raw
       $next = [regex]::Replace($content, "(?<=[`"'(])\/images\/", $assetBase)
-      $next = [regex]::Replace($next, "(?<=[`"'])images/", $assetBase)
+      $next = [regex]::Replace($next, "(?<=[`"'])(?!$([regex]::Escape($normalizedBase)))images/", $assetBase)
       if ($next -ne $content) {
         Set-Content -LiteralPath $_.FullName -Value $next -Encoding UTF8 -NoNewline
       }
