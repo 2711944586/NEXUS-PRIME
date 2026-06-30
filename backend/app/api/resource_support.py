@@ -121,9 +121,18 @@ def public_api_url(path):
     normalized = '/' + str(path).lstrip('/')
     root = request.host_url.rstrip('/')
     forwarded_proto = request.headers.get('X-Forwarded-Proto', '').split(',')[0].strip()
+    forwarded_ssl = (request.headers.get('X-Forwarded-Ssl') or '').lower()
+    forwarded_scheme = request.headers.get('X-Forwarded-Scheme', '').split(',')[0].strip()
+    cloudbase_https_host = any(token in request.host for token in ('.tcloudbase.com', '.tcloudbaseapp.com', '.sh.run.tcloudbase.com'))
     if forwarded_proto in {'http', 'https'} and root.startswith(('http://', 'https://')):
         root = root.replace('http://', f'{forwarded_proto}://', 1).replace('https://', f'{forwarded_proto}://', 1)
+    elif forwarded_scheme in {'http', 'https'} and root.startswith(('http://', 'https://')):
+        root = root.replace('http://', f'{forwarded_scheme}://', 1).replace('https://', f'{forwarded_scheme}://', 1)
+    elif forwarded_ssl == 'on' and root.startswith('http://'):
+        root = root.replace('http://', 'https://', 1)
     elif request.is_secure and root.startswith('http://'):
+        root = root.replace('http://', 'https://', 1)
+    elif cloudbase_https_host and root.startswith('http://'):
         root = root.replace('http://', 'https://', 1)
     return f'{root}{normalized}'
 

@@ -49,3 +49,52 @@ def test_platform_auth_keeps_cookie_and_csrf_contract():
 
         db.session.remove()
         db.drop_all()
+
+
+def test_platform_auth_accepts_trusted_origin_header_csrf_when_cookie_is_partitioned():
+    app = create_app('testing')
+    app.config.update(CORS_ORIGINS=['https://frontend.example.com'])
+
+    with app.app_context():
+        db.create_all()
+        role = Role(name='Admin', is_admin=True)
+        user = User(username='admin', email='admin@nexus.com', role=role, is_admin=True)
+        user.password = 'admin123'
+        db.session.add_all([role, user])
+        db.session.commit()
+
+        login_client = app.test_client()
+        login = login_client.post('/api/v1/auth/login', json={'email': 'admin@nexus.com', 'password': 'admin123'})
+        csrf_token = login.json['data']['csrf_token']
+        access_cookie = next(
+            header.split(';', 1)[0].split('=', 1)[1]
+            for header in login.headers.getlist('Set-Cookie')
+            if header.startswith(f'{platform_auth.ACCESS_COOKIE_NAME}=')
+        )
+
+        cloud_client = app.test_client(use_cookies=False)
+        create = cloud_client.post(
+            '/api/v1/products',
+            headers={
+                'Cookie': f'{platform_auth.ACCESS_COOKIE_NAME}={access_cookie}',
+                'Origin': 'https://frontend.example.com',
+                'X-CSRF-Token': csrf_token,
+            },
+            json={'sku': 'AUTH-CLOUD-CSRF', 'name': '云端 CSRF 分区兼容物料'},
+        )
+        assert create.status_code == 201
+
+        blocked = cloud_client.post(
+            '/api/v1/products',
+            headers={
+                'Cookie': f'{platform_auth.ACCESS_COOKIE_NAME}={access_cookie}',
+                'Origin': 'https://evil.example.com',
+                'X-CSRF-Token': csrf_token,
+            },
+            json={'sku': 'AUTH-CLOUD-BLOCK', 'name': '非可信来源'},
+        )
+        assert blocked.status_code == 403
+        assert blocked.json['error'] == 'csrf_failed'
+
+        db.session.remove()
+        db.drop_all()

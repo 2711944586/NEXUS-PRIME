@@ -10,6 +10,7 @@ from app.services.audit_service import AuditService
 from . import api_bp
 from .auth import (
     CSRF_COOKIE_NAME,
+    auth_cookie_options,
     create_access_token,
     current_api_user,
     generate_csrf_token,
@@ -227,10 +228,7 @@ def api_csrf():
         CSRF_COOKIE_NAME,
         csrf_token,
         max_age=int(current_app.config.get('JWT_EXPIRES_HOURS', 12) * 3600),
-        httponly=False,
-        secure=bool(current_app.config.get('AUTH_COOKIE_SECURE', current_app.config.get('SESSION_COOKIE_SECURE', False))),
-        samesite=current_app.config.get('AUTH_COOKIE_SAMESITE', 'Lax'),
-        path='/',
+        **auth_cookie_options(http_only=False),
     )
     return response
 
