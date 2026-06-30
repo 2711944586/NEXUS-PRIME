@@ -82,7 +82,8 @@ export class AuthService {
   }
 
   hasSessionCookieHint(): boolean {
-    return document.cookie.split(';').some(item => item.trim().startsWith('nexus_csrf_token='));
+    return document.cookie.split(';').some(item => item.trim().startsWith('nexus_csrf_token='))
+      || Boolean(sessionStorage.getItem(CSRF_STORAGE_KEY));
   }
 
   private applyLoginResult(result: LoginResult): void {

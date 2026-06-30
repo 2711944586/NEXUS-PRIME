@@ -481,20 +481,25 @@ export class MobileTerminalPage implements OnInit {
     const lanes = this.data().lanes;
     return {
       backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis' },
-      legend: chartLegend('top', 'rgba(226,239,255,.82)'),
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15,23,42,.96)',
+        borderColor: 'rgba(148,163,184,.28)',
+        textStyle: { color: '#e5eefb', fontWeight: 700 }
+      },
+      legend: chartLegend('top', '#e5eefb'),
       grid: { left: 18, right: 18, top: 44, bottom: 32, containLabel: true },
       xAxis: {
         type: 'category',
         data: lanes.map(item => item.label),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: 'rgba(226,239,255,.7)', fontWeight: 800, width: 86, overflow: 'truncate' }
+        axisLabel: { color: '#cbd5e1', fontWeight: 800, width: 86, overflow: 'truncate' }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { color: 'rgba(226,239,255,.58)' },
-        splitLine: { lineStyle: { color: 'rgba(148,163,184,.16)' } }
+        axisLabel: { color: '#94a3b8' },
+        splitLine: { lineStyle: { color: 'rgba(148,163,184,.24)' } }
       },
       series: [
         { name: '任务数', type: 'bar', data: lanes.map(item => item.active_count), itemStyle: { color: '#14b8a6', borderRadius: [10, 10, 2, 2] } },
@@ -507,20 +512,25 @@ export class MobileTerminalPage implements OnInit {
     const devices = this.data().device_sessions;
     return {
       backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis' },
-      legend: chartLegend('top', 'rgba(226,239,255,.82)'),
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15,23,42,.96)',
+        borderColor: 'rgba(148,163,184,.28)',
+        textStyle: { color: '#e5eefb', fontWeight: 700 }
+      },
+      legend: chartLegend('top', '#e5eefb'),
       grid: { left: 18, right: 18, top: 44, bottom: 32, containLabel: true },
       xAxis: {
         type: 'category',
         data: devices.map(item => item.id),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: 'rgba(226,239,255,.7)', fontWeight: 800 }
+        axisLabel: { color: '#cbd5e1', fontWeight: 800 }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { color: 'rgba(226,239,255,.58)' },
-        splitLine: { lineStyle: { color: 'rgba(148,163,184,.16)' } }
+        axisLabel: { color: '#94a3b8' },
+        splitLine: { lineStyle: { color: 'rgba(148,163,184,.24)' } }
       },
       series: [
         { name: '电量', type: 'bar', data: devices.map(item => item.battery), itemStyle: { color: '#f59e0b', borderRadius: [10, 10, 2, 2] } },
@@ -534,20 +544,25 @@ export class MobileTerminalPage implements OnInit {
     if (zones.length) {
       return {
         backgroundColor: 'transparent',
-        tooltip: { trigger: 'axis' },
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(15,23,42,.96)',
+          borderColor: 'rgba(148,163,184,.28)',
+          textStyle: { color: '#e5eefb', fontWeight: 700 }
+        },
         grid: { left: 18, right: 18, top: 28, bottom: 32, containLabel: true },
         xAxis: {
           type: 'category',
           data: zones.map(item => item.label),
           axisLine: { show: false },
           axisTick: { show: false },
-          axisLabel: { color: 'rgba(226,239,255,.7)', fontWeight: 800, width: 86, overflow: 'truncate' }
+          axisLabel: { color: '#cbd5e1', fontWeight: 800, width: 86, overflow: 'truncate' }
         },
         yAxis: {
           type: 'value',
           max: 100,
-          axisLabel: { color: 'rgba(226,239,255,.58)', formatter: '{value}%' },
-          splitLine: { lineStyle: { color: 'rgba(148,163,184,.16)' } }
+          axisLabel: { color: '#94a3b8', formatter: '{value}%' },
+          splitLine: { lineStyle: { color: 'rgba(148,163,184,.24)' } }
         },
         series: [{ type: 'bar', data: zones.map(item => item.utilization), itemStyle: { color: '#3b82f6', borderRadius: [10, 10, 2, 2] } }]
       };
@@ -555,8 +570,13 @@ export class MobileTerminalPage implements OnInit {
     const summary = this.data().summary;
     return {
       backgroundColor: 'transparent',
-      tooltip: { trigger: 'item' },
-      legend: chartLegend('bottom', 'rgba(226,239,255,.78)'),
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(15,23,42,.96)',
+        borderColor: 'rgba(148,163,184,.28)',
+        textStyle: { color: '#e5eefb', fontWeight: 700 }
+      },
+      legend: chartLegend('bottom', '#e5eefb'),
       series: [compactPieSeries([
         { name: '收货', value: summary.receiving },
         { name: '盘点', value: summary.counting },

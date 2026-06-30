@@ -367,16 +367,18 @@ export class ResourceWorkbenchComponent implements OnInit, OnDestroy {
     request.pipe(
       catchError(error => {
         this.messages.add({ severity: 'warn', summary: '保存未完成', detail: errorDetail(error, '记录未写入，请检查权限或字段。') });
-        return of(null);
+        return of(undefined);
       }),
       finalize(() => this.saving.set(false))
     ).subscribe(result => {
-      if (!result) {
+      if (result === undefined) {
         return;
       }
-      this.messages.add({ severity: 'success', summary: this.mode() === 'create' ? '记录已创建' : '记录已更新', detail: this.displayTitle(result) });
-      this.operationNote.set(`${this.mode() === 'create' ? '已创建' : '已更新'}：${this.displayTitle(result)}`);
-      this.selected.set(result);
+      const fallbackTitle = cfg.createEndpoint === 'inventory/adjust' ? '库存变动已写入' : '操作已完成';
+      const detail = result ? this.displayTitle(result) : fallbackTitle;
+      this.messages.add({ severity: 'success', summary: this.mode() === 'create' ? '记录已创建' : '记录已更新', detail });
+      this.operationNote.set(`${this.mode() === 'create' ? '已创建' : '已更新'}：${detail}`);
+      this.selected.set(result ?? null);
       this.mode.set('inspect');
       this.load(true);
     });

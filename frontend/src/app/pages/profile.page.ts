@@ -51,11 +51,11 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, NgxEchartsDirective, ButtonModule, InputTextModule, SkeletonModule, TagModule, TextareaModule],
   template: `
-    <section class="ops-atlas-page profile-console-page">
-      <header class="profile-hero atlas-panel">
-        @if (user(); as current) {
-          <div class="profile-identity">
-            <div class="profile-avatar-wrap">
+    <section class="ops-atlas-page profile-console-page profile-studio-page">
+      @if (user(); as current) {
+        <header class="atlas-panel profile-studio-hero">
+          <div class="profile-studio-person">
+            <div class="profile-avatar-wrap profile-studio-avatar-wrap">
               <div class="profile-avatar" [class.loading]="avatarUploading() || avatarDeleting()">
                 @if (avatarDisplayUrl(current); as avatarUrl) {
                   <img [src]="avatarUrl" [alt]="current.full_name || current.username" (error)="markAvatarBroken(avatarUrl)" />
@@ -78,90 +78,129 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
                 </button>
               </div>
             </div>
-            <div>
-              <span class="atlas-kicker">账号</span>
+
+            <div class="profile-studio-copy">
+              <span class="atlas-kicker">个人工作台</span>
               <h1>{{ current.full_name || current.username }}</h1>
               <p>{{ current.position || '业务协同成员' }} / {{ current.department_name_display || current.department_name || '未设置部门' }}</p>
+              <div class="profile-meta-row" aria-label="账号信息">
+                <span><i class="pi pi-envelope"></i>{{ current.email || '未绑定邮箱' }}</span>
+                <span><i class="pi pi-briefcase"></i>{{ current.role_name || 'User' }}</span>
+                <span><i class="pi pi-building"></i>{{ current.department_name_display || current.department_name || '未设置部门' }}</span>
+              </div>
               <div class="profile-tags">
                 <p-tag [value]="current.role_name || 'User'" severity="info" />
                 <p-tag [value]="current.is_admin_effective ? '管理员' : '成员'" [severity]="current.is_admin_effective ? 'success' : 'secondary'" />
               </div>
             </div>
           </div>
-          <div class="profile-signal-grid" aria-label="个人工作摘要">
-            <article>
-              <span>权限域</span>
-              <strong>{{ current.is_admin_effective ? '全域' : '业务域' }}</strong>
-              <em>{{ current.role_name || 'User' }}</em>
-            </article>
-            <article>
-              <span>工作台</span>
-              <strong>{{ draft.preferences?.theme === 'dark-cockpit' ? '深色' : '浅色' }}</strong>
-              <em>偏好已同步</em>
-            </article>
-            <article>
-              <span>资料完整度</span>
-              <strong>{{ profileCompletion() }}%</strong>
-              <em>账号、岗位、说明</em>
-            </article>
-            <article>
-              <span>待处理任务</span>
-              <strong>{{ todoTotal() }}</strong>
-              <em>来自业务队列</em>
-            </article>
-            <article>
-              <span>经营风险</span>
-              <strong>{{ command().risks.length }}</strong>
-              <em>库存、采购、应收</em>
-            </article>
-            <article>
-              <span>回款压力</span>
-              <strong>{{ compactMoney(analytics().kpis.unpaid_amount) }}</strong>
-              <em>账龄与信用占用</em>
-            </article>
-          </div>
-        } @else {
-          <p-skeleton height="160px" />
-        }
-      </header>
 
-      <section class="profile-command-grid" aria-label="个人经营工作台">
-        <article class="atlas-panel profile-chart-panel wide">
+          <aside class="profile-session-panel" aria-label="当前会话">
+            <div class="profile-session-head">
+              <span>当前会话</span>
+              <strong>{{ current.is_admin_effective ? '管理权限' : '成员权限' }}</strong>
+              <em>{{ draft.preferences?.theme === 'dark-cockpit' ? '深色驾驶舱' : '白色系统' }}</em>
+            </div>
+            <div class="profile-signal-grid" aria-label="个人工作摘要">
+              <article>
+                <span>资料完整度</span>
+                <strong>{{ profileCompletion() }}%</strong>
+                <em>账号、岗位、说明</em>
+              </article>
+              <article>
+                <span>待处理任务</span>
+                <strong>{{ todoTotal() }}</strong>
+                <em>业务队列</em>
+              </article>
+              <article>
+                <span>经营风险</span>
+                <strong>{{ command().risks.length }}</strong>
+                <em>库存、采购、应收</em>
+              </article>
+              <article>
+                <span>回款压力</span>
+                <strong>{{ compactMoney(analytics().kpis.unpaid_amount) }}</strong>
+                <em>账龄占用</em>
+              </article>
+            </div>
+          </aside>
+        </header>
+      } @else {
+        <p-skeleton height="180px" />
+      }
+
+      <section class="profile-studio-insights" aria-label="个人经营工作台">
+        <article class="atlas-panel profile-chart-panel profile-workload-panel">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">个人负载</span>
-              <h2>个人工作负载</h2>
+              <h2>工作负载</h2>
             </div>
             <p-tag severity="info" [value]="todoTotal() + ' 项待处理'" />
           </div>
-          <div class="profile-chart" echarts [options]="workloadChart()"></div>
+          <div class="profile-workload-board">
+            @if (hasWorkloadData()) {
+              <div class="profile-chart" echarts [options]="workloadChart()"></div>
+            } @else {
+              <div class="profile-workload-empty">
+                <i class="pi pi-check-circle"></i>
+                <strong>当前没有积压任务</strong>
+                <span>资料、采购、库存和回款队列暂无新增待办。</span>
+              </div>
+            }
+            <div class="profile-workload-summary" aria-label="个人业务摘要">
+              @for (item of workloadSummary(); track item.label) {
+                <article [class.warning]="item.tone === 'warning'">
+                  <i class="pi" [class]="item.icon"></i>
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                  <em>{{ item.note }}</em>
+                </article>
+              }
+            </div>
+          </div>
         </article>
 
-        <article class="atlas-panel profile-chart-panel">
+        <aside class="atlas-panel profile-action-panel">
           <div class="atlas-panel-head">
             <div>
-              <span class="atlas-kicker">风险关注</span>
-              <h2>风险关注</h2>
+              <span class="atlas-kicker">业务入口</span>
+              <h2>下一步处理</h2>
             </div>
-            <p-tag [severity]="command().risks.length ? 'warn' : 'success'" [value]="command().risks.length + ' 项'" />
           </div>
-          <div class="profile-chart compact" echarts [options]="riskFocusChart()"></div>
-        </article>
-
-        <article class="atlas-panel profile-chart-panel">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">效率</span>
-              <h2>模块效率</h2>
-            </div>
-            <p-tag severity="success" value="实时" />
+          <div class="profile-action-list">
+            @for (item of profileActions(); track item.path) {
+              <a class="profile-action-row" [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
+                <i class="pi" [class]="item.icon"></i>
+                <span>
+                  <em>{{ item.kicker }}</em>
+                  <strong>{{ item.title }}</strong>
+                  <small>{{ item.body }}</small>
+                </span>
+              </a>
+            }
+            <a class="profile-action-row" routerLink="/app/notifications">
+              <i class="pi pi-bell"></i>
+              <span>
+                <em>通知</em>
+                <strong>待处理消息</strong>
+                <small>库存、审批、收款和报表完成消息集中进入通知中心。</small>
+              </span>
+            </a>
+            <a class="profile-action-row" routerLink="/app/ai">
+              <i class="pi pi-chart-line"></i>
+              <span>
+                <em>分析</em>
+                <strong>经营摘要</strong>
+                <small>快速回到经营分析、报表和风险队列。</small>
+              </span>
+            </a>
           </div>
-          <div class="profile-chart compact" echarts [options]="efficiencyChart()"></div>
-        </article>
+        </aside>
       </section>
 
-      <section class="profile-grid">
-        <article class="atlas-panel profile-editor">
+      <section class="profile-studio-grid">
+        <article class="atlas-panel profile-editor profile-form-card">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">资料</span>
@@ -200,12 +239,12 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
             </label>
             <label class="wide">
               <span>工作说明</span>
-              <textarea pTextarea rows="5" [(ngModel)]="draft.bio" placeholder="负责的业务范围、班组协同或审批说明"></textarea>
+              <textarea pTextarea rows="4" [(ngModel)]="draft.bio" placeholder="负责的业务范围、班组协同或审批说明"></textarea>
             </label>
           </div>
         </article>
 
-        <aside class="atlas-panel profile-ops-card">
+        <aside class="atlas-panel profile-ops-card profile-settings-card">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">偏好</span>
@@ -215,17 +254,17 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           <div class="profile-preference-list">
             <button type="button" [class.active]="draft.preferences?.theme === 'dark-cockpit'" (click)="setTheme('dark-cockpit')">
               <strong>深色驾驶舱</strong>
-              <span>适合监控屏和夜间值守</span>
+              <span>监控屏和夜间值守</span>
             </button>
             <button type="button" [class.active]="draft.preferences?.theme === 'light-luxury'" (click)="setTheme('light-luxury')">
               <strong>白色系统</strong>
-              <span>适合日常办公和报表复核</span>
+              <span>日常办公和报表复核</span>
             </button>
           </div>
           <div class="profile-ledger">
             <div><span>账号</span><strong>{{ user()?.email || '-' }}</strong></div>
             <div><span>角色</span><strong>{{ user()?.role_name || 'User' }}</strong></div>
-            <div><span>最近登录</span><strong>{{ user()?.is_admin_effective ? '管理会话' : '业务会话' }}</strong></div>
+            <div><span>会话</span><strong>{{ user()?.is_admin_effective ? '管理会话' : '业务会话' }}</strong></div>
           </div>
           <div class="profile-session-actions">
             <button pButton type="button" severity="secondary" [outlined]="true" (click)="logout()" aria-label="退出登录">
@@ -234,35 +273,6 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
             </button>
           </div>
         </aside>
-      </section>
-
-      <section class="profile-workbench-grid" aria-label="个人业务入口">
-        @for (item of profileActions(); track item.path) {
-          <a class="atlas-panel profile-work-card" [routerLink]="item.path" [class.warning]="item.tone === 'warning'">
-            <i class="pi" [class]="item.icon"></i>
-            <span>{{ item.kicker }}</span>
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.body }}</p>
-          </a>
-        }
-        <a class="atlas-panel profile-work-card" routerLink="/app/notifications">
-          <i class="pi pi-bell"></i>
-          <span>通知</span>
-          <strong>待处理消息</strong>
-          <p>库存、审批、收款和报表完成消息集中进入通知中心。</p>
-        </a>
-        <a class="atlas-panel profile-work-card" routerLink="/app/ai">
-          <i class="pi pi-chart-line"></i>
-          <span>分析</span>
-          <strong>经营摘要</strong>
-          <p>从个人工作台快速回到经营分析、报表和风险队列。</p>
-        </a>
-        <a class="atlas-panel profile-work-card" routerLink="/app/system/users">
-          <i class="pi pi-shield"></i>
-          <span>安全</span>
-          <strong>权限边界</strong>
-          <p>账号资料、角色和关键动作审计保持一致。</p>
-        </a>
       </section>
     </section>
   `
@@ -286,6 +296,41 @@ export class ProfilePage implements OnInit, OnDestroy {
   protected readonly todo = signal<OperationsTodoPayload>(EMPTY_TODO);
   protected draft: Partial<User> = {};
   protected readonly todoTotal = computed(() => this.todo().items.reduce((sum, item) => sum + Number(item.value || 0), 0));
+  protected readonly workloadRows = computed(() => {
+    const todoRows = this.todo().items.filter(item => Number(item.value || 0) > 0);
+    if (todoRows.length) {
+      return todoRows;
+    }
+    return (this.analytics().module_throughput ?? []).map(item => ({
+      label: item.name,
+      value: item.todo,
+      path: '/app/tasks'
+    }));
+  });
+  protected readonly hasWorkloadData = computed(() => this.workloadRows().some(item => Number(item.value || 0) > 0));
+  protected readonly workloadSummary = computed(() => [
+    {
+      label: '库存预警',
+      value: this.compactNumber(this.command().kpis.low_stock_products),
+      note: '补货队列',
+      icon: 'pi-box',
+      tone: this.command().kpis.low_stock_products ? 'warning' : 'normal'
+    },
+    {
+      label: '采购待审',
+      value: this.compactNumber(this.command().kpis.pending_purchase),
+      note: '审批闭环',
+      icon: 'pi-shopping-cart',
+      tone: this.command().kpis.pending_purchase ? 'warning' : 'normal'
+    },
+    {
+      label: '逾期应收',
+      value: this.compactMoney(this.command().kpis.overdue_amount || this.analytics().kpis.unpaid_amount),
+      note: '回款跟进',
+      icon: 'pi-wallet',
+      tone: (this.command().kpis.overdue_amount || this.analytics().kpis.unpaid_amount) ? 'warning' : 'normal'
+    }
+  ]);
   protected readonly profileActions = computed(() => [
     {
       kicker: '库存',
@@ -313,11 +358,7 @@ export class ProfilePage implements OnInit, OnDestroy {
     }
   ]);
   protected readonly workloadChart = computed<EChartsCoreOption>(() => {
-    const rows = this.todo().items.length ? this.todo().items : (this.analytics().module_throughput ?? []).map(item => ({
-      label: item.name,
-      value: item.todo,
-      path: '/app/tasks'
-    }));
+    const rows = this.workloadRows();
     return {
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis' },

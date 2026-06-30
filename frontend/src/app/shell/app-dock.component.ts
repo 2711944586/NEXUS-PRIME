@@ -68,6 +68,11 @@ const ICONS = [
                 [attr.aria-current]="itemIsActive(item) ? 'page' : null"
                 [style.--dock-tone]="item.accent"
                 [attr.aria-label]="item.label"
+                [attr.title]="item.label"
+                (mouseenter)="showDockHint(item, $event)"
+                (focus)="showDockHint(item, $event)"
+                (mouseleave)="hideDockHint()"
+                (blur)="hideDockHint()"
               >
                 <span class="dock-active-line"></span>
                 <span class="dock-icon">
@@ -101,6 +106,12 @@ const ICONS = [
       }
 
     </nav>
+    @if (activeDockHint) {
+      <div class="dock-floating-popover" [style.top.px]="activeDockHint.top" [style.left.px]="activeDockHint.left" role="tooltip">
+        <b>{{ activeDockHint.label }}</b>
+        <em>{{ activeDockHint.group }}</em>
+      </div>
+    }
   `
 })
 export class AppDockComponent {
@@ -108,4 +119,26 @@ export class AppDockComponent {
   @Input() groups: DockGroup[] = [];
   @Input({ required: true }) itemIsActive!: (item: DockItem) => boolean;
   @Input({ required: true }) groupIsActive!: (group: DockGroup) => boolean;
+
+  activeDockHint: { label: string; group: string; top: number; left: number } | null = null;
+
+  showDockHint(item: DockItem, event: MouseEvent | FocusEvent): void {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const left = Math.min(rect.right + 12, window.innerWidth - 236);
+    this.activeDockHint = {
+      label: item.label,
+      group: item.group,
+      top: rect.top + rect.height / 2,
+      left: Math.max(12, left)
+    };
+  }
+
+  hideDockHint(): void {
+    this.activeDockHint = null;
+  }
 }

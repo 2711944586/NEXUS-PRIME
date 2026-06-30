@@ -549,7 +549,7 @@ export const DOCK_GROUP_LABELS: Record<DockItem['dockGroup'], DockGroupMeta> = {
 
 export const ALL_DOCK_ITEMS: DockItem[] = [...DOCK_ITEMS, ...MORE_DOCK_ITEMS];
 
-export function groupedDockItems(items: DockItem[] = DOCK_ITEMS): DockGroup[] {
+export function groupedDockItems(items: DockItem[] = ALL_DOCK_ITEMS): DockGroup[] {
   const itemsByGroup = new Map<DockItem['dockGroup'], DockItem[]>();
   for (const item of items) {
     const groupItems = itemsByGroup.get(item.dockGroup) ?? [];
@@ -584,7 +584,7 @@ export function navigationStateForUrl(url: string): NavigationState {
   const activeItem = resolveActiveItem(normalizedUrl);
   const activeGroup = DOCK_GROUP_LABELS[activeItem.dockGroup];
   const siblings = ALL_DOCK_ITEMS.filter(item => item.dockGroup === activeItem.dockGroup);
-  const inPrimaryDock = DOCK_ITEMS.some(item => item.key === activeItem.key);
+  const inPrimaryDock = ALL_DOCK_ITEMS.some(item => item.key === activeItem.key);
 
   return {
     url: normalizedUrl,

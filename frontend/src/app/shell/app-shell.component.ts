@@ -7,30 +7,20 @@ import { MessageService } from 'primeng/api';
 import { catchError, debounceTime, distinctUntilChanged, filter, interval, of, startWith, Subject, switchMap } from 'rxjs';
 
 import { ApiService } from '../core/api.service';
-import { DockGroup, DockItem, ManufacturingCommandCenter, ServiceHealth } from '../core/models';
+import { DockGroup, DockItem, ServiceHealth } from '../core/models';
 import {
-  COMPACT_DOCK_KEYS,
-  DESKTOP_DOCK_KEYS,
-  dockItemsByKeys,
+  ALL_DOCK_ITEMS,
   groupedDockItems,
-  MOBILE_DOCK_KEYS,
   navigationStateForUrl
 } from '../core/navigation';
+import { resourceConfigForUrl } from '../core/resource-workflow';
 import { ThemeService } from '../core/theme.service';
-import { activeWorkflowStage, workflowForUrl } from '../core/workflow-blueprints';
-import type { WorkflowBlueprint, WorkflowStage } from '../core/workflow-blueprints';
 import { AppDockComponent } from './app-dock.component';
 import { AppTopbarComponent, QuickCreateAction } from './app-topbar.component';
 import { ResourceWorkbenchComponent } from './resource-workbench.component';
 import { SceneBackgroundComponent } from '../motion';
-import { WorkflowCommandStripComponent } from './workflow-command-strip.component';
 import {
-  EMPTY_COMMAND_CENTER,
   EMPTY_SERVICE_HEALTH,
-  buildShiftHandoffActions,
-  buildWorkflowSignals,
-  calculateShellHealth,
-  nextWorkflowSteps as buildNextWorkflowSteps,
   normalizeServiceHealth,
   serviceHealthLabel,
   serviceHealthLatencyLabel,
@@ -64,12 +54,11 @@ const COMMAND_SUGGESTIONS = [
     AppDockComponent,
     AppTopbarComponent,
     ResourceWorkbenchComponent,
-    SceneBackgroundComponent,
-    WorkflowCommandStripComponent
+    SceneBackgroundComponent
   ],
   template: `
     <div class="atlas-shell" [class.route-overview]="isOverviewRoute()">
-      <nexus-scene-background image="/images/automated-production-line-wide.jpg" mode="default"></nexus-scene-background>
+      <nexus-scene-background image="images/automated-production-line-wide.jpg" mode="default"></nexus-scene-background>
       <a class="skip-main-link" href="#main-content">跳到主内容</a>
       @if (routeLoading()) {
         <div class="route-loading-bar" aria-hidden="true"></div>
@@ -107,20 +96,10 @@ const COMMAND_SUGGESTIONS = [
         />
 
         <main class="content-stage atlas-stage" id="main-content">
-          @if (!isOverviewRoute()) {
-            <app-workflow-command-strip
-              [navigation]="navigationState()"
-              [workflow]="currentWorkflow()"
-              [activeStage]="activeWorkflowStep()"
-              [signals]="workflowSignals()"
-              [nextStages]="nextWorkflowSteps()"
-              [handoffActions]="shiftHandoffActions()"
-              [shellHealth]="shellHealth()"
-              [riskCount]="commandData().risks.length"
-            />
-          }
-          <router-outlet />
-          @if (!isOverviewRoute()) {
+          <section class="route-page-host" aria-label="当前业务页面">
+            <router-outlet />
+          </section>
+          @if (showResourceWorkbench()) {
             <app-resource-workbench />
           }
         </main>
@@ -141,42 +120,20 @@ export class AppShellComponent implements OnInit, OnDestroy {
   protected searchQuery = '';
   protected readonly searchResults = signal<Array<{ type: string; label: string; description?: string; path: string }>>([]);
   protected readonly quickCreateActions = QUICK_CREATE_ACTIONS;
-  protected readonly desktopDockItems = dockItemsByKeys(DESKTOP_DOCK_KEYS);
-  protected readonly compactDockItems = dockItemsByKeys(COMPACT_DOCK_KEYS);
-  protected readonly mobileDockItems = dockItemsByKeys(MOBILE_DOCK_KEYS);
   protected readonly unreadNotificationCount = signal(0);
   protected readonly routeLoading = signal(false);
   private readonly searchInput$ = new Subject<string>();
-  protected readonly commandData = signal<ManufacturingCommandCenter>(EMPTY_COMMAND_CENTER);
   protected readonly serviceHealth = signal<ServiceHealth>(EMPTY_SERVICE_HEALTH);
   protected readonly navigationState = computed(() => navigationStateForUrl(this.currentUrl()));
   protected readonly isOverviewRoute = computed(() => this.currentUrl().startsWith('/app/overview'));
-  protected readonly dockDensity = signal<'desktop' | 'compact' | 'mobile'>('desktop');
+  protected readonly showResourceWorkbench = computed(() => Boolean(resourceConfigForUrl(this.currentUrl())));
   protected readonly brokenAvatarUrl = signal('');
-  protected readonly visibleDockItems = computed(() => {
-    switch (this.dockDensity()) {
-      case 'mobile':
-        return this.mobileDockItems;
-      case 'compact':
-        return this.compactDockItems;
-      default:
-        return this.desktopDockItems;
-    }
-  });
-  protected readonly visibleDockGroups = computed<DockGroup[]>(() => groupedDockItems(this.visibleDockItems()));
-  protected readonly currentWorkflow = computed<WorkflowBlueprint>(() => workflowForUrl(this.currentUrl()));
-  protected readonly activeWorkflowStep = computed<WorkflowStage>(() => activeWorkflowStage(this.currentWorkflow(), this.currentUrl()));
-  protected readonly workflowSignals = computed(() => buildWorkflowSignals(this.commandData(), this.currentWorkflow()));
-  protected readonly nextWorkflowSteps = computed(() => buildNextWorkflowSteps(this.currentWorkflow(), this.activeWorkflowStep()));
-  protected readonly shiftHandoffActions = computed(() => buildShiftHandoffActions(this.currentWorkflow(), this.workflowSignals(), this.nextWorkflowSteps()));
-  private commandDataLoadedAt = 0;
-  private commandDataLoading = false;
+  protected readonly visibleDockGroups = computed<DockGroup[]>(() => groupedDockItems(ALL_DOCK_ITEMS));
   private serviceHealthLoadedAt = 0;
   private serviceHealthLoading = false;
   private spotlightFrame = 0;
   private spotlightTarget: HTMLElement | null = null;
   private spotlightPoint: { x: number; y: number } | null = null;
-  protected readonly shellHealth = computed(() => calculateShellHealth(this.commandData()));
   protected readonly serviceHealthLabel = computed(() => serviceHealthLabel(this.serviceHealth()));
   protected readonly serviceHealthLatencyLabel = computed(() => serviceHealthLatencyLabel(this.serviceHealth()));
   protected readonly serviceHealthTooltip = computed(() => serviceHealthTooltip(this.serviceHealth()));
@@ -190,9 +147,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.document.documentElement.classList.add('nexus-app-shell-active');
     this.theme.hydrateFromServer();
-    this.loadCommandData();
     this.loadServiceHealth();
-    this.syncViewportMode();
     interval(60_000).pipe(
       startWith(0),
       switchMap(() => this.api.get<{ unread: number }>('notifications/unread-count', {}, { silent: true }).pipe(catchError(() => of({ unread: 0 })))),
@@ -214,12 +169,10 @@ export class AppShellComponent implements OnInit, OnDestroy {
       this.createOpen = false;
       this.clearSearch();
       this.currentUrl.set((event as NavigationEnd).urlAfterRedirects);
-      this.loadCommandData();
       this.loadServiceHealth();
       this.scrollMainToTop();
     });
     if (typeof window !== 'undefined') {
-      window.addEventListener('resize', this.onResize);
       window.addEventListener('pointermove', this.onPointerMove, { passive: true });
       window.addEventListener('pointerleave', this.clearSpotlight);
     }
@@ -228,7 +181,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.document.documentElement.classList.remove('nexus-app-shell-active');
     if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', this.onResize);
       window.removeEventListener('pointermove', this.onPointerMove);
       window.removeEventListener('pointerleave', this.clearSpotlight);
       if (this.spotlightFrame) {
@@ -306,9 +258,8 @@ export class AppShellComponent implements OnInit, OnDestroy {
   }
 
   refreshShell(): void {
-    this.loadCommandData(true);
     this.loadServiceHealth(true);
-    this.messages.add({ severity: 'success', summary: '运营数据已同步', detail: '顶部指标、风险队列、服务状态和业务入口已刷新。' });
+    this.messages.add({ severity: 'success', summary: '服务状态已同步', detail: '顶部服务状态和业务入口已刷新。' });
   }
 
   initials(user: { full_name?: string | null; username?: string | null; email?: string | null }): string {
@@ -339,21 +290,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadCommandData(force = false): void {
-    const now = Date.now();
-    if (!force && (this.commandDataLoading || now - this.commandDataLoadedAt < 45000)) {
-      return;
-    }
-    this.commandDataLoading = true;
-    this.api.get<ManufacturingCommandCenter>('manufacturing/command-center').pipe(
-      catchError(() => of(EMPTY_COMMAND_CENTER))
-    ).subscribe(data => {
-      this.commandData.set(data);
-      this.commandDataLoadedAt = Date.now();
-      this.commandDataLoading = false;
-    });
-  }
-
   private loadServiceHealth(force = false): void {
     const now = Date.now();
     if (!force && (this.serviceHealthLoading || now - this.serviceHealthLoadedAt < 45000)) {
@@ -373,25 +309,6 @@ export class AppShellComponent implements OnInit, OnDestroy {
       this.serviceHealthLoading = false;
     });
   }
-
-  private syncViewportMode(): void {
-    if (typeof window === 'undefined') {
-      this.dockDensity.set('desktop');
-      return;
-    }
-    const width = window.innerWidth;
-    if (width <= 760) {
-      this.dockDensity.set('mobile');
-    } else if (width <= 1380) {
-      this.dockDensity.set('compact');
-    } else {
-      this.dockDensity.set('desktop');
-    }
-  }
-
-  private readonly onResize = (): void => {
-    this.syncViewportMode();
-  };
 
   private readonly onPointerMove = (event: PointerEvent): void => {
     const target = event.target instanceof Element

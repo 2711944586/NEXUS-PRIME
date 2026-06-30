@@ -21,7 +21,7 @@ type SceneMode = 'default' | 'login' | 'register';
   `
 })
 export class SceneBackgroundComponent {
-  @Input() image = '/images/industrial-manufacturing.jpg';
+  @Input() image = 'images/industrial-manufacturing.jpg';
   @Input() mode: SceneMode = 'default';
 
   get cssImage(): string {

@@ -45,7 +45,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
   ],
   template: `
     <section class="ops-atlas-page flow-console-page">
-      <nexus-scene-background image="/images/warehouse-wide.jpg"></nexus-scene-background>
+      <nexus-scene-background image="images/warehouse-wide.jpg"></nexus-scene-background>
 
       <header class="flow-hero" nexusReveal [nexusRevealDelay]="60">
         <div class="hero-narrative">

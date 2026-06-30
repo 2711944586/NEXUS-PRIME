@@ -92,6 +92,12 @@ const stocktakeTypeOptions = [
   { label: '抽盘', value: 'partial' }
 ];
 
+const inventoryAdjustTypeOptions = [
+  { label: '入库增加', value: 'inbound' },
+  { label: '出库扣减', value: 'outbound' },
+  { label: '盘点扣减', value: 'check' }
+];
+
 const productCreateFields: ResourceFieldConfig[] = [
   { key: 'sku', label: 'SKU', required: true, placeholder: 'MFG-SKU-001' },
   { key: 'name', label: '物料名称', required: true },
@@ -152,6 +158,14 @@ const stocktakeCreateFields: ResourceFieldConfig[] = [
   { key: 'product_id', label: '抽盘物料', type: 'lookup', lookup: { path: 'lookups/products' }, placeholder: '抽盘时选择' },
   { key: 'planned_date', label: '计划日期', type: 'date' },
   { key: 'remark', label: '备注', type: 'textarea' }
+];
+
+const inventoryAdjustCreateFields: ResourceFieldConfig[] = [
+  { key: 'product_id', label: '物料', type: 'lookup', lookup: { path: 'lookups/products' }, required: true, placeholder: '选择物料' },
+  { key: 'warehouse_id', label: '仓库', type: 'lookup', lookup: { path: 'lookups/warehouses' }, required: true, placeholder: '选择仓库' },
+  { key: 'quantity', label: '数量', type: 'number', required: true, defaultValue: 1, min: 1, step: 1 },
+  { key: 'move_type', label: '变动类型', type: 'select', options: inventoryAdjustTypeOptions, defaultValue: 'inbound' },
+  { key: 'remark', label: '备注', type: 'textarea', placeholder: '说明调拨、收货或盘点原因' }
 ];
 
 function transitionBody(record: DataRecord | null): Record<string, unknown> {
@@ -239,6 +253,16 @@ function stocktakeCreateBody(form: Record<string, unknown>): Record<string, unkn
   return payload;
 }
 
+function inventoryAdjustCreateBody(form: Record<string, unknown>): Record<string, unknown> {
+  return {
+    product_id: Number(form['product_id']),
+    warehouse_id: Number(form['warehouse_id']),
+    quantity: positiveNumber(form['quantity']),
+    move_type: form['move_type'] || 'inbound',
+    remark: form['remark'] || '仓配流向图新建库存变动'
+  };
+}
+
 export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
   {
     key: 'materials',
@@ -246,7 +270,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     eyebrow: '主数据 / 库存水位',
     resource: 'products',
     detailBase: '/app/inventory/products',
-    routePrefixes: ['/app/inventory/products', '/app/maintenance'],
+    routePrefixes: ['/app/inventory/products'],
     searchPlaceholder: '搜索 SKU、物料、供应商',
     createFields: productCreateFields,
     editFields: productCreateFields.filter(field => field.key !== 'sku'),
@@ -273,9 +297,10 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     eyebrow: '仓库 / 库位 / 调拨',
     resource: 'stock',
     detailBase: '/app/inventory/stock',
-    routePrefixes: ['/app/inventory/stock', '/app/dispatch', '/app/mobile-terminal'],
+    routePrefixes: ['/app/inventory/stock'],
     searchPlaceholder: '搜索物料、仓库、库位',
-    createFields: [],
+    createEndpoint: 'inventory/adjust',
+    createFields: inventoryAdjustCreateFields,
     editFields: [{ key: 'shelf_location', label: '库位' }],
     columns: [
       { key: 'product_sku', label: 'SKU' },
@@ -293,6 +318,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
       { label: '生成流向报表', icon: 'pi-chart-line', description: '生成库存变动报表并归档。', endpoint: 'reports/generate/inventory_movement', method: 'POST', tone: 'success' }
     ],
     exportable: true,
+    toCreatePayload: inventoryAdjustCreateBody,
     readonlyReason: '库存数量由收货、出库、盘点和调拨动作维护。'
   },
   {
@@ -330,7 +356,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     resource: 'purchase-orders',
     createEndpoint: 'purchase-orders',
     detailBase: '/app/procurement/orders',
-    routePrefixes: ['/app/procurement/orders', '/app/suppliers/performance', '/app/quality'],
+    routePrefixes: ['/app/procurement/orders'],
     searchPlaceholder: '搜索采购单、供应商、状态',
     createFields: purchaseOrderCreateFields,
     editFields: [
@@ -364,7 +390,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     resource: 'orders',
     createEndpoint: 'sales/orders',
     detailBase: '/app/sales/orders',
-    routePrefixes: ['/app/sales/orders', '/app/capacity', '/app/service'],
+    routePrefixes: ['/app/sales/orders'],
     searchPlaceholder: '搜索订单、客户、状态',
     createFields: salesOrderCreateFields,
     editFields: [],
@@ -419,7 +445,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     eyebrow: '应收 / 收款 / 催款',
     resource: 'receivables',
     detailBase: '/app/finance/receivables',
-    routePrefixes: ['/app/finance/receivables', '/app/contracts', '/app/budget'],
+    routePrefixes: ['/app/finance/receivables'],
     searchPlaceholder: '搜索应收单、客户、状态',
     createFields: [],
     editFields: [
@@ -514,7 +540,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     eyebrow: '报表 / 生成 / 归档',
     resource: 'generated-reports',
     detailBase: '/app/reports',
-    routePrefixes: ['/app/reports', '/app/metrics'],
+    routePrefixes: ['/app/reports'],
     searchPlaceholder: '搜索报表名称、类型',
     createFields: [],
     editFields: [],
@@ -595,7 +621,7 @@ export const RESOURCE_WORKFLOW_CONFIGS: ResourceWorkflowConfig[] = [
     eyebrow: '通知 / 任务 / 来源',
     resource: 'notifications',
     detailBase: '/app/notifications',
-    routePrefixes: ['/app/overview', '/app/notifications', '/app/tasks', '/app/data-quality', '/app/rules', '/app/integrations', '/app/profile', '/app/settings'],
+    routePrefixes: ['/app/notifications'],
     searchPlaceholder: '搜索通知、任务、来源',
     createFields: notificationFields,
     editFields: [...notificationFields, { key: 'is_read', label: '已读', type: 'select', options: yesNoOptions }],

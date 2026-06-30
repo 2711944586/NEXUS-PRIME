@@ -48,7 +48,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
         <div class="hero-narrative">
           <span class="atlas-kicker">经营指标</span>
           <h1>经营指标中心</h1>
-          <p>把销售、库存、采购、履约、财务与协作处理率放在同一个经营视图，便于管理层快速判断系统运行质量。</p>
+          <p>销售、库存、采购、履约和财务状态同屏判断。</p>
           <div class="atlas-actions-row">
             <button pButton type="button" (click)="createDailyBrief()" [loading]="briefCreating()" aria-label="创建经营复盘任务">
               <i class="pi pi-flag"></i>
@@ -64,6 +64,14 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
             </a>
           </div>
         </div>
+
+        <figure class="metrics-hero-photo">
+          <img src="images/control-dashboard-wide.jpg" alt="经营指标控制大屏" />
+          <figcaption>
+            <span>实时经营现场</span>
+            <strong>指标、异常和现金流同步校准</strong>
+          </figcaption>
+        </figure>
 
         <aside class="metrics-hero-board">
           <article class="business-data-row">
@@ -95,6 +103,28 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
         }
       </section>
 
+      <article class="atlas-panel metrics-chart-panel metrics-primary-chart">
+        <div class="atlas-panel-head">
+          <div>
+            <span class="atlas-kicker">交互报表</span>
+            <h2>销售与回款趋势</h2>
+          </div>
+          <div class="metric-mode-switch" aria-label="指标图表模式">
+            @for (mode of chartModes; track mode.key) {
+              <button type="button" [class.active]="chartMode() === mode.key" (click)="chartMode.set(mode.key)">
+                <i class="pi" [class]="mode.icon"></i>
+                {{ mode.label }}
+              </button>
+            }
+          </div>
+        </div>
+        @if (loading()) {
+          <p-skeleton height="360px" />
+        } @else {
+          <div class="executive-chart large" echarts [options]="activeChart()"></div>
+        }
+      </article>
+
       <section class="atlas-panel metrics-execution-strip" aria-label="经营闭环摘要">
         <div class="atlas-panel-head">
           <div>
@@ -115,30 +145,8 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
         </div>
       </section>
 
-      <section class="metrics-grid">
-        <article class="atlas-panel metrics-chart-panel wide">
-          <div class="atlas-panel-head">
-            <div>
-              <span class="atlas-kicker">趋势</span>
-              <h2>销售与回款趋势</h2>
-            </div>
-            <div class="metric-mode-switch" aria-label="指标图表模式">
-              @for (mode of chartModes; track mode.key) {
-                <button type="button" [class.active]="chartMode() === mode.key" (click)="chartMode.set(mode.key)">
-                  <i class="pi" [class]="mode.icon"></i>
-                  {{ mode.label }}
-                </button>
-              }
-            </div>
-          </div>
-          @if (loading()) {
-            <p-skeleton height="360px" />
-          } @else {
-            <div class="executive-chart large" echarts [options]="activeChart()"></div>
-          }
-        </article>
-
-        <article class="atlas-panel metrics-chart-panel">
+      <section class="metrics-grid metrics-primary-grid">
+        <article class="atlas-panel metrics-chart-panel metrics-efficiency-panel">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">效率</span>
@@ -158,7 +166,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           </div>
         </article>
 
-        <article class="atlas-panel metrics-chart-panel">
+        <article class="atlas-panel metrics-chart-panel metrics-throughput-panel">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">吞吐</span>
@@ -172,7 +180,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           }
         </article>
 
-        <article class="atlas-panel metrics-chart-panel">
+        <article class="atlas-panel metrics-chart-panel metrics-risk-panel">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">风险结构</span>
@@ -186,7 +194,7 @@ const EMPTY_COMMAND: ManufacturingCommandCenter = {
           }
         </article>
 
-        <article class="atlas-panel metrics-todo-panel">
+        <article class="atlas-panel metrics-todo-panel metrics-todo-primary">
           <div class="atlas-panel-head">
             <div>
               <span class="atlas-kicker">行动</span>

@@ -120,7 +120,7 @@ interface WorkflowStep {
   ],
   template: `
     <section class="ops-atlas-page command-atlas command-overview-lean">
-      <nexus-scene-background image="/images/control-dashboard-wide.jpg"></nexus-scene-background>
+      <nexus-scene-background image="images/control-dashboard-wide.jpg"></nexus-scene-background>
 
       <header class="command-lean-hero" nexusReveal>
         <figure class="command-hero-photo" nexusSpotlight>

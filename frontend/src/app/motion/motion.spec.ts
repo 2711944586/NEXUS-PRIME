@@ -8,7 +8,7 @@ import { CountUpNumberComponent, NexusRevealDirective, NexusSpotlightDirective, 
   standalone: true,
   imports: [NexusRevealDirective, NexusSpotlightDirective, SceneBackgroundComponent, CountUpNumberComponent],
   template: `
-    <nexus-scene-background image="/images/receiving-dock-wide.jpg" mode="login"></nexus-scene-background>
+    <nexus-scene-background image="images/receiving-dock-wide.jpg" mode="login"></nexus-scene-background>
     <section class="test-reveal" nexusReveal [nexusRevealDelay]="80">Reveal target</section>
     <button class="test-spotlight" nexusSpotlight>Spotlight target</button>
     <nexus-count-up-number class="test-count-money" [value]="125000" format="money" [duration]="0" ariaLabel="订单动能"></nexus-count-up-number>
@@ -24,7 +24,7 @@ describe('motion primitives', () => {
 
     expect(scene.getAttribute('aria-hidden')).toBe('true');
     expect(scene.dataset['sceneMode']).toBe('login');
-    expect(scene.style.getPropertyValue('--nexus-scene-image')).toContain('/images/receiving-dock-wide.jpg');
+    expect(scene.style.getPropertyValue('--nexus-scene-image')).toContain('images/receiving-dock-wide.jpg');
   });
 
   it('reveals content without leaving a blank state when IntersectionObserver is unavailable', async () => {

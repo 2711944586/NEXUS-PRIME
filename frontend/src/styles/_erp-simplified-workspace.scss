@@ -438,7 +438,47 @@
   }
 
   html.operations-console .command-action-list a {
-    min-height: 0;
+    grid-template-rows: auto auto auto auto !important;
+    gap: 10px !important;
+    min-height: 156px !important;
+    padding: 16px !important;
+    overflow: hidden !important;
+  }
+
+  html.operations-console .command-action-list a .p-tag,
+  html.operations-console .command-action-list a p-tag {
+    justify-self: start !important;
+    align-self: start !important;
+  }
+
+  html.operations-console .command-action-list a strong {
+    display: -webkit-box !important;
+    overflow: hidden !important;
+    color: var(--ink-strong) !important;
+    font-size: clamp(1rem, 1.05vw, 1.18rem) !important;
+    line-height: 1.24 !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+  }
+
+  html.operations-console .command-action-list a span,
+  html.operations-console .command-action-list a em {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    font-size: .86rem !important;
+    line-height: 1.32 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html.operations-console .command-action-list a em {
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
   }
 
   html.operations-console .command-domain-grid {

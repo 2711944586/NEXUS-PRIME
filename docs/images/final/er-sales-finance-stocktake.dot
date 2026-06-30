@@ -1,0 +1,38 @@
+digraph er_sales_finance_stocktake {
+  graph [rankdir=LR, bgcolor="white", pad="0.32", nodesep="0.55", ranksep="0.85", splines=ortho, fontname="Microsoft YaHei", label="销售履约、财务应收与盘点", labelloc=t, fontsize=22];
+  node [shape=record, style="rounded,filled", fillcolor="#f8fafc", color="#91a4b7", fontname="Microsoft YaHei", fontsize=10, margin="0.08,0.05"];
+  edge [color="#52697d", arrowsize=0.7, fontname="Microsoft YaHei", fontsize=8];
+  auth_users [label="{auth_users|PK id\lseller / cashier / approver\l}"];
+  biz_partners [label="{biz_partners|PK id\lpartner_type=customer\lname\lcredit_score\l}"];
+  biz_products [label="{biz_products|PK id\lsku / name\lprice / cost\l}"];
+  stock_warehouses [label="{stock_warehouses|PK id\lcode / name\l}"];
+  trade_orders [label="{trade_orders|PK id\lFK customer_id\lFK seller_id\lstatus / total_amount\l}"];
+  trade_order_items [label="{trade_order_items|PK id\lFK order_id\lFK product_id\lqty / unit_price\l}"];
+  finance_customer_credit [label="{finance_customer_credit|PK id\lFK customer_id\lFK frozen_by\lcredit_limit / used\lstatus\l}"];
+  finance_receivables [label="{finance_receivables|PK id\lFK order_id\lFK customer_id\lamount / paid\ldue_date / status\l}"];
+  finance_payments [label="{finance_payments|PK id\lFK receivable_id\lFK customer_id\lFK operator_id\lamount / method\l}"];
+  finance_statements [label="{finance_statements|PK id\lFK customer_id\lFK generated_by\lstatement_amount\l}"];
+  stock_takes [label="{stock_takes|PK id\lFK warehouse_id\lFK created_by\lFK approved_by\lstatus / type\l}"];
+  stock_take_items [label="{stock_take_items|PK id\lFK take_id\lFK product_id\lFK counted_by\lsystem_qty / counted_qty\l}"];
+  stock_take_history [label="{stock_take_history|PK id\lFK take_id\lFK operator_id\laction\l}"];
+  biz_partners -> trade_orders [label="customer"];
+  auth_users -> trade_orders [label="seller"];
+  trade_orders -> trade_order_items [label="1:N"];
+  biz_products -> trade_order_items [label="sold"];
+  biz_partners -> finance_customer_credit [label="1:1 credit"];
+  auth_users -> finance_customer_credit [label="freezes"];
+  trade_orders -> finance_receivables [label="bills"];
+  biz_partners -> finance_receivables [label="owes"];
+  finance_receivables -> finance_payments [label="settled by"];
+  biz_partners -> finance_payments [label="pays"];
+  auth_users -> finance_payments [label="records"];
+  biz_partners -> finance_statements [label="statement"];
+  auth_users -> finance_statements [label="generates"];
+  stock_warehouses -> stock_takes [label="counted"];
+  auth_users -> stock_takes [label="create/approve"];
+  stock_takes -> stock_take_items [label="contains"];
+  biz_products -> stock_take_items [label="counted"];
+  auth_users -> stock_take_items [label="counts"];
+  stock_takes -> stock_take_history [label="audits"];
+  auth_users -> stock_take_history [label="operates"];
+}

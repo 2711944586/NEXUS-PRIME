@@ -1,0 +1,24 @@
+digraph er_identity_master {
+  graph [rankdir=LR, bgcolor="white", pad="0.32", nodesep="0.55", ranksep="0.9", splines=ortho, fontname="Microsoft YaHei", label="身份权限与主数据", labelloc=t, fontsize=22];
+  node [shape=record, style="rounded,filled", fillcolor="#f8fafc", color="#91a4b7", fontname="Microsoft YaHei", fontsize=10, margin="0.08,0.05"];
+  edge [color="#52697d", arrowsize=0.7, fontname="Microsoft YaHei", fontsize=8];
+  auth_users [label="{auth_users|PK id\lFK role_id\lFK department_id\lusername / email\lis_active\l}"];
+  auth_roles [label="{auth_roles|PK id\lname / description\l}"];
+  auth_permissions [label="{auth_permissions|PK id\lcode / name\lresource / action\l}"];
+  roles_permissions [label="{roles_permissions|FK role_id\lFK permission_id\l}"];
+  auth_departments [label="{auth_departments|PK id\lFK parent_id\lname\l}"];
+  biz_partners [label="{biz_partners|PK id\lpartner_type\lname\lcontact / risk_level\lcredit_score\l}"];
+  biz_categories [label="{biz_categories|PK id\lname\l}"];
+  biz_tags [label="{biz_tags|PK id\lname\l}"];
+  biz_products [label="{biz_products|PK id\lFK category_id\lFK supplier_id\lsku / name\lprice / cost\lmin_stock / max_stock\l}"];
+  biz_product_tags [label="{biz_product_tags|FK product_id\lFK tag_id\l}"];
+  auth_roles -> auth_users [label="1:N"];
+  auth_departments -> auth_users [label="1:N"];
+  auth_departments -> auth_departments [label="parent"];
+  auth_roles -> roles_permissions [label="1:N"];
+  auth_permissions -> roles_permissions [label="1:N"];
+  biz_categories -> biz_products [label="classifies"];
+  biz_partners -> biz_products [label="default supplier"];
+  biz_products -> biz_product_tags [label="tagged"];
+  biz_tags -> biz_product_tags [label="labels"];
+}

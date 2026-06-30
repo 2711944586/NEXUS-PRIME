@@ -52,6 +52,7 @@ describe('AuthService', () => {
     expect(localStorage.getItem(USER_KEY)).toBeNull();
     expect(sessionStorage.getItem(USER_KEY)).toContain(user.email);
     expect(sessionStorage.getItem(CSRF_KEY)).toBe('csrf-token');
+    expect(service.hasSessionCookieHint()).toBe(true);
   });
 
   it('clears legacy local storage profile during startup', () => {
@@ -64,5 +65,16 @@ describe('AuthService', () => {
     TestBed.inject(AuthService);
 
     expect(localStorage.getItem(USER_KEY)).toBeNull();
+  });
+
+  it('treats the session csrf token as a cloud cookie hint', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: ApiService, useValue: {} }]
+    });
+
+    sessionStorage.setItem(CSRF_KEY, 'cloud-cross-origin-csrf');
+    const service = TestBed.inject(AuthService);
+
+    expect(service.hasSessionCookieHint()).toBe(true);
   });
 });

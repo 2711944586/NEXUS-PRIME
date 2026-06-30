@@ -119,7 +119,13 @@ def public_api_url(path):
     if str(path).startswith(('http://', 'https://')):
         return path
     normalized = '/' + str(path).lstrip('/')
-    return f'{request.host_url.rstrip("/")}{normalized}'
+    root = request.host_url.rstrip('/')
+    forwarded_proto = request.headers.get('X-Forwarded-Proto', '').split(',')[0].strip()
+    if forwarded_proto in {'http', 'https'} and root.startswith(('http://', 'https://')):
+        root = root.replace('http://', f'{forwarded_proto}://', 1).replace('https://', f'{forwarded_proto}://', 1)
+    elif request.is_secure and root.startswith('http://'):
+        root = root.replace('http://', 'https://', 1)
+    return f'{root}{normalized}'
 
 
 def avatar_url_for(user):

@@ -46,6 +46,29 @@ describe('resource workflow configuration', () => {
     expect(resourceConfigForUrl('/app/finance/credits')?.resource).toBe('credits');
   });
 
+  it('does not attach resource CRUD workbenches to standalone console pages', () => {
+    for (const route of [
+      '/app/settings',
+      '/app/profile',
+      '/app/integrations',
+      '/app/tasks',
+      '/app/data-quality',
+      '/app/rules',
+      '/app/maintenance',
+      '/app/dispatch',
+      '/app/mobile-terminal',
+      '/app/suppliers/performance',
+      '/app/quality',
+      '/app/capacity',
+      '/app/service',
+      '/app/contracts',
+      '/app/budget',
+      '/app/metrics'
+    ]) {
+      expect(resourceConfigForUrl(route)).toBeNull();
+    }
+  });
+
   it('routes replenishment generation actions through the async job endpoint', () => {
     const generationActions = RESOURCE_WORKFLOW_CONFIGS
       .flatMap(config => config.actions)

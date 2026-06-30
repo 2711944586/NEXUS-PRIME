@@ -166,7 +166,7 @@ const EMPTY_STRUCTURED: StructuredOperationsAnalysis = {
   ],
   template: `
     <section class="ops-atlas-page ai-command-page ai-command-studio">
-      <nexus-scene-background image="/images/control-panel-wide.jpg"></nexus-scene-background>
+      <nexus-scene-background image="images/control-panel-wide.jpg"></nexus-scene-background>
 
       <header class="ai-command-hero refined-ai-hero" nexusReveal nexusSpotlight>
         <div class="hero-narrative">

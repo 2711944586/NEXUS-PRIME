@@ -82,8 +82,8 @@ const ICONS = [
 
       <div class="atlas-location">
         <nav class="breadcrumbs" aria-label="当前位置">
-          @for (crumb of navigation.breadcrumbs; track crumb.key) {
-            @if (crumb.path && crumb.key !== 'item:' + navigation.activeItem.key) {
+          @for (crumb of navigation.breadcrumbs.slice(0, -1); track crumb.key) {
+            @if (crumb.path) {
               <a [routerLink]="crumb.path">{{ crumb.label }}</a>
             } @else {
               <span>{{ crumb.label }}</span>
@@ -199,13 +199,11 @@ const ICONS = [
             class="icon-action theme-source-action"
             [text]="true"
             [rounded]="true"
-            (click)="theme.cycleSource()"
-            [attr.aria-label]="'主题：' + theme.sourceLabel()"
-            [pTooltip]="'主题：' + theme.sourceLabel()"
+            (click)="theme.toggle()"
+            [attr.aria-label]="theme.mode() === 'dark-cockpit' ? '切换到亮色模式' : '切换到深色模式'"
+            [pTooltip]="theme.mode() === 'dark-cockpit' ? '亮色模式' : '深色模式'"
           >
-            @if (theme.source() === 'system') {
-              <span class="toolbar-icon"><svg lucideMonitor size="18" strokeWidth="2.2"></svg></span>
-            } @else if (theme.mode() === 'dark-cockpit') {
+            @if (theme.mode() === 'dark-cockpit') {
               <span class="toolbar-icon"><svg lucideMoon size="18" strokeWidth="2.2"></svg></span>
             } @else {
               <span class="toolbar-icon"><svg lucideSun size="18" strokeWidth="2.2"></svg></span>
